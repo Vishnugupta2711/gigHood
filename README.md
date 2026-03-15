@@ -28,6 +28,81 @@
 
 <br/>
 
+<div align="center">
+
+## 💬 What Riders Say
+
+</div>
+
+---
+
+<table>
+<tr>
+<td width="100" align="center" valign="top">
+<br>
+<img src="https://api.dicebear.com/7.x/personas/svg?seed=rider1" width="68" height="68" />
+<br><br>
+<b>⭐⭐⭐⭐⭐</b>
+</td>
+<td valign="top">
+<br>
+
+> *❝ When heavy rain hits the city, deliveries slow down or stop completely. That means losing an entire day's earnings. A safety net for days like this would make a huge difference for workers like us. ❞*
+
+**Ravi Kumar**
+<br>
+🛵 Food Delivery Partner
+
+</td>
+</tr>
+</table>
+
+---
+
+<table>
+<tr>
+<td width="100" align="center" valign="top">
+<br>
+<img src="https://api.dicebear.com/7.x/personas/svg?seed=rider2" width="68" height="68" />
+<br><br>
+<b>⭐⭐⭐⭐⭐</b>
+</td>
+<td valign="top">
+<br>
+
+> *❝ Some days the heat or pollution becomes unbearable. We cannot ride for long hours, but the bills don't stop. Income protection during such days would change everything. ❞*
+
+**Arjun Singh**
+<br>
+🛒 Grocery Delivery Rider
+
+</td>
+</tr>
+</table>
+
+---
+
+<table>
+<tr>
+<td width="100" align="center" valign="top">
+<br>
+<img src="https://api.dicebear.com/7.x/personas/svg?seed=rider3" width="68" height="68" />
+<br><br>
+<b>⭐⭐⭐⭐⭐</b>
+</td>
+<td valign="top">
+<br>
+
+> *❝ When sudden curfews or local shutdowns happen, deliveries stop and we lose the entire day's income. Having an automated insurance system for these disruptions would provide real peace of mind. ❞*
+
+**Imran Shaikh**
+<br>
+📦 E-commerce Delivery Partner
+
+</td>
+</tr>
+</table>
+
 ---
 
 </div>

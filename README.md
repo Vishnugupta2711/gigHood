@@ -1,4 +1,13 @@
-
+<table align="center">
+<tr>
+<td align="center">
+<img src="https://github.com/user-attachments/assets/e2710db6-0137-4137-931f-adbdcdd13e15" width="420"/>
+</td>
+<td align="center">
+<img src="https://github.com/user-attachments/assets/93d89b74-910b-4f0a-b47f-9b99ad389bdc" width="180"/>
+</td>
+</tr>
+</table>
 
 # GigHood — AI-Powered Parametric Income Insurance for Gig Workers
 

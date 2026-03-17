@@ -750,6 +750,15 @@ This serves three purposes simultaneously:
 
 ### Ravi Kumar — Primary Persona
 
+<table>
+<tr>
+<td width="40%" align="center">
+<img src="https://github.com/user-attachments/assets/b4984620-6794-42ce-865e-a217cc725aec" width="200"/>
+
+</td>
+
+<td width="60%" valign="top">
+
 | Attribute | Detail |
 |:----------|:-------|
 | Age | 26 |
@@ -763,6 +772,11 @@ This serves three purposes simultaneously:
 | Payment method | UPI |
 
 > *"If rain stops orders for two days, I cannot pay rent."*
+
+</td>
+
+</tr>
+</table>
 
 ### Ravi's Week with GigHood
 
@@ -1052,6 +1066,23 @@ Trigger event detected
 | Notifications | WhatsApp Business API + FCM | Workers on familiar channels |
 | Cloud | AWS (ECS, RDS, S3, Lambda) | Managed, scalable, India region |
 | CI/CD | GitHub Actions + Docker | Automated testing + container deployment |
+
+![React Native](https://img.shields.io/badge/React%20Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-0F172A?style=for-the-badge&logo=tailwindcss)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![NodeJS](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-F7931E?style=for-the-badge)
+![PyTorch](https://img.shields.io/badge/PyTorch-EF4B28?style=for-the-badge&logo=pytorch)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql)
+![TimescaleDB](https://img.shields.io/badge/TimescaleDB-FDB515?style=for-the-badge)
+![Redis](https://img.shields.io/badge/Redis-D82C20?style=for-the-badge&logo=redis)
+![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazonaws)
+![Razorpay](https://img.shields.io/badge/Razorpay-0C2451?style=for-the-badge)
+![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp)
+![Firebase](https://img.shields.io/badge/Firebase%20FCM-FFCA28?style=for-the-badge&logo=firebase)
+![Docker](https://img.shields.io/badge/Docker-0db7ed?style=for-the-badge&logo=docker)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions)
 
 ### System Architecture
 

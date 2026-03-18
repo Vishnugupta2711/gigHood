@@ -548,7 +548,7 @@ Each layer is independently deployable and testable. Signal ingestion uses free-
 
 ## The Demand Collapse Index — Our Core Intelligence
 
-The DCI is the mathematical heart of Equix. It answers a single question: **has the local gig economy inside this hex actually stopped?**
+The DCI is the mathematical heart of gigHood. It answers a single question: **has the local gig economy inside this hex actually stopped?**
 
 We do not ask "is it raining?" — rain sometimes increases Q-commerce orders. We do not ask "is there a curfew?" — curfews sometimes affect only certain hours. We ask: given all observable signals simultaneously, has earning opportunity collapsed below a viable threshold?
 
@@ -679,7 +679,7 @@ This is strictly a weekly pricing decision — the worker is choosing their tier
 
 ## Zero-Touch Claims Automation
 
-The defining UX principle of Equix is that **a worker should never need to file a claim**. The system detects, validates, and pays without requiring any worker action. For gig workers with low digital literacy and high stress during disruptions, this is not a feature — it is the product.
+The defining UX principle of gigHood is that **a worker should never need to file a claim**. The system detects, validates, and pays without requiring any worker action. For gig workers with low digital literacy and high stress during disruptions, this is not a feature — it is the product.
 
 ```mermaid
 sequenceDiagram
@@ -762,7 +762,7 @@ flowchart TD
 
 ### Additional Fraud Gates
 
-Beyond zone-hopping, Equix applies three secondary checks at the claim processing stage:
+Beyond zone-hopping, gigHood applies three secondary checks at the claim processing stage:
 
 **Earnings inflation detection.** Declared daily earnings are compared against the zone's 90th percentile. Declarations above the 90th percentile trigger a soft flag and require secondary validation before payout (not auto-denial — gig workers at peak performance genuinely earn more).
 
@@ -907,7 +907,7 @@ This serves three purposes simultaneously:
 
 1. **Worker value perception.** The worker sees the system is watching for them before anything has gone wrong. This reduces churn dramatically and builds the kind of trust that drives word-of-mouth in tight-knit dark store communities.
 2. **Pool solvency management.** Voluntary tier upgrades add premium revenue precisely when expected claim costs are higher, improving the insurer's loss ratio without coercive or dynamic repricing.
-3. **Financial agency.** Gig workers currently have no tools to manage income risk proactively. Equix gives them a weekly decision they can make with full information — the risk score, the cost, and the upside — before a disruption hits.
+3. **Financial agency.** Gig workers currently have no tools to manage income risk proactively. gigHood gives them a weekly decision they can make with full information — the risk score, the cost, and the upside — before a disruption hits.
 
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">

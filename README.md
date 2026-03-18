@@ -115,23 +115,53 @@
 
 <div style="padding:20px;border-radius:10px;border:1px solid #30363d;">
 
-| Section | Navigate |
-|--------|---------|
-| 📌 | [Problem Overview](#-problem-overview) |
-| 🚧 | [Barriers Gig Workers Face](#-barriers-gig-workers-face) |
-| ⚠️ | [Disruption Types](#-disruption-types) |
-| 🛡️ | [Proposed Solution — AEGIS](#-proposed-solution--aegis) |
-| 👤 | [Persona & Scenario](#-persona--scenario) |
-| 📊 | [Parametric Insurance Model](#-parametric-insurance-model) |
-| 💰 | [Weekly Premium Model](#-weekly-premium-model) |
-| 🎯 | [Parametric Triggers](#-parametric-triggers) |
-| 🤖 | [AI/ML Integration](#-aiml-integration) |
-| 🔄 | [Application Workflow](#-application-workflow) |
-| 🏗️ | [Tech Stack & Architecture](#-tech-stack--architecture) |
-| 🛠️ | [Development Plan](#-development-plan) |
-| 📈 | [Business Viability](#-business-viability) |
-| 📂 | [Repository Structure](#-repository-structure) |
-| 👥 | [Team](#-team) |
+## 📚 Table of Contents
+
+<details open>
+<summary><b>📌 Core Sections</b></summary>
+
+- 📌 [Problem Overview](#-problem-overview)
+- 🚧 [Barriers Gig Workers Face](#-barriers-gig-workers-face)
+- ⚠️ [Disruption Types](#-disruption-types)
+- 🧠 [Why Q-Commerce Workers](#-why-q-commerce-workers)
+
+</details>
+
+<details>
+<summary><b>🛡️ Solution & Architecture</b></summary>
+
+- 🛡️ [Proposed Solution — gigHood](#-proposed-solution--gighood)
+- 🏗️ [System Architecture](#-system-architecture)
+- 👤 [Persona & Scenario](#-persona--scenario)
+
+</details>
+
+<details>
+<summary><b>⚙️ Core System Design</b></summary>
+
+- 📐 [Parametric Insurance Model](#-parametric-insurance-model)
+- 💰 [Weekly Premium Model](#-weekly-premium-model)
+- 🎯 [Parametric Triggers](#-parametric-triggers)
+- 🤖 [AI / ML Integration](#-ai--ml-integration)
+- 🛡️ [Adversarial Defense & Anti-Spoofing Strategy](#-adversarial-defense--anti-spoofing-strategy)
+
+</details>
+<details>
+<summary><b>📱 Product & Execution</b></summary>
+
+- 🔄 [Application Workflow](#-application-workflow)
+- 🏗️ [Tech Stack & Architecture](#-tech-stack--architecture)
+- 🛠️ [Development Plan](#-development-plan)
+
+</details>
+
+<details>
+<summary><b>📊 Business & Team</b></summary>
+
+- 📈 [Business Viability](#-business-viability)
+- 👥 [Team](#-team)
+
+</details>
 
 </div>
 

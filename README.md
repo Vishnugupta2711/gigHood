@@ -559,6 +559,7 @@ The 0.85 threshold is not arbitrary. It is initialized based on the historical D
 It is important to be precise about what the ML model does and does not do. XGBoost performs two specific tasks: (1) **risk band classification** — assigning each worker to Tier A, B, or C using features including their zone's 12-week DCI history, seasonal weather patterns, proximity to flood-prone areas, and historical claim frequency; and (2) **DCI weight optimization** — updating the α, β, γ, δ coefficients weekly based on actual disruption outcomes. The DCI computation itself is a deterministic sigmoid over those weights — it is not a neural network and does not hallucinate outputs. This distinction matters for regulatory compliance and auditability.
 
 
+
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 ## Parametric Triggers
@@ -646,7 +647,7 @@ This is strictly a weekly pricing decision — the worker is choosing their tier
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## 7. Zero-Touch Claims Automation
+## Zero-Touch Claims Automation
 
 The defining UX principle of Equix is that **a worker should never need to file a claim**. The system detects, validates, and pays without requiring any worker action. For gig workers with low digital literacy and high stress during disruptions, this is not a feature — it is the product.
 
@@ -726,6 +727,9 @@ flowchart TD
     F -->|Yes| H["Flagged for manual review<br>Anti-duplicate gate"]
 ```
 
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
+
+
 ### Additional Fraud Gates
 
 Beyond zone-hopping, Equix applies three secondary checks at the claim processing stage:
@@ -736,12 +740,121 @@ Beyond zone-hopping, Equix applies three secondary checks at the claim processin
 
 **Coordinated claim clustering.** If 100% of policyholders in a hex claim on the same event, this is expected and correct. If only a suspiciously small subset claims (e.g., 3 out of 80 active workers), the 3 outliers are flagged — real disruptions affect all workers in a zone, not a precise subset.
 
+## 🛡️ Adversarial Defense & Anti-Spoofing Strategy
+
+gigHood is designed to operate in adversarial environments where coordinated fraud attempts, such as GPS spoofing, are expected. Traditional GPS-only verification is insufficient. Our system uses a **multi-layer, signal-driven validation architecture** to distinguish genuine workers from spoofed actors.
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
+
+### 1. Differentiation — Real Worker vs Spoofed Actor
+
+Instead of trusting location alone, gigHood validates **presence + behavior + environment consistency**.
+
+A claim is considered valid only if:
+
+- Worker was present in the zone **before disruption (PoP)**
+- Movement pattern matches realistic delivery behavior  
+- Device and network signals align with physical presence  
+- Worker activity correlates with platform-level demand signals  
+
+🚫 A spoofed user may fake GPS  
+✅ But cannot fake **movement physics + network + system-wide consistency simultaneously**
+
+<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+
+
+### 2. Multi-Signal Data Validation
+
+gigHood analyzes multiple independent signals beyond GPS:
+
+#### 📍 Device & Location Intelligence
+- GPS trajectory consistency (speed, direction, jitter)
+- Detection of mock location / developer mode usage
+- Accelerometer + gyroscope patterns (is the device actually moving?)
+- Sudden teleportation detection
+
+#### 🌐 Network & Environment Signals
+- IP geolocation vs GPS mismatch
+- Network latency patterns (real vs simulated presence)
+- Cell tower / WiFi fingerprint consistency
+- Packet delay anomalies during disruption events
+
+#### 📊 Platform & Behavioral Signals
+- Delivery activity before disruption (orders completed / accepted)
+- Sudden inactivity patterns across multiple users
+- Zone-wide worker density vs active claimants
+- Time spent inside zone vs sudden entry at trigger time
+
+#### 🧠 Coordinated Fraud Detection
+- Multiple users claiming from identical GPS coordinates
+- Synchronized claim timing across Telegram-like clusters
+- Abnormal spike in claims from a single hex
+- Graph-based clustering of suspicious accounts
+
+<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+
+
+### 3. Coordinated Attack Detection (System-Level Defense)
+
+gigHood treats fraud as a **network problem, not an individual problem**.
+
+If:
+- 100+ workers claim simultaneously  
+- From identical or near-identical patterns  
+- Without corresponding real-world disruption signals  
+
+→ The system flags a **fraud cluster event**
+
+Actions:
+- Temporarily shift affected claims to **verification mode**
+- Recalculate trust score for entire cluster
+- Cross-check with platform activity + real demand signals
+
+<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+
+
+### 4. UX Balance — Protecting Honest Workers
+
+gigHood is designed to avoid penalizing genuine users.
+
+If a claim is flagged:
+
+- ❗ It is **not immediately rejected**
+- ⏳ It is placed in a **soft verification queue**
+- 📲 Worker receives a simple prompt:
+  - Confirm presence (1-tap check-in / passive validation)
+- ⚡ Resolution SLA: under 2 hours  
+
+Additional safeguards:
+- Network drop scenarios are handled gracefully  
+- Historical trust score reduces false rejections  
+- Frequent legitimate users are fast-tracked  
+
+<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+
+
+### 5. Final Defense Philosophy
+
+gigHood does not rely on a single signal.
+
+It combines:
+
+- Spatial intelligence (DCI)  
+- Temporal validation (PoP)  
+- Device + network verification  
+- Behavioral modeling  
+- Cluster-level anomaly detection  
+
+This creates a system where:
+
+> **Spoofing one signal is easy — spoofing the entire system is nearly impossible.**
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
+
 ## Proactive Coverage Alerts
 
-This feature transforms Equix from a reactive payout tool into a **forward-looking financial tool** — the single most important UX differentiator.
+This feature transforms gigHood from a reactive payout tool into a **forward-looking financial tool** — the single most important UX differentiator.
 
 Every Sunday evening, the DCI forecasting model (using 7-day weather forecasts fused with historical DCI patterns) computes a next-week risk score for each active hex. Workers in elevated-risk zones receive a push notification:
 

@@ -12,105 +12,61 @@
 <img src="https://readme-typing-svg.demolab.com?font=Syne&weight=700&size=18&pause=1200&color=38BDF8&center=true&vCenter=true&width=700&lines=Predict+disruptions+before+they+strike.;Automate+insurance.+Eliminate+paperwork.;Instant+payouts+when+gig+workers+need+it+most.;Built+for+India's+15M%2B+delivery+partners." alt="Typing SVG"/>
 <br/>
 
-![Hackathon](https://img.shields.io/badge/Guidewire-DEVTrails%20Hackathon%202026-0f4c81?style=for-the-badge&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Active%20Development-22c55e?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-a855f7?style=for-the-badge)
 <br/>
 
-![Zomato](https://img.shields.io/badge/Zomato-E23744?style=flat-square&logoColor=white)
-![Swiggy](https://img.shields.io/badge/Swiggy-FC8019?style=flat-square&logoColor=white)
-![Amazon](https://img.shields.io/badge/Amazon-FF9900?style=flat-square&logo=amazon&logoColor=white)
-![Flipkart](https://img.shields.io/badge/Flipkart-2874F0?style=flat-square&logoColor=white)
 ![Zepto](https://img.shields.io/badge/Zepto-9B59B6?style=flat-square&logoColor=white)
-![Dunzo](https://img.shields.io/badge/Dunzo-00B386?style=flat-square&logoColor=white)
+![Blinkit](https://img.shields.io/badge/Blinkit-F7D000?style=flat-square&logoColor=black)
 
 </div>
 
-# GigHood — AI-Powered Parametric Income Insurance for Gig Workers
+<div align="center">
 
-*Protecting gig worker income from external disruptions using AI-driven parametric insurance.*
+# gigHood
+
+### AI-Powered Parametric Income Insurance for Gig Workers
+
+---
+
+🎥 **[Phase 1 Pitch Video — Watch Here](YOUR_LINK_HERE)**
+
+</div>
+
+---
+
+### 📌 TL;DR
+
+**Problem:** India's Q-commerce delivery partners (Zepto, Blinkit) lose 20–30% of weekly income to external disruptions — with zero financial protection.
+
+**Solution:** gigHood — an AI-powered parametric income insurance platform that detects zone-level economic collapse and pays workers automatically within 90 seconds.
+
+**Core Innovation:** Demand Collapse Index (DCI) — a spatial ML model that proves *income loss*, not just weather events, eliminating basis risk.
+
+**What makes it different:** Zero-touch claims · H3 hex-grid fraud prevention · Weekly pricing aligned to gig earnings cycles · No paperwork ever.
+
+---
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
-## 💬 What Riders Say
+## 📊 The Reality in Numbers
 
-<div style="background:linear-gradient(145deg,#161b22,#1f2933); padding:25px; border-radius:12px; border:1px solid #30363d;">
+### 📉 Income Loss
 
-<table>
-<tr>
-<td width="100" align="center" valign="top">
-<br>
-<img src="https://api.dicebear.com/7.x/personas/svg?seed=rider1" width="68" height="68" />
-<br><br>
-<b>⭐⭐</b>
-</td>
-<td valign="top">
-<br>
+| Stat | Source |
+|:-----|:-------|
+| Gig workers lose **20–30%** of monthly income during disruptions | DEVTrails 2026 Problem Statement |
+| Q-commerce order fulfilment drops **60–80%** during heavy rain (>30mm/hr) vs 20–35% for food delivery | RedSeer Consulting, Q-commerce Ops Report 2023 |
+| Disruptions occur **3–6 times/month** per dark store zone in monsoon-affected cities | RedSeer Consulting, 2023 |
 
-*❝ When heavy rain hits the city, deliveries slow down or stop completely. That means losing an entire day's earnings. A safety net for days like this would make a huge difference for workers like us. ❞*
+### 👷 Worker Reality
 
-**Ravi Kumar**
-<br>
-🛵 Food Delivery Partner
-
-</td>
-</tr>
-</table>
-
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
-
-<table>
-<tr>
-<td width="100" align="center" valign="top">
-<br>
-<img src="https://api.dicebear.com/7.x/personas/svg?seed=rider2" width="68" height="68" />
-<br><br>
-<b>⭐⭐</b>
-</td>
-<td valign="top">
-<br>
-
-*❝ Some days the heat or pollution becomes unbearable. We cannot ride for long hours, but the bills don't stop. Income protection during such days would change everything. ❞*
-
-**Arjun Singh**
-<br>
-🛒 Grocery Delivery Rider
-
-</td>
-</tr>
-</table>
-
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
-
-<table>
-<tr>
-<td width="100" align="center" valign="top">
-<br>
-<img src="https://api.dicebear.com/7.x/personas/svg?seed=rider3" width="68" height="68" />
-<br><br>
-<b>⭐⭐⭐</b>
-</td>
-<td valign="top">
-<br>
-
-*❝ When sudden curfews or local shutdowns happen, deliveries stop and we lose the entire day's income. Having an automated insurance system for these disruptions would provide real peace of mind. ❞*
-
-**Imran Shaikh**
-<br>
-📦 E-commerce Delivery Partner
-
-</td>
-</tr>
-</table>
+| Stat | Source |
+|:-----|:-------|
+| India's gig workforce: **15M+** delivery partners | NITI Aayog, India's Booming Gig Economy 2022 |
+| Q-commerce workers report **zero financial buffer** for disruption days | IFMR LEAD gig worker field research, 2022–2024 |
+| **No income protection product** currently exists for parametric income loss in this segment | ICRIER Gig Economy Report, 2023 |
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
-
-</div>
-
-<div>
-
-## 📑 Table of Contents
-</div>
 
 <div style="padding:20px;border-radius:10px;border:1px solid #30363d;">
 
@@ -119,18 +75,19 @@
 <details open>
 <summary><b>📌 Core Sections</b></summary>
 
-- 📌 [Problem Overview](#-problem-overview)
-- 🚧 [Barriers Gig Workers Face](#-barriers-gig-workers-face)
-- ⚠️ [Disruption Types](#-disruption-types)
-- 🧠 [Why Q-Commerce Workers](#-why-q-commerce-workers)
+- 🔎 [Problem Overview](#-problem-overview)
+- 🧱 [Barriers Gig Workers Face](#-barriers-gig-workers-face)
+- 🌩️ [Disruption Types](#️-disruption-types)
+- 🧠 [Why Q-Commerce Workers](#-why-q-commerce-workers-specifically)
 
 </details>
 
 <details>
 <summary><b>🛡️ Solution & Architecture</b></summary>
 
-- 🛡️ [Proposed Solution — gigHood](#-proposed-solution--gighood)
-- 🏗️ [System Architecture](#-system-architecture)
+- 🚀 [Proposed Solution — gigHood](#-proposed-solution--gighood)
+- 🆚 [Why gigHood is Different](#-why-gighood-is-different)
+- 🏗️ [System Architecture](#️-system-architecture)
 - 👤 [Persona & Scenario](#-persona--scenario)
 
 </details>
@@ -138,25 +95,41 @@
 <details>
 <summary><b>⚙️ Core System Design</b></summary>
 
-- 📐 [Parametric Insurance Model](#-parametric-insurance-model)
-- 💰 [Weekly Premium Model](#-weekly-premium-model)
-- 🎯 [Parametric Triggers](#-parametric-triggers)
-- 🤖 [AI / ML Integration](#-ai--ml-integration)
-- 🛡️ [Adversarial Defense & Anti-Spoofing Strategy](#-adversarial-defense--anti-spoofing-strategy)
+- 🧮 [The Demand Collapse Index](#-the-demand-collapse-index--our-core-intelligence)
+- 🎯 [Parametric Triggers](#-parametric-triggers--independent-signal-checklist)
+- 💰 [Weekly Pricing Model](#-weekly-pricing-model--design--computation)
+- ⚡ [Zero-Touch Claims Automation](#-zero-touch-claims-automation)
+- 🔍 [Fraud Detection — Proof of Presence](#-fraud-detection--time-decay-proof-of-presence)
+- 🛡️ [Adversarial Defense & Anti-Spoofing Strategy](#️-adversarial-defense--anti-spoofing-strategy)
+- 🔔 [Proactive Coverage Alerts](#-proactive-coverage-alerts)
 
 </details>
+
+<details>
+<summary><b>🤖 AI & ML</b></summary>
+
+- 📐 [Parametric Insurance Model](#-parametric-insurance-model)
+- 🤖 [AI / ML Integration](#-ai--ml-integration)
+
+</details>
+
 <details>
 <summary><b>📱 Product & Execution</b></summary>
 
 - 🔄 [Application Workflow](#-application-workflow)
-- 🏗️ [Tech Stack & Architecture](#-tech-stack--architecture)
-- 🛠️ [Development Plan](#-development-plan)
+- 📱 [Why Mobile over Web](#-why-mobile-over-web)
+- 🏗️ [Tech Stack & Architecture](#️-tech-stack--architecture)
+- 🗓️ [Development Plan](#️-development-plan)
 
 </details>
 
 <details>
 <summary><b>📊 Business & Team</b></summary>
 
+- ✅ [Compliance with Problem Statement Constraints](#-compliance-with-problem-statement-constraints)
+- 🎯 [MVP Demo Scope — Built vs Mocked](#-mvp-demo-scope--built-vs-mocked)
+- 📏 [Target Success Metrics](#-target-success-metrics)
+- 📊 [Analytics Dashboard](#-analytics-dashboard)
 - 📈 [Business Viability](#-business-viability)
 - 👥 [Team](#-team)
 
@@ -166,7 +139,7 @@
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
-## 🔍 Problem Overview
+## 🔎 Problem Overview
 
 <div align="center">
 
@@ -176,7 +149,7 @@
 
 <br/>
 
-India's gig economy is the invisible engine behind on-demand urban life. Millions of delivery partners working with **Zomato**, **Swiggy**, **Amazon**, **Flipkart**, **Zepto**, and **Dunzo** ensure fast, reliable fulfillment — yet they operate entirely **without a stable financial safety net**.
+India's gig economy is the invisible engine behind on-demand urban life. Millions of delivery partners working with **Zepto**, **Blinkit**, **Swiggy Instamart**, and other quick-commerce platforms ensure fast, reliable fulfillment — yet they operate entirely **without a stable financial safety net**.
 
 Unlike salaried employees, gig workers are compensated **strictly per delivery or per hour worked.** When the environment turns hostile — weather, pollution, civil unrest — they simply **stop earning.**
 
@@ -207,10 +180,6 @@ During Disruptions
 
 A structural analysis of the compounding vulnerabilities that leave delivery partners financially exposed during operational disruptions.
 
-<table>
-<tr>
-<td width="50%" valign="top">
-
 ### 👷 Worker-Level Barriers
 
 | # | Issue |
@@ -220,9 +189,6 @@ A structural analysis of the compounding vulnerabilities that leave delivery par
 | 03 | Forced to choose between **safety** and **survival** |
 | 04 | No short-term income loss insurance product exists |
 | 05 | Even a few-hour disruption causes immediate strain |
-
-</td>
-<td width="50%" valign="top">
 
 ### 🏗️ Systemic Barriers
 
@@ -234,16 +200,12 @@ A structural analysis of the compounding vulnerabilities that leave delivery par
 | 04 | No dynamic pricing based on real-time risk |
 | 05 | No automated disruption detection pipeline |
 
-</td>
-</tr>
-</table>
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
-## ⚡ Disruption Types
+## 🌩️ Disruption Types
 
-GigHood identifies and responds to **two primary classes of disruptions** that halt delivery operations and eliminate gig worker income:
+gigHood identifies and responds to **two primary classes of disruptions** that halt delivery operations and eliminate gig worker income:
 
 ### 🌧️ Environmental Disruptions
 
@@ -295,7 +257,7 @@ GigHood identifies and responds to **two primary classes of disruptions** that h
 
 <td width="65%" valign="top">
 
-## Why Q-Commerce Workers, Specifically
+## 🧠 Why Q-Commerce Workers, Specifically
 
 The choice of Q-commerce over food delivery or e-commerce is a deliberate design decision, not a label. Three structural properties make this persona the strongest fit for parametric insurance:
 
@@ -319,7 +281,7 @@ The choice of Q-commerce over food delivery or e-commerce is a deliberate design
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Syne&weight=700&size=15&pause=2000&color=EF4444&center=true&vCenter=true&width=600&lines=This+is+the+problem+GigHood+solves.;Automated.+Instant.+AI-powered+protection." alt="CTA Typing SVG"/>
+<img src="https://readme-typing-svg.demolab.com?font=Syne&weight=700&size=15&pause=2000&color=EF4444&center=true&vCenter=true&width=600&lines=This+is+the+problem+gigHood+solves.;Automated.+Instant.+AI-powered+protection." alt="CTA Typing SVG"/>
 
 </div>
 
@@ -351,6 +313,21 @@ Unlike traditional systems that rely on claims, gigHood detects when **earning o
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
+## 🆚 Why gigHood is Different
+
+Most parametric insurance products ask: **"Is it raining?"** — and pay out if it is. gigHood asks: **"Has earning opportunity in this zone actually collapsed?"** — and pays only if it has. This distinction eliminates basis risk entirely.
+
+| Dimension | Weather-Based Insurance | gigHood |
+|:----------|:----------------------:|:-------:|
+| Trigger | Single weather signal | Multi-signal Demand Collapse Index |
+| Spatial precision | City-wide or district | H3 hex-grid — 1.2km cells |
+| Basis risk | High — rain can increase orders | Low — DCI proves income loss |
+| Fraud prevention | Absent or basic | Time-Decay Proof-of-Presence engine |
+| Claims process | Worker must file | Zero-touch — fully automated |
+| Pricing model | Fixed or annual | Weekly, zone-adaptive, IRDAI-compliant |
+
+<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+
 ### 01 · 🔍 Spatial Risk Intelligence (DCI Engine)
 
 The core intelligence of gigHood is the **Demand Collapse Index (DCI)** — a spatial model that determines whether income in a delivery zone has collapsed.
@@ -370,21 +347,25 @@ Instead of asking *“Is it raining?”*, gigHood asks:
 
 #### DCI Formula
 
-DCI = σ(αW + βT + γP + δS)
+```
+DCI_h  =  σ( α·W  +  β·T  +  γ·P  +  δ·S )
 
-Where:
-- W = Weather severity  
-- T = Traffic disruption  
-- P = Platform outage  
-- S = Social disruption  
+  W  =  Weather severity score   (rainfall mm/hr, wind speed, AQI)
+  T  =  Traffic congestion index (0–1 normalized)
+  P  =  Platform outage flag     (latency / order volume drop)
+  S  =  Social disruption score  (curfew, strike, zone closure)
 
-σ(x) = 1 / (1 + e^-x)
+  σ(x)  =  1 / (1 + e^-x)       (sigmoid — maps to 0–1 probability)
+
+  α = 0.45  β = 0.25  γ = 0.20  δ = 0.10   (cold-start priors)
+```
 
 #### Trigger Condition
 
-If DCI > 0.85 → Zone is **economically disrupted**
-
-→ Claims are triggered automatically
+```
+DCI_h > 0.85  →  Zone is ECONOMICALLY DISRUPTED
+                  Claims initiated automatically for all active policyholders
+```
 
 **Capabilities:**
 - Hyperlocal disruption detection  
@@ -447,16 +428,15 @@ Disruption detected
 
 ### 04 · 📱 Worker-Centric Smart Application
 
-A mobile-first app designed for quick-commerce riders.
+A mobile-first app designed for quick-commerce riders, built in Phase 2 and extended in Phase 3.
 
-| Feature | Description |
-|:--------|:------------|
-| Risk Dashboard | Real-time zone disruption risk |
-| Safety Radar | H3 hex-based map |
-| Earnings Forecast | Predicted income |
-| Financial Health Score | Stability tracking |
-| Voice AI Assistant | Multilingual support |
-| Govt Scheme Discovery | Welfare integration |
+| Feature | Phase | Description |
+|:--------|:-----:|:------------|
+| Zone Risk Dashboard | Phase 2 | Real-time DCI score for worker's hex |
+| Policy Activation | Phase 2 | Tier selection and weekly UPI auto-debit |
+| Payout History | Phase 2 | Timeline of past disruptions and credits |
+| Proactive Tier Alerts | Phase 3 | Sunday evening next-week risk forecast + upgrade prompt |
+| AI Chat Assistant | Phase 3 | Conversational support for policy, payout, and risk queries |
 
 **User Flow:**
 
@@ -468,28 +448,36 @@ Login → Zone Risk → Plan Selection → Policy Activation → Auto Protection
 
 gigHood continuously monitors **zone-level disruption risk**.
 
-- DCI > 0.75 → Early warning  
-- DCI > 0.85 → Auto payout trigger  
+- DCI > 0.75 → Early warning alert sent to worker
+- DCI > 0.85 → Auto payout trigger fires
 
 Workers stay protected without any manual intervention.
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-### 06–10 · Additional Platform Pillars
+### 11 · 🤖 AI Chatbot Assistant
 
-| Pillar | Feature | Description |
-|:------:|:--------|:------------|
-| 06 | 📊 Financial Health | Stability insights |
-| 07 | 🗺️ Safety Radar | Zone-level mapping |
-| 08 | 🏛️ Govt Schemes | Welfare integration |
-| 09 | 🔐 Fraud Detection | Proof-of-Presence model |
-| 10 | 🧠 Architecture | App → API → DCI Engine |
+gigHood integrates a real-time AI Chat Assistant in Phase 3, making the platform accessible for workers with varying digital literacy.
+
+> *"Workers don't navigate the system — they talk to it."*
+
+The chatbot is powered by the Claude API with the worker's policy context, current DCI score, and last payout injected into each session. It is **read-only and explanatory** — it never files claims or modifies policies.
+
+| Capability | Description |
+|:-----------|:------------|
+| 🧠 Smart Q&A | Answers policy, payout, and risk queries instantly |
+| 📊 Risk Explanation | Explains why DCI is high in plain language (e.g., "47mm/hr rain blocked your zone for 4 hours") |
+| 💰 Payout Breakdown | Shows exactly how payout was calculated |
+| 🛡️ Policy Guidance | Explains tier differences and what the proactive upgrade means |
+| 📢 Disruption Context | Conversational summary of active disruption events |
+
+**Supported languages:** Hindi · Kannada · Tamil · Telugu · English
 
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
-## System Architecture
+## 🏗️ System Architecture
 
 The platform is composed of five layers: signal ingestion, spatial intelligence, policy and pricing, claims automation, and the payout and dashboard layer.
 
@@ -545,7 +533,7 @@ Each layer is independently deployable and testable. Signal ingestion uses free-
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## The Demand Collapse Index — Our Core Intelligence
+## 🧮 The Demand Collapse Index — Our Core Intelligence
 
 The DCI is the mathematical heart of gigHood. It answers a single question: **has the local gig economy inside this hex actually stopped?**
 
@@ -573,13 +561,27 @@ On Day 1, we have no historical claim data. We solve this with **actuarial prior
 
 - IMD (India Meteorological Department) historical rainfall records for the city, mapped to reported delivery downtime from Zepto/Blinkit public incident disclosures.
 - Urban mobility disruption datasets from IIT urban transport labs (publicly available).
-- Expert heuristic priors: $\alpha = 0.45$, $\beta = 0.25$, $\gamma = 0.20$, $\delta = 0.10$ as starting weights, reflecting weather dominance for Q-commerce.
+- Expert heuristic priors reflecting weather dominance for Q-commerce:
+
+```
+α = 0.45  (weather — dominant signal for Q-commerce)
+β = 0.25  (traffic — secondary signal)
+γ = 0.20  (platform — tertiary signal)
+δ = 0.10  (social — least frequent trigger)
+```
 
 Weights are updated weekly via online XGBoost retraining as real DCI events and claim outcomes accumulate. The model converges on city-specific weights typically within 6–8 weeks of live operation.
 
 ### Trigger Threshold
 
-If $DCI_h > 0.85$, the hex is declared **disrupted** and automated claim processing begins for all active policyholders within that hex.
+```
+DCI_h > 0.85  →  Hex declared DISRUPTED
+                  Automated claim processing begins for all active policyholders
+
+0.65 < DCI_h ≤ 0.85  →  Elevated Watch — worker alerted, no payout yet
+
+DCI_h ≤ 0.65  →  Normal operations — no action
+```
 
 The 0.85 threshold is not arbitrary. It is initialized based on the historical DCI distribution at which 90% of Q-commerce dark store operations in pilot cities were confirmed halted, cross-referenced against IMD rainfall event logs and Zepto public incident reports. The threshold is tunable per city via the admin dashboard and recalibrates automatically as claim outcomes accumulate — a disruption event where 95%+ of workers in a hex go offline is treated as ground truth for threshold refinement.
 
@@ -591,7 +593,7 @@ It is important to be precise about what the ML model does and does not do. XGBo
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## Parametric Triggers
+## 🎯 Parametric Triggers — Independent Signal Checklist
 
 To satisfy the requirement of 3–5 independent automated triggers, we expose the DCI's component signals as individual triggers *before* they fuse into the composite index. This gives judges a clear checklist while preserving the architectural elegance of the composite model.
 
@@ -615,7 +617,7 @@ Each trigger is independently monitorable and logged. This means a weather-only 
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## Weekly Pricing Model
+## 💰 Weekly Pricing Model — Design & Computation
 
 ### Design Philosophy
 
@@ -676,7 +678,7 @@ This is strictly a weekly pricing decision — the worker is choosing their tier
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## Zero-Touch Claims Automation
+## ⚡ Zero-Touch Claims Automation
 
 The defining UX principle of gigHood is that **a worker should never need to file a claim**. The system detects, validates, and pays without requiring any worker action. For gig workers with low digital literacy and high stress during disruptions, this is not a feature — it is the product.
 
@@ -711,7 +713,12 @@ sequenceDiagram
 ### Income Loss Calculation
 
 ```
-Payout = (Worker's Average Daily Earnings ÷ 8) × Verified Disrupted Hours
+Payout  =  (Worker's Average Daily Earnings ÷ 8)  ×  Verified Disrupted Hours
+
+  Verified Disrupted Hours  =  duration DCI_h remained above 0.85
+  Daily Earnings declared at onboarding, cross-referenced vs zone 90th percentile
+  Caps set at 85th percentile of earnings distribution:
+    ₹600–₹800/day (based on IFMR LEAD gig worker field research and NITI Aayog 2022 data)
 ```
 
 "Verified disrupted hours" is the duration the hex's DCI remained above 0.85. This prevents full-day payouts for a disruption that cleared in two hours.
@@ -725,7 +732,7 @@ If fewer than 3 of 5 signal sources are available at computation time (e.g., a t
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## Fraud Detection — Time-Decay Proof of Presence
+## 🔍 Fraud Detection — Time-Decay Proof of Presence
 
 Parametric insurance has one dominant fraud vector: **zone hopping** — a worker who is not in the disrupted area drives into it after the trigger fires to collect a payout. The Time-Decay Proof of Presence (PoP) engine eliminates this with minimal computational overhead and no battery-intensive tracking.
 
@@ -771,117 +778,248 @@ Beyond zone-hopping, gigHood applies three secondary checks at the claim process
 
 ## 🛡️ Adversarial Defense & Anti-Spoofing Strategy
 
-gigHood is designed to operate in adversarial environments where coordinated fraud attempts, such as GPS spoofing, are expected. Traditional GPS-only verification is insufficient. Our system uses a **multi-layer, signal-driven validation architecture** to distinguish genuine workers from spoofed actors.
+<div align="center">
+
+<img src="https://readme-typing-svg.demolab.com?font=Syne&weight=700&size=16&pause=1500&color=EF4444&center=true&vCenter=true&width=700&lines=500+fake+GPS+signals.+Real+payouts.+Liquidity+drained.;gigHood+does+not+verify+location+%E2%80%94+it+verifies+reality." alt="Adversarial Defense SVG"/>
+
+</div>
+
+> **Core Principle: "gigHood does not verify location — it verifies reality."**
+>
+> A fraudster can spoof a GPS coordinate. They cannot simultaneously spoof a weather station, a traffic sensor, a government alert feed, 90 minutes of timestamped location history, and the physical capacity of a 1.2km delivery zone. Our defense is not device-based — it is **reality-consistency based**.
+
+<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=EF4444&section=footer" width="100%"/>
+
+### 🔒 Layer 0 — The DCI Anchor (The Attack That Cannot Exist)
+
+This is the argument that makes GPS spoofing architecturally irrelevant — and it is the layer most systems miss entirely.
+
+**The DCI trigger is computed from external, infrastructure-level signals only:**
+
+```
+DCI inputs:
+  W  →  OpenWeatherMap rainfall API         (weather station, not device)
+  T  →  Traffic congestion index            (road sensor data, not device)
+  P  →  Platform delivery uptime            (server-side API, not device)
+  S  →  Government curfew / alert feed      (official feed, not device)
+```
+
+**No worker's phone contributes to the DCI value of their hex.**
+
+This means: if a fraudster at home spoofs their GPS into a hex where `DCI = 0.30`, the trigger never fires. No disruption is registered. No payout is processed. The GPS spoof achieves nothing.
+
+The only scenario where spoofing causes damage is when a **real disruption exists** (`DCI > 0.85` from legitimate external signals) and a fraudster then fakes their location into that hex. Every layer below defends against that case.
+
+> **To manufacture a false DCI spike, an attacker would need to fake an actual rainstorm, a real traffic shutdown, a government curfew, and a platform outage simultaneously. That is not a fraud problem — that is weather control.**
+
+<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=EF4444&section=footer" width="100%"/>
+
+### 1️⃣ The Differentiation — Real Worker vs Spoofed Actor
+
+*How gigHood's AI/ML architecture distinguishes a genuinely stranded delivery partner from a bad actor spoofing their location.*
+
+A real Q-commerce worker stranded in a disrupted zone leaves a multi-dimensional digital footprint that is physically impossible to forge in real-time from a home environment.
+
+#### Time-Decay Proof of Presence (PoP)
+
+Fraud syndicates organize via Telegram and react to events — they turn on spoofing apps **after** the rain starts. gigHood's PoP engine requires the worker to have existed in the H3 hex **before** the disruption onset.
+
+```
+Validation window:  T - 90 minutes  →  T (disruption trigger time)
+
+Required:  ≥ 1 encrypted H3 hex ping within that window
+           pings dispatched every 15 min via WorkManager / BackgroundTasks
+           historical log is immutable — cannot be retroactively altered
+```
+
+A fraudster who activates their spoofing app at `T` has zero entries in the pre-disruption window. **The claim is denied before any ML model is consulted.**
+
+#### Impossible Velocity Detection
+
+```
+If:  distance between last known location and spoofed hex
+     ÷  time elapsed  >  physically possible speed (e.g., 120km/hr on a 2-wheeler)
+
+Then:  VELOCITY_VIOLATION flag raised
+       Claim routed to soft verification queue regardless of GPS payload
+```
+
+#### Environmental Signal Consistency
+
+A genuine worker in `47mm/hr` rainfall shows:
+- Degraded mobile connectivity → fluctuating network latency
+- GPS coordinate jitter from weather interference  
+- Battery drain consistent with active riding + weather conditions
+
+A fraudster on home WiFi during the same event shows:
+- Stable broadband latency (contradicts severe weather conditions)
+- Clean, static GPS signal (contradicts outdoor mobility)
+- Battery drain inconsistent with claimed physical activity
+
+This passive environmental inconsistency requires no worker action to detect and is extremely difficult to fake without professional spoofing hardware.
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
+### 2️⃣ The Data — Beyond GPS: Detecting a Coordinated Fraud Ring
 
-### 1. Differentiation — Real Worker vs Spoofed Actor
+*Specific data points beyond basic GPS coordinates that gigHood analyzes to catch organized syndicates.*
 
-Instead of trusting location alone, gigHood validates **presence + behavior + environment consistency**.
+#### A. H3 Hex Density Cap — The Physical Impossibility Argument
 
-A claim is considered valid only if:
+```
+Known fact:  One H3 Resolution-9 hex  ≈  1.2km diameter
+             Active Q-commerce riders per Zepto/Blinkit dark store zone:
+             ~50–80 (operational estimate based on dark store model — 1 store per ~1.5km radius)
 
-- Worker was present in the zone **before disruption (PoP)**
-- Movement pattern matches realistic delivery behavior  
-- Device and network signals align with physical presence  
-- Worker activity correlates with platform-level demand signals  
+Market Crash scenario:  500 simultaneous claims from one hex
 
-🚫 A spoofed user may fake GPS  
-✅ But cannot fake **movement physics + network + system-wide consistency simultaneously**
+Verdict:  PHYSICAL_CAPACITY_VIOLATION
+          A single dark store cannot operationally support 500 simultaneous riders.
+          The entire cluster is flagged as a coordinated attack instantly.
+          No individual claim evaluation needed.
+```
 
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+This is the strongest single signal in the system. It requires no ML, no heuristics, and is completely unbeatable. You cannot fake 500 workers fitting inside a 1.2km circle that physically holds 80.
 
+#### B. Temporal Synchronization Detection
 
-### 2. Multi-Signal Data Validation
+Human behavior is stochastic — gig workers react to disruptions at different times based on their location, their shift, their awareness. Coordinated Telegram rings produce millisecond-synchronized responses.
 
-gigHood analyzes multiple independent signals beyond GPS:
+```
+Signal:  Multiple workers entering the disrupted hex
+         OR multiple PoP pings arriving
+         within the same 500ms window
 
-#### 📍 Device & Location Intelligence
-- GPS trajectory consistency (speed, direction, jitter)
-- Detection of mock location / developer mode usage
-- Accelerometer + gyroscope patterns (is the device actually moving?)
-- Sudden teleportation detection
+Threshold:  > 15 synchronized entries in < 500ms  →  SYNC_ATTACK flag
+            Probability of organic occurrence:  < 0.001%
+```
 
-#### 🌐 Network & Environment Signals
-- IP geolocation vs GPS mismatch
-- Network latency patterns (real vs simulated presence)
-- Cell tower / WiFi fingerprint consistency
-- Packet delay anomalies during disruption events
+#### C. Cross-User Correlation Graph
 
-#### 📊 Platform & Behavioral Signals
-- Delivery activity before disruption (orders completed / accepted)
-- Sudden inactivity patterns across multiple users
-- Zone-wide worker density vs active claimants
-- Time spent inside zone vs sudden entry at trigger time
+```
+Nodes    =  workers filing claims in the same disruption event
+Edges    =  similarity score across:
+              - claim timing delta (ms)
+              - GPS entry timestamp
+              - PoP ping pattern
+              - network fingerprint
 
-#### 🧠 Coordinated Fraud Detection
-- Multiple users claiming from identical GPS coordinates
-- Synchronized claim timing across Telegram-like clusters
-- Abnormal spike in claims from a single hex
-- Graph-based clustering of suspicious accounts
+Dense cluster with high similarity score  →  COORDINATED_RING flag
+Isolated nodes with organic variance      →  approved normally
+```
 
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+#### D. Network vs Environmental Reality
 
+| Signal | Genuine Worker in Storm | Home Fraudster |
+|:-------|:-----------------------:|:--------------:|
+| Mobile latency | Fluctuating (storm interference) | Stable (home WiFi) |
+| IP type | Mobile carrier (Jio/Airtel) | Residential broadband |
+| GPS jitter | Present (rain, movement) | Absent (static spoof) |
+| Battery drain | High (navigation + weather) | Normal |
+| Cell tower | Consistent with claimed hex | Mismatched or static |
 
-### 3. Coordinated Attack Detection (System-Level Defense)
+#### E. Claim Distribution Consistency
 
-gigHood treats fraud as a **network problem, not an individual problem**.
+Real disruptions follow predictable patterns:
 
-If:
-- 100+ workers claim simultaneously  
-- From identical or near-identical patterns  
-- Without corresponding real-world disruption signals  
+```
+Expected:  Wide distribution of claim times within the disruption window
+           Natural variance in payout amounts
+           Near-total hex coverage (80–95% of active workers claim)
 
-→ The system flags a **fraud cluster event**
-
-Actions:
-- Temporarily shift affected claims to **verification mode**
-- Recalculate trust score for entire cluster
-- Cross-check with platform activity + real demand signals
-
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
-
-
-### 4. UX Balance — Protecting Honest Workers
-
-gigHood is designed to avoid penalizing genuine users.
-
-If a claim is flagged:
-
-- ❗ It is **not immediately rejected**
-- ⏳ It is placed in a **soft verification queue**
-- 📲 Worker receives a simple prompt:
-  - Confirm presence (1-tap check-in / passive validation)
-- ⚡ Resolution SLA: under 2 hours  
-
-Additional safeguards:
-- Network drop scenarios are handled gracefully  
-- Historical trust score reduces false rejections  
-- Frequent legitimate users are fast-tracked  
+Fraud signals:
+  →  Only a tight cluster of workers claims (selective activation)
+  →  Claims arrive in synchronized batches
+  →  Low entropy in claim pattern (all identical payout amounts declared)
+  →  Suspiciously small subset claims despite all workers being "in zone"
+```
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
+### 3️⃣ The UX Balance — Protecting Honest Workers
 
-### 5. Final Defense Philosophy
+*How gigHood handles flagged claims without penalizing genuine workers experiencing real network drops during bad weather.*
 
-gigHood does not rely on a single signal.
+> **Design Rule: Flag the system anomaly — not the individual worker.**
 
-It combines:
+A real worker in a genuine disruption may have patchy connectivity, delayed pings, or an unusual movement pattern due to the very conditions that caused the disruption. The system must not punish honesty.
 
-- Spatial intelligence (DCI)  
-- Temporal validation (PoP)  
-- Device + network verification  
-- Behavioral modeling  
-- Cluster-level anomaly detection  
+#### Response Tiers by Trust Score
 
-This creates a system where:
+Each worker accumulates a **Trust Score** based on:
+- PoP consistency over prior weeks
+- Claim frequency vs disruption events in their zone
+- Historical payout pattern regularity
+- Absence of velocity or sync violations
 
-> **Spoofing one signal is easy — spoofing the entire system is nearly impossible.**
+```
+Trust Score  →  Response at flag time
+
+HIGH    (long history, consistent pings, normal frequency)
+        →  Auto-cleared passively within 15 minutes
+        →  Worker receives payout with brief status note
+
+MEDIUM  (newer account, minor irregularities)
+        →  Soft verification queue, passive checks run automatically
+        →  Resolution SLA: 2 hours
+        →  If passive checks clear: payout released with no worker action
+
+LOW     (new account, missing PoP history, velocity flag)
+        →  1-tap active verification prompt sent via FCM push
+        →  Worker taps to confirm presence (triggers secure one-time GPS fetch)
+        →  Resolution SLA: 2 hours
+        →  Repeated violations: account isolation for manual review
+```
+
+#### The Cluster Suppression Protocol
+
+When a density or sync attack is detected:
+
+```
+Step 1:  Freeze suspicious cluster (workers with coordinated signatures)
+Step 2:  Identify independent workers in same hex with organic patterns
+Step 3:  Release independent workers' payouts immediately — unaffected
+Step 4:  Apply passive + active verification to flagged cluster only
+Step 5:  Log fraud cluster event for insurer admin dashboard
+```
+
+Honest workers in the same hex as an attack are **never penalized**. The suppression is surgical — cluster-scoped, not hex-scoped.
+
+#### What a Genuine Worker Experiences During a Flag
+
+```
+Scenario:  Real disruption + network drop caused delayed PoP pings
+
+Worker experience:
+  1.  DCI crosses 0.85 — zone disrupted
+  2.  Worker has only 2 pings in 90-min window (connectivity issues)
+  3.  System: insufficient PoP data — routes to soft queue
+  4.  Passive check: environmental signals consistent with storm
+                     no velocity violation
+                     trust score: HIGH
+  5.  Auto-cleared — payout released
+  6.  Worker notification: "₹480 credited — income protected"
+  
+Total delay from trigger:  < 30 minutes
+Worker action required:  None
+```
+
+#### Final Defense Philosophy
+
+```
+Layer 0  →  DCI cannot be spoofed (external infrastructure signals)
+Layer 1  →  Pre-presence required (PoP time-decay, retroactive forgery impossible)
+Layer 2  →  Physical capacity enforced (hex density cap, 500 in 1.2km = attack)
+Layer 3  →  Synchronization detected (stochastic vs scripted behavior)
+Layer 4  →  Environmental consistency (home WiFi vs stormy field)
+Layer 5  →  Trust-tiered response (honest workers fast-tracked, attackers isolated)
+```
+
+> **"If one user lies, we detect it. If 500 users lie together — we detect the impossibility of their shared reality."**
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
-## Proactive Coverage Alerts
+## 🔔 Proactive Coverage Alerts
 
 This feature transforms gigHood from a reactive payout tool into a **forward-looking financial tool** — the single most important UX differentiator.
 
@@ -977,7 +1115,32 @@ This serves three purposes simultaneously:
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## 🎯 Why This Persona Matters
+### Priya Sharma — Secondary Persona
+
+| Attribute | Detail |
+|:----------|:-------|
+| Age | 31 |
+| City | Mumbai |
+| Platform | Zepto (Instamart zone) |
+| Work Model | Dark store-based delivery (1–2 km radius) |
+| Average weekly income | ₹3,800 |
+| Best week | ₹5,400 |
+| Worst monsoon week | ₹900 |
+| Vehicle | 2-wheeler |
+| Device | Android smartphone |
+| Payment method | UPI |
+
+> *"During the Mumbai floods, the entire zone shuts for 2–3 days. My husband and I both lose income at the same time — there is no backup."*
+
+#### Priya's Scenario — AQI Spike + Curfew Combination
+
+**Before:** Priya works a Zepto dark store in Dharavi zone, Mumbai. November brings both post-Diwali AQI spikes (often >350) and periodic local bandhs. She earns ₹520–₹650 on good days, nothing on disruption days.
+
+**During:** On a Thursday morning, AQI crosses 320 in her hex. Platform operations are suspended. DCI recomputes: W=0.15, T=0.30, P=0.85, S=0.40 → `DCI = 0.81` — elevated watch, not yet triggered. By 11 AM, AQI hits 380. DCI crosses 0.85. Priya's PoP log shows 6 pings in the prior 90 minutes in her hex. Claim initiated automatically.
+
+**After:** ₹390 credited via UPI (3.1 disrupted hours × ₹126/hr average). No form. No call. No waiting.
+
+<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 Quick-commerce delivery partners operate within **fixed hyperlocal zones (1–3 km radius)** centered around dark stores.
 
@@ -1030,76 +1193,40 @@ gigHood’s **H3 spatial model + DCI engine** aligns directly with this operatio
     UPI transfer executed via Razorpay
             |
             v
-    Worker notified via app + WhatsApp
+    Worker notified via app + FCM push notification
 
 **No claim. No paperwork. No delay.**
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
-
-## 💰 Weekly Premium Model
-
-### Protection Tiers
-
-| Tier | Weekly Premium | Coverage |
-|------|--------------|----------|
-| 🟢 Tier A | ₹20 | Low-risk zones |
-| 🟡 Tier B | ₹30 | Moderate-risk zones |
-| 🔴 Tier C | ₹42 | High-risk zones |
-
-### Pricing Logic
-
-Premiums are determined using:
-
-**4-week rolling average of zone-level DCI**
-
-| Factor | Impact |
-|--------|--------|
-| Historical disruption frequency | Higher risk → higher tier |
-| Seasonal patterns (monsoon/cyclone) | Temporary risk adjustment |
-| Zone-specific conditions | Localized pricing |
-
-This ensures:
-- Stable weekly pricing  
-- No sudden spikes  
-- Predictable cost for workers  
-
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
-
-
-## 🎯 Parametric Triggers
-
-gigHood monitors real-world signals affecting quick-commerce delivery zones.
-
-| Trigger | Threshold | Source | Effect |
-|---------|----------|--------|--------|
-| 🌧 Heavy Rain | ≥ 35mm/hr | OpenWeatherMap | Roads unusable |
-| 🌫 AQI Spike | AQI > 300 | CPCB | Unsafe outdoor work |
-| 🚧 Traffic Gridlock | Congestion = 1.0 | Maps API | Movement blocked |
-| 📵 Platform Outage | High latency/downtime | Platform API | Orders stop |
-| 🚫 Curfew / Bandh | Govt restriction | Alert feeds | Zone shutdown |
-| 🌀 Cyclone Warning | Active alert | IMD | Full disruption |
-
-All triggers feed into:
-
-**Demand Collapse Index (DCI)**
-
-Final payout is based on combined signals, not a single trigger.
-
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
-
-
 ## 🤖 AI / ML Integration
 
-gigHood uses controlled and explainable machine learning.
+gigHood uses controlled and explainable machine learning. It is important to be precise: the core system is **deterministic and parametric** — ML plays two specific, bounded roles and does not drive outputs autonomously.
 
-### Core Components
+### Core ML Components
 
-| Component | Model | Role |
+| Component | Model | Exact Role |
 |-----------|-------|------|
-| Risk Scoring | XGBoost | Zone disruption probability |
-| Forecasting | LSTM | Weather & AQI prediction |
-| Fraud Detection | Rule-based checks | Claim validation |
+| Risk Band Classification | XGBoost | Assigns each worker to Tier A/B/C using zone's 12-week DCI history, seasonal weather patterns, flood-proximity, claim frequency |
+| DCI Weight Optimization | XGBoost (weekly retrain) | Updates α, β, γ, δ signal weights based on real disruption outcomes — model converges in 6–8 weeks |
+| Disruption Forecasting | Rolling average + seasonal index | Predicts next-week zone risk for proactive tier upgrade alerts — no LSTM required at MVP stage |
+| Fraud Anomaly Detection | Rule-based + statistical thresholds | Claim frequency anomaly, earnings inflation, coordinated cluster detection |
+
+> The DCI computation itself is a **deterministic sigmoid** over ML-optimized weights — not a black-box neural network. This makes it auditable, explainable, and IRDAI-compliant.
+
+### Cold-Start Strategy
+
+On Day 1, no historical claim data exists. Weights are bootstrapped using:
+- IMD historical rainfall records mapped to delivery downtime
+- Urban mobility disruption datasets from IIT urban transport labs
+
+```
+Initial heuristic priors:
+  α = 0.45  (weather — dominant factor for Q-commerce outdoor workers)
+  β = 0.25  (traffic — secondary mobility factor)
+  γ = 0.20  (platform — outage detection)
+  δ = 0.10  (social — least frequent disruption type)
+```
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
@@ -1186,26 +1313,25 @@ Rule:
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-### Voice AI Assistant
-
-Workers interact naturally — no reading required.
-
-```
-Worker speaks  →  "What happens if it rains tomorrow?"
-                         |
-                         v
-              Speech-to-text transcription
-                         |
-                         v
-          LLM generates plain-language response
-          (Claude / GPT-4 + worker profile context)
-                         |
-                         v
-       Text-to-speech in worker's preferred language
-```
-
 **Supported languages:** Hindi · Kannada · Tamil · Telugu · English
 
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
+
+## 📱 Why Mobile over Web
+
+The Phase 1 requirement asks us to justify our platform choice. gigHood is **native mobile only** — not a Progressive Web App (PWA), not a web dashboard for workers. Here is why this is a non-negotiable architectural decision, not a preference:
+
+| Requirement | PWA / Web | Native Mobile (React Native) |
+|:------------|:---------:|:----------------------------:|
+| 15-min background location pings for PoP fraud engine | ❌ Browsers kill background tasks aggressively | ✅ WorkManager (Android) + BackgroundTasks (iOS) |
+| Persistent foreground location service | ❌ Not available in browser context | ✅ Co-active with Zepto/Blinkit delivery app |
+| UPI deep-link payment integration | ⚠️ Limited, inconsistent across browsers | ✅ Native intent handling |
+| Push notifications during disruptions | ⚠️ Requires browser open | ✅ FCM native push, app closed |
+| Offline-first ping queue | ❌ ServiceWorker has strict limits | ✅ WorkManager retry queue |
+
+**The core reason:** The Proof-of-Presence fraud engine requires encrypted H3 hex pings every 15 minutes in the background. If the OS kills the background process, the system falsely denies legitimate claims. Native mobile OS APIs (WorkManager on Android, BGAppRefreshTask on iOS) are the only reliable mechanism. A web app makes the entire fraud model inoperable.
+
+The **admin dashboard** for insurers is a web app (Next.js on Vercel) — because insurer analysts work on desktops and do not require background location services.
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
@@ -1213,39 +1339,35 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 
 ### Technology Stack
 
-| Layer | Technology | Rationale |
+#### MVP Stack — What We Build and Demo (Free Tier, Zero Cost)
+
+| Layer | Technology | Justification |
 |------|------------|-----------|
-| Mobile App | React Native | Cross-platform (Android + iOS) |
-| Admin Dashboard | React + Tailwind CSS | Fast, component-based UI |
-| API Gateway | Kong / AWS API Gateway | Routing, auth, rate limiting |
-| Backend Services | FastAPI + Node.js | ML + real-time processing |
-| ML Models | XGBoost + LSTM | Risk prediction + forecasting |
-| Database | PostgreSQL + TimescaleDB | Relational + time-series |
-| Cache | Redis | Real-time trigger evaluation |
-| Payments | Razorpay | UPI, instant settlement |
-| Notifications | WhatsApp API + FCM | Worker communication |
-| Cloud | AWS (ECS, RDS, S3) | Scalable infrastructure |
-| CI/CD | GitHub Actions + Docker | Automated deployment |
+| Worker App | React Native (Expo) | Native background location APIs required for PoP fraud engine |
+| Admin Dashboard | Next.js + Tailwind CSS on Vercel free tier | SSR for live data; Vercel free tier handles full demo load |
+| Backend API | Python + FastAPI | Native ML model serving; async endpoints for DCI computation |
+| Scheduled Jobs | APScheduler (in-process) | DCI recomputation every 5 min inside FastAPI — no Redis needed |
+| ML Models | XGBoost + Scikit-learn | Risk band classification + DCI weight optimization |
+| Database | Supabase free tier (PostgreSQL + PostGIS) | PostGIS + H3 extension pre-enabled; 500MB free; no card required |
+| Spatial Index | H3 Python library | Hex-grid computation, runs on Supabase backend |
+| Payments | Razorpay Sandbox | UPI payout simulation; webhooks; fully free in test mode |
+| Notifications | Firebase FCM (free tier) | Push notifications to worker app |
+| Signal APIs | OpenWeatherMap free tier, CPCB AQI API (free), Maps mock, Gov alert mock | All free or mocked |
+| Backend Hosting | Render free tier | Hosts FastAPI + APScheduler; sufficient for hackathon demo |
 
+#### Scaled Production Stack (Post-Hackathon Roadmap)
 
-![React Native](https://img.shields.io/badge/React%20Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-0F172A?style=for-the-badge&logo=tailwindcss)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![NodeJS](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-![XGBoost](https://img.shields.io/badge/XGBoost-F7931E?style=for-the-badge)
-![PyTorch](https://img.shields.io/badge/PyTorch-EF4B28?style=for-the-badge&logo=pytorch)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql)
-![TimescaleDB](https://img.shields.io/badge/TimescaleDB-FDB515?style=for-the-badge)
-![Redis](https://img.shields.io/badge/Redis-D82C20?style=for-the-badge&logo=redis)
-![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazonaws)
-![Razorpay](https://img.shields.io/badge/Razorpay-0C2451?style=for-the-badge)
-![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp)
-![Firebase](https://img.shields.io/badge/Firebase%20FCM-FFCA28?style=for-the-badge&logo=firebase)
-![Docker](https://img.shields.io/badge/Docker-0db7ed?style=for-the-badge&logo=docker)
-![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions)
+| Layer | Technology |
+|------|------------|
+| Backend Hosting | AWS ECS (containerized) |
+| Database | AWS RDS PostgreSQL + TimescaleDB (time-series) |
+| Cache / Queue | Redis + Celery workers |
+| API Gateway | Kong |
+| Secondary Service | Node.js microservice for notification routing |
+| ML Forecasting | Retrained seasonal model (XGBoost time-series variant) |
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+
 
 ### Microservices
 
@@ -1257,7 +1379,7 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 | Claim Engine | Payout calculation + orchestration |
 | Fraud Detection | Proof-of-Presence validation |
 | Payment Service | Razorpay UPI payouts |
-| Notification Service | WhatsApp + push alerts |
+| Notification Service | FCM push alerts |
 | Auth Service | OTP login, JWT |
 
 
@@ -1265,64 +1387,81 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 
 ## 🗓️ Development Plan
 
-### Phase 1 — Ideation & Foundation (Weeks 1–2) ✅ Complete
+### Phase 1 — Ideation & Foundation [March 4–20] ✅ Complete
 
-- [x] Problem research and persona selection (Q-commerce)
-- [x] Parametric trigger design
-- [x] DCI-based architecture design
-- [x] Weekly pricing model (₹20–₹42 tiers)
-- [x] System architecture planning
-- [x] README setup
+- [x] Problem research and persona selection (Q-commerce — Zepto/Blinkit)
+- [x] Parametric trigger design (5 independent triggers)
+- [x] DCI-based architecture and formula design
+- [x] Weekly pricing model (₹20–₹42 tiers, 4-week rolling average)
+- [x] System architecture planning (5-layer design)
+- [x] Cold-start ML strategy (IMD priors + XGBoost bootstrapping)
+- [x] README and GitHub repository setup
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
-### Phase 2 — Core Development (Weeks 3–5)
+### Phase 2 — Automation & Protection [March 21–April 4]
 
-- [ ] Backend APIs (FastAPI + Node.js)
-- [ ] Database setup (PostgreSQL + TimescaleDB)
-- [ ] External API integration (Weather, AQI, Traffic)
+- [ ] FastAPI backend setup on Render free tier
+- [ ] Supabase database setup (PostgreSQL + PostGIS + H3)
+- [ ] External API integration (OpenWeatherMap, CPCB AQI)
+- [ ] DCI computation engine with APScheduler (every 5 min)
 - [ ] H3 spatial grid implementation
-- [ ] Trigger detection engine
-- [ ] Mobile app UI (onboarding + dashboard)
+- [ ] Trigger detection engine (5 independent triggers)
+- [ ] Worker mobile app UI — onboarding + policy dashboard (React Native)
+- [ ] Dynamic premium calculation (XGBoost risk band classifier)
+- [ ] Claims management — zero-touch automated flow
+- [ ] Razorpay sandbox UPI payout integration
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
-### Phase 3 — Intelligence Layer (Weeks 6–8)
+### Phase 3 — Scale & Optimise [April 5–17]
 
-- [ ] XGBoost risk model (DCI weight tuning)
-- [ ] LSTM forecasting model (weather trends)
-- [ ] DCI computation pipeline
-- [ ] Zone-level disruption detection
-- [ ] Proof-of-Presence validation system
-
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
-
-
-### Phase 4 — Automation & Payments (Weeks 9–10)
-
-- [ ] Razorpay UPI integration
-- [ ] Automated claims engine
-- [ ] Notification system (WhatsApp + FCM)
-- [ ] Admin dashboard (zone monitoring)
-
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+- [ ] Proof-of-Presence fraud engine (WorkManager + BackgroundTasks + GPS fallback)
+- [ ] Advanced fraud gates (earnings inflation, claim frequency anomaly, cluster detection)
+- [ ] Adversarial defense layer (GPS spoof detection, coordinated cluster flagging)
+- [ ] Admin dashboard (Next.js on Vercel — live hex map, pool health, claim log)
+- [ ] Proactive tier upgrade alert system (Sunday evening DCI forecast)
+- [ ] AI Chat Assistant (Claude API — policy, payout, and risk explanations in Hindi/English)
+- [ ] XGBoost weekly retrain pipeline (DCI weight optimization)
+- [ ] Degraded-mode fallback (< 3 signals available)
+- [ ] End-to-end disruption simulation demo
+- [ ] Final submission package
 
 
-### Phase 5 — Testing & Demo (Weeks 11–12)
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
-- [ ] End-to-end testing
-- [ ] Load testing (multi-zone simulation)
-- [ ] Demo scenario setup
-- [ ] Final submission
+## 📊 Analytics Dashboard
 
+gigHood provides dual dashboards — one for workers, one for insurers — built in Phase 3.
+
+### Worker Dashboard
+
+| Panel | What It Shows |
+|:------|:-------------|
+| Active Coverage | Current tier, weekly premium paid, coverage cap for the week |
+| Zone Risk Today | Live DCI score for their hex with traffic-light indicator |
+| Protection History | Timeline of past disruption events, claims triggered, payouts received |
+| Proactive Alert | Next-week risk forecast and tier upgrade option (Sunday evenings) |
+
+### Insurer / Admin Dashboard
+
+| Panel | What It Shows |
+|:------|:-------------|
+| Live Hex Map | H3 grid colour-coded by DCI level — red (disrupted), amber (elevated), green (normal) |
+| Active Policies | Count of active workers by zone, tier distribution, weekly premium pool total |
+| Trigger Events | Real-time log of DCI threshold crossings — timestamp, hex ID, signals that fired |
+| Claims Processed | Auto-approved vs flagged vs denied — with fraud reason codes |
+| Fraud Detection Metrics | PoP validation rate, zone-hop attempts caught, cluster flags raised |
+| Payout Summaries | Total disbursed this week, average payout per event, loss ratio tracker |
+| Predictive Risk Panel | Next 7-day disruption forecast by zone — expected claim volume and pool sufficiency |
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
 ## 📈 Business Viability
 
-<img width="1000" height="467" alt="Image" src="https://github.com/user-attachments/assets/5c39641b-950e-436b-81b3-50eb8fbadb25" />
+<img width="1000" height="467" alt="Quick Commerce Market Size" src="https://github.com/user-attachments/assets/5c39641b-950e-436b-81b3-50eb8fbadb25" />
 
 ### Market Opportunity
 
@@ -1348,16 +1487,77 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
-### Unit Economics (Tier B Example)
+### Unit Economics — Honest Assessment
 
 ```
-Weekly premium: ₹30
-Expected payout: ₹19.5 (65% loss ratio)
-Operating cost: ₹5
-Gross margin: ₹5.5 per user per week
+Weekly premium (Tier B):        ₹30/worker
+Average payout per event:       ₹480/worker
+Expected disruption events:     1.5/week (monsoon baseline, RedSeer 2023)
+Claim trigger probability:      0.40 (DCI > 0.85 given a disruption day)
 
-At 100,000 users → ₹5.5 lakh/week margin
+Expected weekly claim cost:     ₹480 × 1.5 × 0.40 = ₹288/worker
+At ₹30 premium → Loss ratio:   960% per worker in isolation
 ```
+
+This ratio is not viable at single-worker level — and we are not hiding it. This is how parametric insurance actually works: **the pool is the product, not the individual policy.**
+
+```
+At scale — 10,000 workers across 50 hexes:
+  Not all hexes disrupt simultaneously
+  Dry-season weeks (Oct–May) have near-zero claims
+  Monsoon subscription at ₹80/week (Jun–Sep) re-prices the risk correctly
+
+Diversified pool loss ratio target:   60–65%
+Gross margin at 65% loss ratio:       ₹10.5/worker/week
+At 100,000 workers:                   ₹10.5 lakh/week margin
+```
+
+The path to viability is pooling across geographies and seasons — the same principle that makes all micro-insurance products work.
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
+
+## ✅ Compliance with Problem Statement Constraints
+
+| PS Constraint | gigHood Implementation |
+|:---|:---|
+| **Income loss only** — no health, vehicle, or accident coverage | DCI triggers income loss payouts exclusively. No health, vehicle repair, accident, or life cover exists anywhere in the system. |
+| **Weekly pricing model strictly** | 4-week rolling DCI average sets tier. Weekly UPI auto-debit. No daily or per-event pricing. Tier upgrades apply to next full billing week. |
+| **Chosen delivery persona — one sub-category** | Q-Commerce only — Zepto and Blinkit dark store partners. Food delivery and e-commerce explicitly excluded. |
+| **3–5 automated parametric triggers** | Five independent triggers: rainfall ≥35mm/hr, AQI >300, traffic gridlock, platform outage, verified curfew/bandh. All feed the DCI composite. |
+| **Automated coverage and payouts** | Zero-touch claims engine. Worker never files a claim. DCI threshold crossing initiates full payout pipeline automatically. |
+| **Intelligent fraud detection** | Time-Decay Proof-of-Presence, earnings inflation detection, claim frequency anomaly, coordinated cluster detection. |
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
+
+## 🎯 MVP Demo Scope — Built vs Mocked
+
+| Component | Demo Status |
+|:---|:---|
+| DCI computation engine | **Built** — real signal ingestion + sigmoid formula via APScheduler |
+| Weather and AQI signals | **Real** — OpenWeatherMap free tier + CPCB AQI API |
+| Traffic and platform signals | **Mocked** — simulated API responses |
+| H3 spatial grid | **Built** — h3 Python library on Supabase PostGIS |
+| Proof-of-Presence fraud engine | **Built** — 15-min pings + historical lookup + GPS fallback |
+| Advanced fraud gates | **Built** — earnings inflation, frequency anomaly, cluster detection |
+| Razorpay UPI payouts | **Sandbox** — test mode, not live transactions |
+| XGBoost risk classification | **Built** — trained on synthetic + IMD historical data |
+| Proactive tier upgrade alerts | **Built** — Sunday DCI forecast + weekly tier upgrade prompt |
+| AI Chat Assistant | **Built** — Claude API with worker policy context injection |
+| Admin dashboard | **Built** — Next.js on Vercel free tier |
+| Seasonal forecasting model | **Mocked** — rolling average used at MVP; full retrain in production |
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
+
+## 📏 Target Success Metrics
+
+| Metric | Target | How Measured |
+|:---|:---:|:---|
+| Claim trigger accuracy | >90% | DCI threshold correctly identifies halted zones vs ground truth |
+| Fraud false-positive rate | <5% | Legitimate workers wrongly denied by PoP engine |
+| Payout latency | <90 seconds | DCI threshold crossing to UPI credit confirmation |
+| PoP validation accuracy | >95% | Zone-hop attempts correctly flagged |
+| Target loss ratio at scale | 60–65% | At 10,000+ workers across 50+ hexes, diversified pool |
+| Worker onboarding time | <3 minutes | Registration to active policy |
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
@@ -1365,9 +1565,9 @@ At 100,000 users → ₹5.5 lakh/week margin
 
 <div align="center">
 
-**GigHood — Guidewire DEVTrails Hackathon 2026**
+**gigHood — Building the future of financial protection for India's gig workers**
 
-*Building the future of financial protection for India's gig workers through AI-powered parametric income insurance.*
+*AI-powered parametric income insurance, built for the last mile.*
 
 </div>
 
@@ -1423,15 +1623,8 @@ style="border-radius:50%; object-fit:cover;" />
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Syne&weight=700&size=15&pause=2000&color=38BDF8&center=true&vCenter=true&width=700&lines=Predict.+Protect.+Pay.+Instantly.;Built+for+the+backbone+of+India's+economy.;GigHood+%E2%80%94+Because+every+delivery+matters." alt="Footer Typing SVG"/>
+<img src="https://readme-typing-svg.demolab.com?font=Syne&weight=700&size=15&pause=2000&color=38BDF8&center=true&vCenter=true&width=700&lines=Predict.+Protect.+Pay.+Instantly.;Built+for+the+backbone+of+India's+economy.;gigHood+%E2%80%94+Because+every+delivery+matters." alt="Footer Typing SVG"/>
 
 <br/>
 
-![Made in India](https://img.shields.io/badge/Made%20with%20%E2%9D%A4%EF%B8%8F%20in-India-ff9933?style=for-the-badge)
-![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-22c55e?style=for-the-badge)
-![MIT License](https://img.shields.io/badge/License-MIT-a855f7?style=for-the-badge)
-
 </div>
-
-<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
-

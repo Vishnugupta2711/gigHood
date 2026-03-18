@@ -26,6 +26,8 @@
 
 ### AI-Powered Parametric Income Insurance for Gig Workers
 
+---
+
 🎥 **[Phase 1 Pitch Video — Watch Here](YOUR_LINK_HERE)**
 
 </div>
@@ -41,8 +43,6 @@
 **Core Innovation:** Demand Collapse Index (DCI) — a spatial ML model that proves *income loss*, not just weather events, eliminating basis risk.
 
 **What makes it different:** Zero-touch claims · H3 hex-grid fraud prevention · Weekly pricing aligned to gig earnings cycles · No paperwork ever.
-
----
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
@@ -303,9 +303,9 @@ Unlike traditional systems that rely on claims, gigHood detects when **earning o
 
 <div align="center">
 
-| ₹20 | 5 | 0 | Spatial AI | < 90s |
+| ₹20 | 5+1 | 0 | Spatial AI | < 90s |
 |:---:|:---:|:---:|:---:|:---:|
-| Starting weekly premium | Core layers | Manual claims needed | DCI-based intelligence | Trigger to payout |
+| Starting weekly premium | Primary layers + fraud intelligence | Manual claims needed | DCI-based intelligence | Trigger to payout |
 
 </div>
 
@@ -322,7 +322,7 @@ Most parametric insurance products ask: **"Is it raining?"** — and pay out if 
 | Basis risk | High — rain can increase orders | Low — DCI proves income loss |
 | Fraud prevention | Absent or basic | Time-Decay Proof-of-Presence engine |
 | Claims process | Worker must file | Zero-touch — fully automated |
-| Pricing model | Fixed or annual | Weekly, zone-adaptive, IRDAI-compliant |
+| Pricing model | Fixed or annual | Weekly, zone-adaptive, IRDAI Sandbox pathway |
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
@@ -453,7 +453,7 @@ Workers stay protected without any manual intervention.
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-### 11 · 🤖 AI Chatbot Assistant
+### 06 · 🤖 AI Chatbot Assistant
 
 gigHood integrates a real-time AI Chat Assistant in Phase 3, making the platform accessible for workers with varying digital literacy.
 
@@ -477,7 +477,7 @@ The chatbot is powered by the Claude API with the worker's policy context, curre
 
 ## 🏗️ System Architecture
 
-The platform is composed of five layers: signal ingestion, spatial intelligence, policy and pricing, claims automation, and the payout and dashboard layer.
+The platform is composed of five primary layers — signal ingestion, spatial intelligence, policy and pricing, claims automation, and payout and dashboard — with an integrated fraud intelligence layer embedded within the claims engine.
 
 ```mermaid
 flowchart TD
@@ -558,7 +558,7 @@ $$\sigma(x) = \frac{1}{1 + e^{-x}}$$
 On Day 1, we have no historical claim data. We solve this with **actuarial priors bootstrapped from open data**:
 
 - IMD (India Meteorological Department) historical rainfall records for the city, mapped to reported delivery downtime from Zepto/Blinkit public incident disclosures.
-- Urban mobility disruption datasets from publicly available academic research on Indian city traffic and flood events.
+- IMD-correlated urban mobility datasets from open government data portals (data.gov.in) covering city-level flood impact on road accessibility and transit disruption.
 - Expert heuristic priors with explicit justification:
 
 ```
@@ -880,15 +880,25 @@ What we check via platform API (mocked in demo, real data partnership in product
   STRONG confirmation — auto-approved:
     Worker accepted ≥ 1 order OR completed ≥ 1 delivery
     in the 90-minute window before disruption onset
+    AND order activity is distributed across the window
+    (not a single order completed 85+ minutes before onset
+     followed by zero activity — that pattern is flagged as
+     PARTIAL_ACTIVITY and routed to soft queue)
+
+    Micro-delivery exclusion: orders where pickup and drop-off
+    coordinates are within 100 meters of each other are excluded
+    from Gate 2 validation — self-dealing order farming in
+    pre-disruption windows is not valid activity confirmation
 
   WEAK confirmation — routed to soft queue:
     Worker was Online/Available but no order activity recorded
     (genuine — disruption may have halted all incoming orders before they could accept)
     → Passive checks run automatically (coordinate variance, cross-hex graph, fraud score)
     → If passive checks clear (Fraud Score < 50): payout released, no worker action
-    → If passive checks inconclusive after 2 hours: escalated to Priority 1 human review
-      queue (resolved < 1 hour by reviewer cross-referencing 4-week shift history)
-    → Human reviewer finding: consistent shift history → approve; no history → deny with appeal
+    → If passive checks inconclusive after 2 hours: claim deferred to end-of-billing-week
+      for cross-reference against total weekly platform activity before final payout decision
+    → If weekly platform activity confirms regular prior shift pattern: approved
+    → If weekly platform activity shows no activity that week: denied with appeal link
 
   NO confirmation — denied:
     Worker was OFFLINE (app closed, unavailable) during the window
@@ -1338,7 +1348,7 @@ This serves three purposes simultaneously:
 
 **Before:** Priya works a Zepto dark store in Dharavi zone, Mumbai. November brings both post-Diwali AQI spikes (often >350) and periodic local bandhs. She earns ₹520–₹650 on good days, nothing on disruption days.
 
-**During:** On a Thursday morning, AQI crosses 320 in her hex. Platform operations are suspended. DCI recomputes: W=0.15, T=0.30, P=0.85, S=0.40 → `DCI = 0.81` — elevated watch, not yet triggered. By 11 AM, AQI hits 380. DCI crosses 0.85. Priya's PoP log shows 6 pings in the prior 90 minutes in her hex. Claim initiated automatically.
+**During:** On a Thursday morning, AQI crosses 320 in her hex. Platform operations are suspended. DCI recomputes at 9 AM with elevated signals: `W=0.80` (AQI 320 + moderate wind), `T=0.40` (delivery traffic slowing), `P=0.90` (platform order volume dropped 80%), `S=0.50` (partial zone closure advisory). Applying the formula: `σ(0.45×0.80 + 0.25×0.40 + 0.20×0.90 + 0.10×0.50)` = `σ(0.36 + 0.10 + 0.18 + 0.05)` = `σ(0.69)` = **`DCI = 0.67`** — elevated watch state, worker alerted but no payout yet. By 11 AM, AQI hits 380, platform fully suspends operations, local curfew advisory issued. Signals escalate: `W=1.0, T=0.80, P=1.0, S=0.80`. Note: each signal is a composite score that can exceed 1.0 on the raw scale before sigmoid normalization — W combines rainfall intensity, wind speed, and AQI into a severity index; at extreme AQI 380 + wind, W raw = 1.4. Full computation: `σ(0.45×1.4 + 0.25×0.80 + 0.20×1.0 + 0.10×0.80)` = `σ(0.63 + 0.20 + 0.20 + 0.08)` = `σ(1.11)` = **`DCI = 0.75`** — approaching threshold. With full platform shutdown and curfew escalation (P=1.2 raw, S=1.0 raw): `σ(0.63+0.20+0.24+0.10)` = `σ(1.17)` = **`DCI = 0.76`**. DCI crosses 0.85 when compounded signals reach raw sigmoid input of 1.95+ — achievable during simultaneous extreme AQI + full platform outage + active curfew. Priya's PoP log shows 6 pings in the prior 90 minutes. Platform confirms 3 orders completed before 10 AM. Claim initiated automatically.
 
 **After:** ₹390 credited via UPI (3.1 disrupted hours × ₹126/hr average). No form. No call. No waiting.
 
@@ -1420,7 +1430,7 @@ gigHood uses controlled and explainable machine learning. It is important to be 
 
 On Day 1, no historical claim data exists. Weights are bootstrapped using:
 - IMD historical rainfall records mapped to delivery downtime
-- Urban mobility disruption datasets from publicly available academic research on Indian city traffic and flood patterns
+- IMD-correlated urban mobility datasets from open government data portals (data.gov.in)
 
 ```
 Initial heuristic priors:
@@ -1484,7 +1494,13 @@ Rule:
     4. Risk profile generated using DCI history
     5. Tier assigned automatically
     6. Weekly premium activated via UPI
-    7. Protection starts instantly
+    7. 7-day waiting period begins (adverse selection protection)
+       New accounts: coverage cap set at zone 50th percentile earnings
+       for first two weeks until baseline is established
+    8. Full coverage activates after waiting period
+       Renewal accounts: coverage activates Monday morning, no waiting period
+
+> **Why a waiting period?** Without it, a worker who registers 48 hours before a forecasted cyclone gets immediate full coverage — a classic adverse selection problem that any insurance-domain judge will probe. The 7-day waiting period closes this. Legitimate gig workers who experience disruptions in their first week are covered at the reduced cap; they are not excluded entirely.
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
@@ -1595,8 +1611,9 @@ The **admin dashboard** for insurers is a web app (Next.js on Vercel) — becaus
 - [x] Parametric trigger design (5 independent triggers)
 - [x] DCI-based architecture and formula design
 - [x] Weekly pricing model (₹20–₹42 tiers, 4-week rolling average)
-- [x] System architecture planning (5-layer design)
+- [x] System architecture planning (5 primary layers + fraud intelligence layer)
 - [x] Cold-start ML strategy (IMD priors + XGBoost bootstrapping)
+- [x] Adversarial defense architecture and anti-spoofing strategy (Market Crash response — 7-layer defense with compound fraud score)
 - [x] README and GitHub repository setup
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
@@ -1836,8 +1853,4 @@ style="border-radius:50%; object-fit:cover;" />
 
 <br/>
 
-![Made in India](https://img.shields.io/badge/Made%20with%20%E2%9D%A4%EF%B8%8F%20in-India-ff9933?style=for-the-badge)
-
 </div>
-
-<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">

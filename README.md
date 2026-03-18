@@ -28,7 +28,6 @@
 
 # GigHood — AI-Powered Parametric Income Insurance for Gig Workers
 
-**Guidewire DEVTrails Hackathon 2026**  
 *Protecting gig worker income from external disruptions using AI-driven parametric insurance.*
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">

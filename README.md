@@ -29,9 +29,17 @@
 
 ### AI-Powered Parametric Income Insurance for Gig Workers
 
----
+<div align="center">
 
-🎥 **[Phase 1 Pitch Video — Watch Here](YOUR_LINK_HERE)**
+### 🎥 Phase One Pitch Video
+
+<a href="https://youtu.be/xDvoUhNjD60">
+<img width="450" height="320" alt="image" src="https://github.com/user-attachments/assets/1a02c217-c99c-4f12-808d-6ca1444abf7f" />
+</a>
+
+</div>
+
+---
 
 </div>
 

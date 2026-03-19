@@ -185,7 +185,7 @@
 - [The Demand Collapse Index — Core Intelligence](#the-demand-collapse-index--our-core-intelligence)
 - [Parametric Triggers](#parametric-triggers)
 - [Weekly Pricing Model](#weekly-pricing-model)
-- [7. Zero-Touch Claims Automation](#7-zero-touch-claims-automation)
+- [Zero-Touch Claims Automation](#7-zero-touch-claims-automation)
 - [Fraud Detection — Time-Decay Proof of Presence](#fraud-detection--time-decay-proof-of-presence)
 - [Adversarial Defense & Anti-Spoofing Strategy](#-adversarial-defense--anti-spoofing-strategy)
 - [🔔 Proactive Coverage Alerts](#-proactive-coverage-alerts)
@@ -766,7 +766,7 @@ This is strictly a weekly pricing decision — the worker is choosing their tier
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## 7. Zero-Touch Claims Automation
+## Zero-Touch Claims Automation
 
 The defining UX principle of Equix is that **a worker should never need to file a claim**. The system detects, validates, and pays without requiring any worker action. For gig workers with low digital literacy and high stress during disruptions, this is not a feature — it is the product.
 
@@ -1500,7 +1500,7 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 
 
 
-## 🏗️ Tech Stack & Architecture
+## Tech Stack & Architecture
 
 ### MVP Stack — What We Build and Demo (Free Tier, Zero Cost)
 
@@ -1565,7 +1565,7 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
-## 🗓️ Development Plan
+## Development Plan
 
 ### Phase 1 — Ideation & Foundation (Weeks 1–2) ✅ Complete
 

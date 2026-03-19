@@ -31,7 +31,7 @@
 
 <div align="center">
 
-### 🎥 Phase One Pitch Video
+### 🎥 [Phase One Pitch Video](https://youtu.be/xDvoUhNjD60)
 
 <a href="https://youtu.be/xDvoUhNjD60">
 <img width="450" height="320" alt="image" src="https://github.com/user-attachments/assets/1a02c217-c99c-4f12-808d-6ca1444abf7f" />

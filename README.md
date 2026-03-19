@@ -29,6 +29,8 @@
 
 ### AI-Powered Parametric Income Insurance for Gig Workers
 
+---
+
 🎥 **[Phase 1 Pitch Video — Watch Here](YOUR_LINK_HERE)**
 
 </div>
@@ -68,19 +70,19 @@
 - [04 · Worker-Centric Smart Application](#04--worker-centric-smart-application)
 - [05 · Smart Protection Mode](#05--smart-protection-mode)
 - [06 · AI Chatbot Assistant](#06--ai-chatbot-assistant)
-- [System Architecture](#system-architecture)
+- [🏗️ System Architecture](#️-system-architecture)
 
 </details>
 
 <details>
 <summary><b>⚙️ Core System Design</b></summary>
 
-- [The Demand Collapse Index — Our Core Intelligence](#the-demand-collapse-index--our-core-intelligence)
-- [Parametric Triggers](#parametric-triggers)
-- [Weekly Pricing Model](#weekly-pricing-model)
-- [Zero-Touch Claims Automation](#zero-touch-claims-automation)
-- [Fraud Detection — Time-Decay Proof of Presence](#fraud-detection--time-decay-proof-of-presence)
-- [Adversarial Defense & Anti-Spoofing Strategy](#adversarial-defense--anti-spoofing-strategy)
+- [🧮 The Demand Collapse Index](#-the-demand-collapse-index--our-core-intelligence)
+- [🎯 Parametric Triggers](#-parametric-triggers)
+- [💰 Weekly Pricing Model](#-weekly-pricing-model)
+- [⚡ Zero-Touch Claims Automation](#-zero-touch-claims-automation)
+- [🔍 Fraud Detection — Proof of Presence](#-fraud-detection--time-decay-proof-of-presence)
+- [🛡️ Adversarial Defense & Anti-Spoofing Strategy](#️-adversarial-defense--anti-spoofing-strategy)
 - [🔔 Proactive Coverage Alerts](#-proactive-coverage-alerts)
 
 </details>
@@ -99,8 +101,8 @@
 <summary><b>📱 Product & Execution</b></summary>
 
 - [📱 Application Workflow](#-application-workflow)
-- [Tech Stack & Architecture](#tech-stack--architecture)
-- [Development Plan](#development-plan)
+- [🏗️ Tech Stack & Architecture](#️-tech-stack--architecture)
+- [🗓️ Development Plan](#️-development-plan)
 
 </details>
 
@@ -116,6 +118,7 @@
 
 </details>
 
+---
 
 ### 📌 TL;DR
 
@@ -147,11 +150,7 @@
 | Q-commerce workers report **zero financial buffer** for disruption days | IFMR LEAD gig worker field research, 2022–2024 |
 | **No income protection product** currently exists for parametric income loss in this segment | ICRIER Gig Economy Report, 2023 |
 
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
+<div align="right"><a href="#table-of-contents">⬆ Back to Top</a></div>
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
@@ -189,13 +188,6 @@ During Disruptions
 <i>Studies and platform reports consistently confirm this trend across major Indian cities.</i>
 
 </div>
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
@@ -222,17 +214,10 @@ A structural analysis of the compounding vulnerabilities that leave delivery par
 | 03 | Fraudulent claims risk without smart verification |
 | 04 | No dynamic pricing based on real-time risk |
 | 05 | No automated disruption detection pipeline |
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
-## Disruption Types
+## 🌩️ Disruption Types
 gigHood identifies and responds to **two primary classes of disruptions** that halt delivery operations and eliminate gig worker income:
 
 ### 🌧️ Environmental Disruptions
@@ -285,10 +270,6 @@ gigHood identifies and responds to **two primary classes of disruptions** that h
 
 <td width="65%" valign="top">
   
-<div align="right">
-
-</div>
-
 ## 🧠 Why Q-Commerce Workers, Specifically
 
 
@@ -318,11 +299,7 @@ The choice of Q-commerce over food delivery or e-commerce is a deliberate design
 
 </div>
 
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
+<div align="right"><a href="#table-of-contents">⬆ Back to Top</a></div>
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
@@ -460,13 +437,6 @@ Disruption detected
 ✅ Zero paperwork  
 ✅ No claim filing  
 ✅ Fully automated payouts  
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 ### 04 · Worker-Centric Smart Application
@@ -520,16 +490,11 @@ The chatbot is powered by the Claude API with the worker's policy context, curre
 
 **Supported languages:** Hindi · Kannada · Tamil · Telugu · English
 
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
+<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
-## System Architecture
+## 🏗️ System Architecture
 
 The platform is composed of five primary layers — signal ingestion, spatial intelligence, policy and pricing, claims automation, and payout and dashboard — with an integrated fraud intelligence layer embedded within the claims engine.
 
@@ -581,16 +546,9 @@ flowchart TD
 ```
 
 Each layer is independently deployable and testable. Signal ingestion uses free-tier APIs with mock fallbacks for demo purposes. The spatial layer runs on PostGIS with H3 extension. The claims engine is stateless and event-driven, with DCI recomputation scheduled via APScheduler running inside the FastAPI process.
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## The Demand Collapse Index — Our Core Intelligence
+## 🧮 The Demand Collapse Index — Our Core Intelligence
 
 The DCI is the mathematical heart of gigHood. It answers a single question: **has the local gig economy inside this hex actually stopped?**
 
@@ -667,17 +625,9 @@ The 0.85 threshold is not arbitrary. It is initialized based on the historical D
 ### XGBoost's Exact Role
 
 It is important to be precise about what the ML model does and does not do. XGBoost performs two specific tasks: (1) **risk band classification** — assigning each worker to Tier A, B, or C using features including their zone's 12-week DCI history, seasonal weather patterns, proximity to flood-prone areas, and historical claim frequency; and (2) **DCI weight optimization** — updating the α, β, γ, δ coefficients weekly based on actual disruption outcomes. The DCI computation itself is a deterministic sigmoid over those weights — it is not a neural network and does not hallucinate outputs. This distinction matters for regulatory compliance and auditability.
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## Parametric Triggers
+## 🎯 Parametric Triggers
 
 To satisfy the requirement of 3–5 independent automated triggers, we expose the DCI's component signals as individual triggers *before* they fuse into the composite index. This gives judges a clear checklist while preserving the architectural elegance of the composite model.
 
@@ -698,16 +648,9 @@ flowchart LR
 ```
 
 Each trigger is independently monitorable and logged. This means a weather-only event (trigger 1 fires, others do not) still flows through the DCI and may or may not cross the 0.85 threshold depending on contextual signals — preventing single-signal false positives while maintaining independent auditability.
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## Weekly Pricing Model
+## 💰 Weekly Pricing Model
 
 ### Design Philosophy
 
@@ -765,7 +708,7 @@ This is strictly a weekly pricing decision — the worker is choosing their tier
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## Zero-Touch Claims Automation
+## ⚡ Zero-Touch Claims Automation
 
 The defining UX principle of gigHood is that **a worker should never need to file a claim**. The system detects, validates, and pays without requiring any worker action. For gig workers with low digital literacy and high stress during disruptions, this is not a feature — it is the product.
 
@@ -817,7 +760,7 @@ If fewer than 3 of 5 signal sources are available at computation time (e.g., a t
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-## Fraud Detection — Time-Decay Proof of Presence
+## 🔍 Fraud Detection — Time-Decay Proof of Presence
 
 Parametric insurance has one dominant fraud vector: **zone hopping** — a worker who is not in the disrupted area drives into it after the trigger fires to collect a payout. The Time-Decay Proof of Presence (PoP) engine eliminates this with minimal computational overhead and no battery-intensive tracking.
 
@@ -847,13 +790,6 @@ flowchart TD
     F -->|No| G[Claim Approved]
     F -->|Yes| H["Flagged for manual review<br>Anti-duplicate gate"]
 ```
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
@@ -865,17 +801,13 @@ Beyond zone-hopping, gigHood applies three secondary checks at the claim process
 
 **Claim frequency anomaly.** A worker claiming payouts on more than 60% of their active days over a rolling 4-week period is flagged for review. This catches workers who are gaming the DCI threshold by operating in high-risk zones deliberately.
 
+<div align="right"><a href="#table-of-contents">⬆ Back to Top</a></div>
+
+
 **Coordinated claim clustering.** If 100% of policyholders in a hex claim on the same event, this is expected and correct. If only a suspiciously small subset claims (e.g., 3 out of 80 active workers), the 3 outliers are flagged — real disruptions affect all workers in a zone, not a precise subset.
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
-## Adversarial Defense & Anti-Spoofing Strategy
+## 🛡️ Adversarial Defense & Anti-Spoofing Strategy
 
 <div align="center">
 
@@ -1309,14 +1241,10 @@ Layer 7  →  Triage-prioritized human review (scales under mass event load)
 > **"Fraud does not appear as anomalies — it appears as statistically normal behavior replicated at scale. Our defense validates consistency across order activity, coordinate physics, platform-confirmed history, and cross-hex network structure — not any single signal."**
 >
 > **"If 500 workers lie together across 25 hexes — we detect the impossibility of their shared order history."**
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
+
+
+<div align="right"><a href="#table-of-contents">⬆ Back to Top</a></div>
 
 
 ## 🔔 Proactive Coverage Alerts
@@ -1346,14 +1274,9 @@ This serves three purposes simultaneously:
 2. **Pool solvency management.** Voluntary tier upgrades add premium revenue precisely when expected claim costs are higher, improving the insurer's loss ratio without coercive or dynamic repricing.
 3. **Financial agency.** Gig workers currently have no tools to manage income risk proactively. gigHood gives them a weekly decision they can make with full information — the risk score, the cost, and the upside — before a disruption hits.
 
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
-
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
+
+<div align="right"><a href="#table-of-contents">⬆ Back to Top</a></div>
 
 # 👤 Persona & Scenario
 
@@ -1459,13 +1382,6 @@ This serves three purposes simultaneously:
 **During:** On a Thursday morning, AQI crosses 320 in her hex. Platform operations are suspended. DCI recomputes at 9 AM with elevated signals: `W=0.80` (AQI 320 + moderate wind), `T=0.40` (delivery traffic slowing), `P=0.90` (platform order volume dropped 80%), `S=0.50` (partial zone closure advisory). Applying the formula: `σ(0.45×0.80 + 0.25×0.40 + 0.20×0.90 + 0.10×0.50)` = `σ(0.36 + 0.10 + 0.18 + 0.05)` = `σ(0.69)` = **`DCI = 0.67`** — elevated watch state, worker alerted but no payout yet. By 11 AM, AQI hits 380, platform fully suspends operations, local curfew advisory issued. Signals escalate: `W=1.0, T=0.80, P=1.0, S=0.80`. Note: each signal is a composite score that can exceed 1.0 on the raw scale before sigmoid normalization — W combines rainfall intensity, wind speed, and AQI into a severity index; at extreme AQI 380 + wind, W raw = 1.4. Full computation: `σ(0.45×1.4 + 0.25×0.80 + 0.20×1.0 + 0.10×0.80)` = `σ(0.63 + 0.20 + 0.20 + 0.08)` = `σ(1.11)` = **`DCI = 0.75`** — approaching threshold. With full platform shutdown and curfew escalation (P=1.2 raw, S=1.0 raw): `σ(0.63+0.20+0.24+0.10)` = `σ(1.17)` = **`DCI = 0.76`**. DCI crosses 0.85 when compounded signals reach raw sigmoid input of 1.95+ — achievable during simultaneous extreme AQI + full platform outage + active curfew. Priya's PoP log shows 6 pings in the prior 90 minutes. Platform confirms 3 orders completed before 10 AM. Claim initiated automatically.
 
 **After:** ₹390 credited via UPI (3.1 disrupted hours × ₹126/hr average). No form. No call. No waiting.
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 ## 🎯 Why This Persona Matters
@@ -1479,13 +1395,6 @@ This makes them uniquely suitable for gigHood because:
 - Work is highly dependent on **mobility and platform uptime**  
 
 gigHood’s **H3 spatial model + DCI engine** aligns directly with this operational structure, enabling precise disruption detection and automated compensation.
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 ## 📐 Parametric Insurance Model
@@ -1543,7 +1452,7 @@ gigHood uses controlled and explainable machine learning.
 | Risk Band Classification | XGBoost | Assigns each worker to Tier A/B/C using zone's 12-week DCI history, seasonal weather patterns, flood-proximity, claim frequency |
 | DCI Weight Optimization | XGBoost (weekly retrain) | Updates α, β, γ, δ signal weights based on real disruption outcomes — model converges in 6–8 weeks |
 | Disruption Forecasting | Rolling average + seasonal index | Predicts next-week zone risk for proactive tier upgrade alerts — no LSTM required at MVP stage |
-| Fraud Anomaly Detection | Rule-based + statistical thresholds | Claim frequency anomaly, earnings inflation, coordinated cluster detection |
+| Fraud Anomaly Detection | Compound fraud score | GPS coordinate variance, platform order activity validation, OS-level mock location detection, cross-hex fingerprint graph, multi-signal weighted scoring |
 
 > The DCI computation itself is a **deterministic sigmoid** over ML-optimized weights — not a black-box neural network. This makes it auditable and explainable — a deliberate design choice for regulatory review.
 
@@ -1606,15 +1515,10 @@ Rule:
 | Location history | Prevent zone hopping |
 | Earnings validation | Prevent inflation |
 | Claim frequency | Detect abnormal patterns |
-
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+
+
+<div align="right"><a href="#table-of-contents">⬆ Back to Top</a></div>
 
 
 ## 📱 Application Workflow
@@ -1688,7 +1592,7 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 
 
 
-## Tech Stack & Architecture
+## 🏗️ Tech Stack & Architecture
 
 ### MVP Stack — What We Build and Demo (Free Tier, Zero Cost)
 
@@ -1717,19 +1621,6 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 | Secondary Service | Node.js microservice for notification routing |
 | ML Forecasting | Retrained seasonal model (XGBoost time-series variant) |
 
-
-
-![React Native](https://img.shields.io/badge/React%20Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-0F172A?style=for-the-badge&logo=tailwindcss)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![XGBoost](https://img.shields.io/badge/XGBoost-F7931E?style=for-the-badge)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql)
-![Razorpay](https://img.shields.io/badge/Razorpay-0C2451?style=for-the-badge)
-![Firebase](https://img.shields.io/badge/Firebase%20FCM-FFCA28?style=for-the-badge&logo=firebase)
-![Docker](https://img.shields.io/badge/Docker-0db7ed?style=for-the-badge&logo=docker)
-![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions)
-
-
 ### Microservices
 
 | Service | Responsibility |
@@ -1746,7 +1637,7 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
-## Development Plan
+## 🗓️ Development Plan
 
 ### Phase 1 — Ideation & Foundation [March 4–20] ✅ Complete
 
@@ -1790,13 +1681,10 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 - [ ] Degraded-mode fallback (< 3 signals available)
 - [ ] End-to-end disruption simulation demo
 - [ ] Final submission package
-
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
+
+<div align="right"><a href="#table-of-contents">⬆ Back to Top</a></div>
+
 
 ## 📊 Analytics Dashboard
 
@@ -1882,12 +1770,6 @@ At 100,000 workers:                   ₹10.5 lakh/week margin
 **Catastrophic event protection:** A single extreme event — such as a Chennai cyclone disrupting 80% of active hexes in one week — could wipe an undiversified pool. gigHood addresses this through two mechanisms: (1) a **reserve fund** maintained at 20% of cumulative weekly premium revenue, building a buffer over time; and (2) at production scale, a **reinsurance arrangement** with a licensed non-life insurer to cap single-event losses above a defined threshold. This is standard practice for parametric insurance products operating under the IRDAI Sandbox framework.
 
 The path to viability is pooling across geographies and seasons — the same principle that makes all micro-insurance products work.
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
 ## ✅ Compliance with Problem Statement Constraints
@@ -1937,6 +1819,9 @@ The path to viability is pooling across geographies and seasons — the same pri
 | Worker onboarding time | <3 minutes | Registration to active policy |
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
+
+<div align="right"><a href="#table-of-contents">⬆ Back to Top</a></div>
+
 
 ## 👥 Team
 

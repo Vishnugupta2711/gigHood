@@ -33,6 +33,7 @@
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
+<a name="table-of-contents"></a>
 
 ## 📚 Table of Contents
 
@@ -143,6 +144,12 @@
 | Q-commerce workers report **zero financial buffer** for disruption days | IFMR LEAD gig worker field research, 2022–2024 |
 | **No income protection product** currently exists for parametric income loss in this segment | ICRIER Gig Economy Report, 2023 |
 
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
+
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
 ## 💬 What Riders Say
@@ -193,6 +200,12 @@
 </tr>
 </table>
 
+<div align="right">
+
+
+
+</div>
+
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 <table>
@@ -215,6 +228,12 @@
 </td>
 </tr>
 </table>
+
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
@@ -293,6 +312,12 @@ A structural analysis of the compounding vulnerabilities that leave delivery par
 </tr>
 </table>
 
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
+
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
@@ -363,6 +388,12 @@ The choice of Q-commerce over food delivery or e-commerce is a deliberate design
 </td>
 
 <td width="35%" align="center">
+
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 
 <img src="https://github.com/user-attachments/assets/e68548fe-a13f-461a-8efb-ace894a2c922" width="320"/>
 
@@ -636,6 +667,11 @@ flowchart TD
 
 Each layer is independently deployable and testable. Signal ingestion uses free-tier APIs with mock fallbacks for demo purposes. The spatial layer runs on PostGIS with H3 extension. The claims engine is stateless and event-driven, with DCI recomputation scheduled via APScheduler running inside the FastAPI process.
 
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
@@ -1335,6 +1371,12 @@ Layer 7  →  Triage-prioritized human review (scales under mass event load)
 >
 > **"If 500 workers lie together across 25 hexes — we detect the impossibility of their shared order history."**
 
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
+
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
 
@@ -1473,6 +1515,12 @@ This serves three purposes simultaneously:
 
 **After:** ₹390 credited via UPI (3.1 disrupted hours × ₹126/hr average). No form. No call. No waiting.
 
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
+
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 ## 🎯 Why This Persona Matters
@@ -1486,6 +1534,12 @@ This makes them uniquely suitable for gigHood because:
 - Work is highly dependent on **mobility and platform uptime**  
 
 gigHood’s **H3 spatial model + DCI engine** aligns directly with this operational structure, enabling precise disruption detection and automated compensation.
+
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
@@ -1788,7 +1842,11 @@ Worker speaks  →  "What happens if it rains tomorrow?"
 - [ ] End-to-end disruption simulation demo
 - [ ] Final submission package
 
+<div align="right">
 
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
 ## 📊 Analytics Dashboard
@@ -1875,6 +1933,11 @@ At 100,000 workers:                   ₹10.5 lakh/week margin
 **Catastrophic event protection:** A single extreme event — such as a Chennai cyclone disrupting 80% of active hexes in one week — could wipe an undiversified pool. gigHood addresses this through two mechanisms: (1) a **reserve fund** maintained at 20% of cumulative weekly premium revenue, building a buffer over time; and (2) at production scale, a **reinsurance arrangement** with a licensed non-life insurer to cap single-event losses above a defined threshold. This is standard practice for parametric insurance products operating under the IRDAI Sandbox framework.
 
 The path to viability is pooling across geographies and seasons — the same principle that makes all micro-insurance products work.
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
@@ -1944,6 +2007,10 @@ style="border-radius:50%; object-fit:cover;" />
 <img src="https://readme-typing-svg.demolab.com?font=Syne&weight=700&size=15&pause=2000&color=38BDF8&center=true&vCenter=true&width=700&lines=Predict.+Protect.+Pay.+Instantly.;Built+for+the+backbone+of+India's+economy.;GigHood+%E2%80%94+Because+every+delivery+matters." alt="Footer Typing SVG"/>
 
 <br/>
+
+</div>
+<div align="right">
+
 
 </div>
 

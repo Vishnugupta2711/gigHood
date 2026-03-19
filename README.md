@@ -423,7 +423,7 @@ Most parametric insurance products ask: **"Is it raining?"** — and pay out if 
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-### 01 · 🔍 Spatial Risk Intelligence (DCI Engine)
+### 01 · Spatial Risk Intelligence (DCI Engine)
 
 The core intelligence of gigHood is the **Demand Collapse Index (DCI)** — a spatial model that determines whether income in a delivery zone has collapsed.
 
@@ -465,7 +465,7 @@ If DCI > 0.85 → Zone is **economically disrupted**
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-### 02 · 🛡️ Weekly Micro-Insurance (Stable Pricing)
+### 02 · Weekly Micro-Insurance (Stable Pricing)
 
 Policies are aligned with the **weekly earning cycle of Q-commerce workers**.
 
@@ -490,7 +490,7 @@ This ensures:
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-### 03 · ⚡ Automated Claim Triggering & Instant Payouts
+### 03 · Automated Claim Triggering & Instant Payouts
 
 gigHood eliminates manual claim processes entirely.
 
@@ -517,7 +517,7 @@ Disruption detected
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-### 04 · 📱 Worker-Centric Smart Application
+### 04 · Worker-Centric Smart Application
 
 
 | Feature | Description |
@@ -539,7 +539,7 @@ Login → Zone Risk → Plan Selection → Policy Activation → Auto Protection
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-### 05 · 🤖 Smart Protection Mode
+### 05 · Smart Protection Mode
 
 gigHood continuously monitors **zone-level disruption risk**.
 
@@ -550,7 +550,7 @@ Workers stay protected without any manual intervention.
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
-### 06 · 💬 AI Chatbot Assistant
+### 06 · AI Chatbot Assistant
 
 gigHood integrates a real-time AI Chat Assistant in Phase 3, making the platform accessible for workers with varying digital literacy.
 

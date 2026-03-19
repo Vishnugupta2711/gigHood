@@ -187,7 +187,7 @@
 - [Weekly Pricing Model](#weekly-pricing-model)
 - [7. Zero-Touch Claims Automation](#7-zero-touch-claims-automation)
 - [Fraud Detection — Time-Decay Proof of Presence](#fraud-detection--time-decay-proof-of-presence)
-- [🛡️ Adversarial Defense & Anti-Spoofing Strategy](#-adversarial-defense--anti-spoofing-strategy)
+- [Adversarial Defense & Anti-Spoofing Strategy](#-adversarial-defense--anti-spoofing-strategy)
 - [🔔 Proactive Coverage Alerts](#-proactive-coverage-alerts)
 
 </details>
@@ -856,7 +856,7 @@ Beyond zone-hopping, Equix applies three secondary checks at the claim processin
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
-## 🛡️ Adversarial Defense & Anti-Spoofing Strategy
+## Adversarial Defense & Anti-Spoofing Strategy
 
 <div align="center">
 

@@ -274,6 +274,12 @@ During Disruptions
 
 </div>
 
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
+
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
@@ -373,6 +379,12 @@ gigHood identifies and responds to **two primary classes of disruptions** that h
 <tr>
 
 <td width="65%" valign="top">
+  
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 
 ## 🧠 Why Q-Commerce Workers, Specifically
 
@@ -389,12 +401,6 @@ The choice of Q-commerce over food delivery or e-commerce is a deliberate design
 
 <td width="35%" align="center">
 
-<div align="right">
-
-[⬆ Back to Top](#table-of-contents)
-
-</div>
-
 <img src="https://github.com/user-attachments/assets/e68548fe-a13f-461a-8efb-ace894a2c922" width="320"/>
 
 </td>
@@ -406,6 +412,12 @@ The choice of Q-commerce over food delivery or e-commerce is a deliberate design
 <div align="center">
 
 <img src="https://readme-typing-svg.demolab.com?font=Syne&weight=700&size=15&pause=2000&color=EF4444&center=true&vCenter=true&width=600&lines=This+is+the+problem+GigHood+solves.;Automated.+Instant.+AI-powered+protection." alt="CTA Typing SVG"/>
+
+</div>
+
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
 
 </div>
 
@@ -546,6 +558,12 @@ Disruption detected
 ✅ No claim filing  
 ✅ Fully automated payouts  
 
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
+
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 ### 04 · Worker-Centric Smart Application
@@ -610,6 +628,12 @@ The chatbot is powered by the Claude API with the worker's policy context, curre
 | 09 | 🏛️ Govt Schemes | Welfare integration |
 | 10 | 🔐 Fraud Detection | Proof-of-Presence model |
 
+
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
@@ -753,6 +777,12 @@ The 0.85 threshold is not arbitrary. It is initialized based on the historical D
 
 It is important to be precise about what the ML model does and does not do. XGBoost performs two specific tasks: (1) **risk band classification** — assigning each worker to Tier A, B, or C using features including their zone's 12-week DCI history, seasonal weather patterns, proximity to flood-prone areas, and historical claim frequency; and (2) **DCI weight optimization** — updating the α, β, γ, δ coefficients weekly based on actual disruption outcomes. The DCI computation itself is a deterministic sigmoid over those weights — it is not a neural network and does not hallucinate outputs. This distinction matters for regulatory compliance and auditability.
 
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
+
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
@@ -777,6 +807,12 @@ flowchart LR
 ```
 
 Each trigger is independently monitorable and logged. This means a weather-only event (trigger 1 fires, others do not) still flows through the DCI and may or may not cross the 0.85 threshold depending on contextual signals — preventing single-signal false positives while maintaining independent auditability.
+
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
@@ -921,6 +957,12 @@ flowchart TD
     F -->|Yes| H["Flagged for manual review<br>Anti-duplicate gate"]
 ```
 
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
+
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 
@@ -933,6 +975,12 @@ Beyond zone-hopping, Equix applies three secondary checks at the claim processin
 **Claim frequency anomaly.** A worker claiming payouts on more than 60% of their active days over a rolling 4-week period is flagged for review. This catches workers who are gaming the DCI threshold by operating in high-risk zones deliberately.
 
 **Coordinated claim clustering.** If 100% of policyholders in a hex claim on the same event, this is expected and correct. If only a suspiciously small subset claims (e.g., 3 out of 80 active workers), the 3 outliers are flagged — real disruptions affect all workers in a zone, not a precise subset.
+
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
@@ -1407,6 +1455,12 @@ This serves three purposes simultaneously:
 2. **Pool solvency management.** Voluntary tier upgrades add premium revenue precisely when expected claim costs are higher, improving the insurer's loss ratio without coercive or dynamic repricing.
 3. **Financial agency.** Gig workers currently have no tools to manage income risk proactively. gigHood gives them a weekly decision they can make with full information — the risk score, the cost, and the upside — before a disruption hits.
 
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
+
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png" width="100%">
 
@@ -1657,6 +1711,13 @@ Rule:
 | Location history | Prevent zone hopping |
 | Earnings validation | Prevent inflation |
 | Claim frequency | Detect abnormal patterns |
+
+
+<div align="right">
+
+[⬆ Back to Top](#table-of-contents)
+
+</div>
 
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 

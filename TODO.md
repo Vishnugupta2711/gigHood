@@ -64,15 +64,15 @@ _Signal fetchers and DCI engine both need H3 hex grid data. Spatial must exist f
 
 _DCI Engine (Phase 4) reads from `signal_cache`. Signal fetchers must be built first._
 
-- [ ] Implement `backend/services/signal_fetchers.py` — base structure with `cache_signal(hex_id, signal_type, raw_data, normalized_score)` helper that writes to `signal_cache` table
-- [ ] Implement `fetch_weather(hex_id: str, lat: float, lng: float) -> float` — call OpenWeatherMap API, extract `rain.1h` (mm), `wind.speed` (km/hr), `main.temp`; normalize to W score using documented formula
-- [ ] Implement `fetch_aqi(hex_id: str, city: str) -> float` — call CPCB AQI API; map AQI index to 0–1+ severity score; combine with weather W score
-- [ ] Implement `fetch_traffic(hex_id: str, lat: float, lng: float) -> float` — mock implementation returning random `T score` seeded from hex_id and current hour (deterministic mock)
-- [ ] Implement `fetch_platform_status(hex_id: str) -> float` — mock implementation simulating order volume drop %; return `P score` as `order_drop_pct / 100`
-- [ ] Implement `fetch_social_signals(hex_id: str, city: str) -> float` — mock government alert feed; return `S score` (0 = no alert, 1 = curfew/bandh)
-- [ ] Implement `run_signal_ingestion_cycle(hex_ids: list[str])` — orchestrator that calls all 5 fetchers for each hex, caches results, tracks `source_available` per signal
-- [ ] Write unit tests for normalization logic: 40mm/hr rain → W ≈ 0.85; AQI 350 → elevated W component
-- [ ] Write unit test for degraded mode signal counting: verify `source_available` is correctly set when an API is unreachable
+- [x] Implement `backend/services/signal_fetchers.py` — base structure with `cache_signal(hex_id, signal_type, raw_data, normalized_score)` helper that writes to `signal_cache` table
+- [x] Implement `fetch_weather(hex_id: str, lat: float, lng: float) -> float` — call OpenWeatherMap API, extract `rain.1h` (mm), `wind.speed` (km/hr), `main.temp`; normalize to W score using documented formula
+- [x] Implement `fetch_aqi(hex_id: str, city: str) -> float` — call CPCB AQI API; map AQI index to 0–1+ severity score; combine with weather W score
+- [x] Implement `fetch_traffic(hex_id: str, lat: float, lng: float) -> float` — mock implementation returning random `T score` seeded from hex_id and current hour (deterministic mock)
+- [x] Implement `fetch_platform_status(hex_id: str) -> float` — mock implementation simulating order volume drop %; return `P score` as `order_drop_pct / 100`
+- [x] Implement `fetch_social_signals(hex_id: str, city: str) -> float` — mock government alert feed; return `S score` (0 = no alert, 1 = curfew/bandh)
+- [x] Implement `run_signal_ingestion_cycle(hex_ids: list[str])` — orchestrator that calls all 5 fetchers for each hex, caches results, tracks `source_available` per signal
+- [x] Write unit tests for normalization logic: 40mm/hr rain → W ≈ 0.85; AQI 350 → elevated W component
+- [x] Write unit test for degraded mode signal counting: verify `source_available` is correctly set when an API is unreachable
 
 ---
 

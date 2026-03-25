@@ -16,9 +16,9 @@ Full product scope: `README.md` | Full technical spec: `IMPLEMENTATION.md`
 
 ## Current Development Phase
 
-> **Phase 3 — Signal Ingestion (5 Fetchers)**
+> **Phase 4 — DCI Computation Engine**
 
-Phase 2 (Spatial Grid Module) has been completed. The `spatial.py` module handling H3 geometries, WKT polygons, and k-ring clustering is built and tested. 7,651 hex zones for Bengaluru were successfully seeded into the live database.
+Phase 3 (Signal Ingestion) has been completed. The `signal_fetchers.py` module integrates OpenWeatherMap, AQI, and mocked traffic/platform/social feeds, normalizing them into scores and caching them in Supabase. Tests successfully validate the math and degraded mode counting.
 
 ---
 
@@ -29,6 +29,7 @@ Phase 2 (Spatial Grid Module) has been completed. The `spatial.py` module handli
 | `README.md` | ✅ Complete | Product vision, business context, full system narrative |
 | `IMPLEMENTATION.md` | ✅ Complete | Authoritative technical spec — architecture, schemas, modules, pipeline logic, test plan |
 | `TODO.md` | ✅ Complete | 18-phase, ~120-task atomic engineering roadmap ordered by dependency graph |
+| `SETUP.md` & `setup.sh` | ✅ Complete | 1-click bootstrap scripts that set up local venvs, dependencies, and `.env` configs |
 | `AGENTS.md` | ✅ Complete | Agent workflow rules, skill map, document hierarchy, execution strategy |
 | `RULES.md` | ✅ Complete | Hard operational guardrails and prohibited actions for all agent sessions |
 | `MEMORY.md` | ✅ This file | Persistent project state for future agents |
@@ -147,7 +148,7 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 | **Phase 0** | Repo & environment setup | ✅ Complete |
 | **Phase 1** | Database schema & Supabase migrations | ✅ Complete |
 | **Phase 2** | H3 Spatial grid module | ✅ Complete |
-| **Phase 3** | Signal ingestion (5 fetchers) | ⬜ Not started |
+| **Phase 3** | Signal ingestion (5 fetchers) | ✅ Complete |
 | **Phase 4** | DCI computation engine | ⬜ Not started |
 | **Phase 5** | APScheduler integration | ⬜ Not started |
 | **Phase 6** | Auth module (OTP + JWT) | ⬜ Not started |
@@ -167,11 +168,11 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 
 ## Next Task for a New Agent
 
-**Start at Phase 3, Task 1 in `TODO.md`:**
+**Start at Phase 4, Task 1 in `TODO.md`:**
 
-Please execute the `Phase 3` sequence in `TODO.md` regarding Signal Ingestion.
-1. Implement the API fetchers for Weather, AQI, Traffic, Platform, and Social signals in `backend/services/signal_fetchers.py`.
-2. Map H3 hex zones to API coordinates internally.
-3. Save raw payload and normalized score to `signal_cache` table.
+Please execute the `Phase 4` sequence in `TODO.md` regarding the DCI Computation Engine.
+1. Implement `backend/services/dci_engine.py` with the sigmoid function `1 / (1 + exp(-x))`.
+2. Evaluate the `compute_dci` function combining the 4 core scores (W, T, P, S).
+3. Set the status labels based on the exact 0.65 and 0.85 boundaries.
 
 > Before writing any code, read `MEMORY.md` → `TODO.md` → `IMPLEMENTATION.md` Section 3 → `RULES.md` in that order.

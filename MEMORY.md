@@ -16,9 +16,9 @@ Full product scope: `README.md` | Full technical spec: `IMPLEMENTATION.md`
 
 ## Current Development Phase
 
-> **Phase 4 — DCI Computation Engine**
+> **Phase 5 — APScheduler Integration**
 
-Phase 3 (Signal Ingestion) has been completed. The `signal_fetchers.py` module integrates OpenWeatherMap, AQI, and mocked traffic/platform/social feeds, normalizing them into scores and caching them in Supabase. Tests successfully validate the math and degraded mode counting.
+Phase 4 (DCI Computation Engine) has been completed. The `dci_engine.py` processing module correctly evaluates combinations of environment arrays using standard sigmoid bounding to map risk states. Persistent hysteresis is managed by `trigger_monitor.py` requiring two cycle confirmations to close a disrupted event, stored sequentially in the new `consecutive_normal_cycles` Postgres column.
 
 ---
 
@@ -149,7 +149,7 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 | **Phase 1** | Database schema & Supabase migrations | ✅ Complete |
 | **Phase 2** | H3 Spatial grid module | ✅ Complete |
 | **Phase 3** | Signal ingestion (5 fetchers) | ✅ Complete |
-| **Phase 4** | DCI computation engine | ⬜ Not started |
+| **Phase 4** | DCI computation engine | ✅ Complete |
 | **Phase 5** | APScheduler integration | ⬜ Not started |
 | **Phase 6** | Auth module (OTP + JWT) | ⬜ Not started |
 | **Phase 7** | Policy engine (XGBoost + premium bander) | ⬜ Not started |
@@ -168,11 +168,11 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 
 ## Next Task for a New Agent
 
-**Start at Phase 4, Task 1 in `TODO.md`:**
+**Start at Phase 5, Task 1 in `TODO.md`:**
 
-Please execute the `Phase 4` sequence in `TODO.md` regarding the DCI Computation Engine.
-1. Implement `backend/services/dci_engine.py` with the sigmoid function `1 / (1 + exp(-x))`.
-2. Evaluate the `compute_dci` function combining the 4 core scores (W, T, P, S).
-3. Set the status labels based on the exact 0.65 and 0.85 boundaries.
+Please execute the `Phase 5` sequence in `TODO.md` regarding APScheduler Integration.
+1. Implement `backend/scheduler/jobs.py` to initialize the APScheduler.
+2. Schedule `run_signal_ingestion_cycle()` followed by `run_dci_cycle()`.
+3. Wrap them in a lifecycle manager in `backend/main.py` so the tasks boot alongside the FastAPI server.
 
 > Before writing any code, read `MEMORY.md` → `TODO.md` → `IMPLEMENTATION.md` Section 3 → `RULES.md` in that order.

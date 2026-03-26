@@ -80,16 +80,16 @@ _DCI Engine (Phase 4) reads from `signal_cache`. Signal fetchers must be built f
 
 _Depends on spatial (hex IDs) and signal ingestion (cached scores). Core of the system._
 
-- [ ] Implement `backend/services/dci_engine.py` — `sigmoid(x: float) -> float` function: `1 / (1 + exp(-x))`
-- [ ] Implement `compute_dci(w: float, t: float, p: float, s: float, alpha=0.45, beta=0.25, gamma=0.20, delta=0.10) -> float` — applies the formula `σ(α·W + β·T + γ·P + δ·S)`
-- [ ] Implement `get_dci_status(dci: float) -> str` — returns `'normal'` (≤0.65), `'elevated'` (0.65–0.85), or `'disrupted'` (>0.85)
-- [ ] Implement `run_dci_cycle(hex_ids: list[str])` — for each hex: read latest signals from `signal_cache`, check ≥3 sources available, compute DCI, write to `dci_history`, update `hex_zones.current_dci` and `dci_status`
-- [ ] **[Fix 1 — Hysteresis]** Implement hysteresis in `trigger_monitor`: once a hex enters `DISRUPTED` state (DCI > 0.85), do NOT close the disruption event until DCI drops **below 0.65 for two consecutive cycles**. Store a `consecutive_normal_cycles` counter per hex in memory (or `hex_zones`). This prevents event flapping during storms that hover around 0.85.
-- [ ] Implement degraded mode: if <3 signal sources available for a hex, set `dci_status='normal'`, skip computation, log the degraded hex
-- [ ] Write unit tests using the exact input/output examples from `IMPLEMENTATION.md` Section 8.1: `σ(0.45×1.0 + 0.25×0.8 + 0.20×0.9 + 0.10×0.5)` = `σ(0.88)` ≈ 0.707
-- [ ] Write unit tests: `σ(0)=0.5`, `σ(2)≈0.88`, `σ(-2)≈0.12`
-- [ ] Write unit test: hysteresis — simulate DCI sequence [0.87, 0.82, 0.91, 0.61, 0.60] and verify the event is only closed after the **second** consecutive sub-0.65 cycle
-- [ ] Write unit test: verify disruption threshold requires σ(x)>0.85, meaning x>1.73
+- [x] Implement `backend/services/dci_engine.py` — `sigmoid(x: float) -> float` function: `1 / (1 + exp(-x))`
+- [x] Implement `compute_dci(w: float, t: float, p: float, s: float, alpha=0.45, beta=0.25, gamma=0.20, delta=0.10) -> float` — applies the formula `σ(α·W + β·T + γ·P + δ·S)`
+- [x] Implement `get_dci_status(dci: float) -> str` — returns `'normal'` (≤0.65), `'elevated'` (0.65–0.85), or `'disrupted'` (>0.85)
+- [x] Implement `run_dci_cycle(hex_ids: list[str])` — for each hex: read latest signals from `signal_cache`, check ≥3 sources available, compute DCI, write to `dci_history`, update `hex_zones.current_dci` and `dci_status`
+- [x] **[Fix 1 — Hysteresis]** Implement hysteresis in `trigger_monitor`: once a hex enters `DISRUPTED` state (DCI > 0.85), do NOT close the disruption event until DCI drops **below 0.65 for two consecutive cycles**. Store a `consecutive_normal_cycles` counter per hex in memory (or `hex_zones`). This prevents event flapping during storms that hover around 0.85.
+- [x] Implement degraded mode: if <3 signal sources available for a hex, set `dci_status='normal'`, skip computation, log the degraded hex
+- [x] Write unit tests using the exact input/output examples from `IMPLEMENTATION.md` Section 8.1: `σ(0.45×1.0 + 0.25×0.8 + 0.20×0.9 + 0.10×0.5)` = `σ(0.88)` ≈ 0.707
+- [x] Write unit tests: `σ(0)=0.5`, `σ(2)≈0.88`, `σ(-2)≈0.12`
+- [x] Write unit test: hysteresis — simulate DCI sequence [0.87, 0.82, 0.91, 0.61, 0.60] and verify the event is only closed after the **second** consecutive sub-0.65 cycle
+- [x] Write unit test: verify disruption threshold requires σ(x)>0.85, meaning x>1.73
 
 ---
 

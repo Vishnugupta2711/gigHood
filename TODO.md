@@ -125,15 +125,15 @@ _Worker registration and JWT auth must exist before policy or location ping endp
 
 _Requires workers table (Phase 1), XGBoost model (below), and hex_zones (Phase 2)._
 
-- [ ] Implement `backend/services/risk_profiler.py` — generate synthetic training data (12-week DCI history, seasonal flag, flood proximity, claim frequency) and train XGBoost classifier for Tier A/B/C; serialize model to `ml/risk_profiler.pkl`
-- [ ] Implement `predict_tier(worker_hex_history: list[float], seasonal_flag: bool, flood_proximity: float, claim_frequency: float) -> str` — loads model and returns `'A'`, `'B'`, or `'C'`
-- [ ] Write unit test for risk profiler: low DCI history → Tier A; high + flood proximity → Tier C
-- [ ] Implement `backend/services/premium_bander.py` — `calculate_premium(tier: str, avg_dci_4w: float, month: int) -> float` applying tier base rates (₹20/28/30/42/42/59) and monsoon multiplier (1.4× for months 6–9)
-- [ ] Write unit test: Tier A, avg DCI 0.35, non-monsoon → ₹20; Tier A, monsoon → ₹28
-- [ ] Implement `backend/services/policy_manager.py` — `create_policy(worker_id: str)`: run risk profiler, assign tier, calculate premium, set dates, set `is_waiting_period=True` for new workers, insert into `policies`
-- [ ] Implement `renew_policy(worker_id: str)` — create next-week policy record, no waiting period, activate Monday
-- [ ] Implement `GET /workers/me/policy` API endpoint — return active policy for authenticated worker
-- [ ] Implement `POST /policies/create` API endpoint — trigger policy creation for authenticated worker
+- [x] Implement `backend/services/risk_profiler.py` — generate synthetic training data (12-week DCI history, seasonal flag, flood proximity, claim frequency) and train XGBoost classifier for Tier A/B/C; serialize model to `ml/risk_profiler.pkl`
+- [x] Implement `predict_tier(worker_hex_history: list[float], seasonal_flag: bool, flood_proximity: float, claim_frequency: float) -> str` — loads model and returns `'A'`, `'B'`, or `'C'`
+- [x] Write unit test for risk profiler: low DCI history → Tier A; high + flood proximity → Tier C
+- [x] Implement `backend/services/premium_bander.py` — `calculate_premium(tier: str, avg_dci_4w: float, month: int) -> float` applying tier base rates (₹20/28/30/42/42/59) and monsoon multiplier (1.4× for months 6–9)
+- [x] Write unit test: Tier A, avg DCI 0.35, non-monsoon → ₹20; Tier A, monsoon → ₹28
+- [x] Implement `backend/services/policy_manager.py` — `create_policy(worker_id: str)`: run risk profiler, assign tier, calculate premium, set dates, set `is_waiting_period=True` for new workers, insert into `policies`
+- [x] Implement `renew_policy(worker_id: str)` — create next-week policy record, no waiting period, activate Monday
+- [x] Implement `GET /workers/me/policy` API endpoint — return active policy for authenticated worker
+- [x] Implement `POST /policies/create` API endpoint — trigger policy creation for authenticated worker
 
 ---
 
@@ -141,8 +141,8 @@ _Requires workers table (Phase 1), XGBoost model (below), and hex_zones (Phase 2
 
 _Requires policy_manager (Phase 7) and payment_service (Phase 9). Wire the Monday job._
 
-- [ ] Implement `backend/scheduler/weekly_jobs.py` — `run_monday_policy_cycle()`: query all active workers, call `renew_policy()` for each, trigger premium debit via Razorpay for each active policy
-- [ ] Wire `run_monday_policy_cycle` into the Monday 00:00 APScheduler job registered in Phase 5
+- [x] Implement `backend/scheduler/weekly_jobs.py` — `run_monday_policy_cycle()`: query all active workers, call `renew_policy()` for each, trigger premium debit via Razorpay for each active policy
+- [x] Wire `run_monday_policy_cycle` into the Monday 00:00 APScheduler job registered in Phase 5
 
 ---
 
@@ -150,11 +150,11 @@ _Requires policy_manager (Phase 7) and payment_service (Phase 9). Wire the Monda
 
 _Required by claims pipeline (Phase 10) and premium debit (Phase 8)._
 
-- [ ] Implement `backend/services/payment_service.py` — initialize Razorpay client using `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`
-- [ ] Implement `initiate_upi_payout(upi_id: str, amount_rupees: float, reference_id: str) -> dict` — call Razorpay sandbox payout API; return `razorpay_payment_id`
-- [ ] Implement `handle_payout_webhook(payload: dict, signature: str) -> bool` — verify Razorpay webhook signature; return True if payment confirmed
-- [ ] Implement `POST /webhooks/razorpay` FastAPI endpoint — call `handle_payout_webhook`, update claim status to `'paid'` on confirmation
-- [ ] Write unit test: mock Razorpay API response → verify `razorpay_payment_id` stored correctly
+- [x] Implement `backend/services/payment_service.py` — initialize Razorpay client using `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`
+- [x] Implement `initiate_upi_payout(upi_id: str, amount_rupees: float, reference_id: str) -> dict` — call Razorpay sandbox payout API; return `razorpay_payment_id`
+- [x] Implement `handle_payout_webhook(payload: dict, signature: str) -> bool` — verify Razorpay webhook signature; return True if payment confirmed
+- [x] Implement `POST /webhooks/razorpay` FastAPI endpoint — call `handle_payout_webhook`, update claim status to `'paid'` on confirmation
+- [x] Write unit test: mock Razorpay API response → verify `razorpay_payment_id` stored correctly
 
 ---
 

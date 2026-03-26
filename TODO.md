@@ -112,12 +112,12 @@ _Signal ingestion and DCI computation must exist before scheduling. Scheduler ru
 
 _Worker registration and JWT auth must exist before policy or location ping endpoints can be secured._
 
-- [ ] Implement `backend/services/auth_service.py` — `create_jwt(worker_id: str) -> str` and `decode_jwt(token: str) -> dict` using `python-jose`
-- [ ] Implement `backend/api/workers.py` — `POST /auth/register`: accept phone, name, city, dark_store_zone, avg_daily_earnings, upi_id, device_model, device_os_version, sim_carrier, sim_registration_date; map dark store zone to H3 hex_id; insert into `workers` table; return JWT
-- [ ] Implement `POST /auth/otp/send` — stub that logs OTP to console (mock OTP for demo)
-- [ ] Implement `POST /auth/otp/verify` — verify OTP stub and issue JWT
-- [ ] Implement `get_current_worker` FastAPI dependency that validates JWT and returns worker record
-- [ ] Write unit test: register worker → JWT returned → JWT decoded → correct worker ID
+- [x] Implement `backend/services/auth_service.py` — `create_jwt(worker_id: str) -> str` and `decode_jwt(token: str) -> dict` using `python-jose`
+- [x] Implement `backend/api/workers.py` — `POST /auth/register`: accept phone, name, city, dark_store_zone, avg_daily_earnings, upi_id, device_model, device_os_version, sim_carrier, sim_registration_date; map dark store zone to H3 hex_id; insert into `workers` table; return JWT
+- [x] Implement `POST /auth/otp/send` — stub that logs OTP to console (mock OTP for demo)
+- [x] Implement `POST /auth/otp/verify` — verify OTP stub and issue JWT
+- [x] Implement `get_current_worker` FastAPI dependency that validates JWT and returns worker record
+- [x] Write unit test: register worker -> JWT returned -> JWT decoded -> correct worker ID
 
 ---
 

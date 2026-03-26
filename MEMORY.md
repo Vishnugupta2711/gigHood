@@ -16,9 +16,10 @@ Full product scope: `README.md` | Full technical spec: `IMPLEMENTATION.md`
 
 ## Current Development Phase
 
-> **Phase 7 — Policy Engine**
+> **Phase 8 — Weekly Premium Debit Scheduler Job**
 
-Phase 6 (Auth Module) is complete. The system now fully enables securely hashed string-to-coordinate logic yielding valid registered generic UUIDs encapsulated seamlessly inside Python-JOSE parsed JWT access tokens. OTP generation mocks and JWT validation logic inside `/workers` dependencies (`get_current_worker`) exist and block unauthorized endpoint utilization effectively.
+Phase 7 (Policy Engine) is officially finalized. 
+The system features a dynamically self-learning programmatic XGBoost predictor wrapped around physical inputs mimicking deterministic behavior of monsoon floods and claim history frequencies. Evaluates history recursively mapped to A, B, and C categorical definitions correctly. Serialized cache operates to eliminate loading lag safely.
 
 ---
 
@@ -152,7 +153,7 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 | **Phase 4** | DCI computation engine | ✅ Complete |
 | **Phase 5** | APScheduler integration | ✅ Complete |
 | **Phase 6** | Auth module (OTP + JWT) | ✅ Complete |
-| **Phase 7** | Policy engine (XGBoost + premium bander) | ⬜ Not started |
+| **Phase 7** | Policy engine (XGBoost + premium bander) | ✅ Complete |
 | **Phase 8** | Weekly premium debit scheduler job | ⬜ Not started |
 | **Phase 9** | Razorpay payment service | ⬜ Not started |
 | **Phase 10** | Claims automation pipeline | ⬜ Not started |
@@ -168,11 +169,10 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 
 ## Next Task for a New Agent
 
-**Start at Phase 7, Task 1 in `TODO.md`:**
+**Start at Phase 8, Task 1 in `TODO.md`:**
 
-Please execute the `Phase 7` sequence in `TODO.md` regarding Policy Engine.
-1. Implement `backend/services/risk_profiler.py` and logic generating synthetic training data for DCI limits.
-2. Train XGBoost classifier evaluating history and flood variance predicting Tiers A/B/C.
-3. Validate predictions utilizing local pickled model loading checks inside tests.
+Please execute the `Phase 8` sequence in `TODO.md` regarding the Weekly Premium Debit job.
+1. Implement logic inside `premium_debit_job` tracking weekly rollover via `policies.py`.
+2. Connect to the mock Razorpay client inside `payment_service.py` subtracting weekly bounds from wallets automatically based on specific Worker tiers mathematically.
 
 > Before writing any code, read `MEMORY.md` → `TODO.md` → `IMPLEMENTATION.md` Section 3 → `RULES.md` in that order.

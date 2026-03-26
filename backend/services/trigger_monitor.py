@@ -61,14 +61,15 @@ def get_active_policyholders_in_hex(hex_id: str) -> list[dict]:
     Returns list of dicts: [{'worker_id': id, 'policy_id': id}]
     """
     try:
-        workers_res = supabase.table('workers').select('id').eq('home_hex', hex_id).eq('status', 'active').execute()
-        worker_ids = [w['id'] for w in workers_res.data]
+        workers_res = supabase.table('workers').select('id, device_token').eq('home_hex', hex_id).eq('status', 'active').execute()
+        worker_map = {w['id']: w.get('device_token') for w in workers_res.data}
+        worker_ids = list(worker_map.keys())
         
         if not worker_ids:
             return []
             
         policies_res = supabase.table('policies').select('worker_id', 'id').in_('worker_id', worker_ids).eq('status', 'active').execute()
-        return policies_res.data
+        return [{'worker_id': p['worker_id'], 'id': p['id'], 'device_token': worker_map.get(p['worker_id'])} for p in policies_res.data]
     except Exception as e:
         logger.error(f"Error fetching policy holders in hex {hex_id}: {e}")
         return []
@@ -101,6 +102,13 @@ def _open_disruption_event(hex_id: str, dci_peak: float):
                     'event_id': event_id,
                     'status': 'pending'
                 }).execute()
+                
+                # TRIGGER FCM HERE (Phase 12)
+                device_token = pol.get('device_token')
+                if device_token:
+                    from backend.services.notification_service import notification_service
+                    notification_service.notify_elevated_watch(device_token, hex_id, "DISRUPTED")
+                    
             except Exception as e:
                 logger.error(f"Failed to bind initial Claim for worker {pol['worker_id']}: {e}")
                 

@@ -221,11 +221,11 @@ _Depends on claims pipeline (Phase 10) and location_pings data being populated._
 
 _Depends on Firebase setup and claims pipeline (Phase 10)._
 
-- [ ] Set up Firebase project, download service account JSON, set `FIREBASE_CREDENTIALS_PATH` in `.env`
-- [ ] Implement `backend/services/notification_service.py` — initialize `firebase_admin` app; implement `send_push(device_token: str, title: str, body: str, data: dict = {})`
-- [ ] Implement notification templates for all 5 triggers: payout credited, disruption elevated watch, claim flagged for verification, degraded mode, proactive tier upgrade offer
-- [ ] Implement `POST /workers/me/device-token` API endpoint — store FCM device token on worker record
-- [ ] Wire notification calls into `execute_fast_track_payout` (payout credited) and trigger monitor (elevated watch)
+- [x] Set up Firebase project, download service account JSON, set `FIREBASE_CREDENTIALS_PATH` in `.env`
+- [x] Implement `backend/services/notification_service.py` — initialize `firebase_admin` app; implement `send_push(device_token: str, title: str, body: str, data: dict = {})`
+- [x] Implement notification templates for all 5 triggers: payout credited, disruption elevated watch, claim flagged for verification, degraded mode, proactive tier upgrade offer
+- [x] Implement `POST /workers/me/device-token` API endpoint — store FCM device token on worker record
+- [x] Wire notification calls into `execute_fast_track_payout` (payout credited) and trigger monitor (elevated watch)
 
 ---
 

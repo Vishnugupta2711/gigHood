@@ -16,9 +16,9 @@ Full product scope: `README.md` | Full technical spec: `IMPLEMENTATION.md`
 
 ## Current Development Phase
 
-> **Phase 11 — Fraud Engine (7-Layer Defense)**
+> **Phase 12 — Notification Service**
 
-Phases 10 and 11 have been seamlessly executed sequentially. The backend now runs the mathematical Claim Approver routing claims identically using the 7-layer Fraud Evaluator bounding micro-deliveries and static GPS variances. It governs internal automated payouts bypassing mock stubs natively.
+Phases 11 and 12 have been fully executed. The 7-Layer Fraud Engine restricts claim math, and the Firebase Cloud Messaging engine now securely broadcasts alerts to workers. The backend intercepts missing credentials automatically providing 5 standardized templates (Watch, Payouts, Verify) masking API failures cleanly behind Pytest architectures.
 
 ---
 
@@ -157,7 +157,7 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 | **Phase 9** | Razorpay payment service | ✅ Complete |
 | **Phase 10** | Claims automation pipeline | ✅ Complete |
 | **Phase 11** | 7-layer fraud engine | ✅ Complete |
-| **Phase 12** | FCM notification service | ⬜ Not started |
+| **Phase 12** | FCM notification service | ✅ Complete |
 | **Phase 13** | Worker mobile app (React Native) | ⬜ Not started |
 | **Phase 14** | Admin dashboard (Next.js) | ⬜ Not started |
 | **Phase 15** | AI chat assistant | ⬜ Not started |
@@ -168,10 +168,10 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 
 ## Next Task for a New Agent
 
-**Start at Phase 12, Task 1 in `TODO.md`:**
+**Start at Phase 13, Task 1 in `TODO.md`:**
 
-Please execute the `Phase 12` sequence in `TODO.md` regarding FCM notifications:
-1. Link Firebase push APIs cleanly mapped across trigger bounds alerting workers.
-2. Build Worker App architecture in `Phase 13`.
+Please execute the `Phase 13` sequence in `TODO.md` regarding the React Native (Expo) Worker Application:
+1. Initialize the Expo typescript bindings safely handling isolated screens.
+2. Link MapViews with DCI polling endpoints correctly visually representing Hex statuses.
 
 > Before writing any code, read `MEMORY.md` → `TODO.md` → `IMPLEMENTATION.md` Section 3 → `RULES.md` in that order.

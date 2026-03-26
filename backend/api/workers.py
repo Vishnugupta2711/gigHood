@@ -30,6 +30,10 @@ class OTPVerify(BaseModel):
     phone: str
     otp: str
 
+class DeviceTokenRequest(BaseModel):
+    device_token: str
+
+
 def hash_dark_store_to_coords(dark_store_name: str) -> tuple[float, float]:
     """
     Deterministically hash a dark store string into valid coords within Bengaluru.
@@ -128,5 +132,15 @@ def get_my_policy(worker: dict = Depends(get_current_worker)):
         return res.data[0]
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/me/device-token")
+def update_device_token(req: DeviceTokenRequest, worker: dict = Depends(get_current_worker)):
+    """Maps the physical worker profile explicitly to their Firebase Cloud Messaging identity"""
+    worker_id = worker.get("id")
+    try:
+        supabase.table('workers').update({'device_token': req.device_token}).eq('id', worker_id).execute()
+        return {"message": "Device token bound securely."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

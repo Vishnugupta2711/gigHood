@@ -42,7 +42,7 @@ def execute_fast_track_payout(claim_id: str, worker_id: str):
         pol_res = supabase.table('policies').select('tier').eq('id', claim['policy_id']).execute()
         tier = pol_res.data[0]['tier'] if pol_res.data else 'B'
         
-        worker_res = supabase.table('workers').select('avg_daily_earnings, upi_id').eq('id', worker_id).execute()
+        worker_res = supabase.table('workers').select('avg_daily_earnings, upi_id, device_token').eq('id', worker_id).execute()
         if not worker_res.data:
              return
              
@@ -68,9 +68,12 @@ def execute_fast_track_payout(claim_id: str, worker_id: str):
             
             logger.info(f"Fast Track Payout Completed. Claim {claim_id}. ₹{payout_rupees} sent.")
             
-            # TRIGGER FCM HERE (Phase 11/12)
-            pass
-            
+            # TRIGGER FCM HERE (Phase 12)
+            device_token = worker.get('device_token')
+            if device_token:
+                from backend.services.notification_service import notification_service
+                notification_service.notify_payout_credited(device_token, payout_rupees, tier)
+                
     except Exception as e:
         logger.error(f"Failed cleanly executing Fast-Track payout {claim_id}: {e}")
 

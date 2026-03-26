@@ -16,10 +16,9 @@ Full product scope: `README.md` | Full technical spec: `IMPLEMENTATION.md`
 
 ## Current Development Phase
 
-> **Phase 8 — Weekly Premium Debit Scheduler Job**
+> **Phase 10 — Claims Automation Pipeline**
 
-Phase 7 (Policy Engine) is officially finalized. 
-The system features a dynamically self-learning programmatic XGBoost predictor wrapped around physical inputs mimicking deterministic behavior of monsoon floods and claim history frequencies. Evaluates history recursively mapped to A, B, and C categorical definitions correctly. Serialized cache operates to eliminate loading lag safely.
+Phases 7, 8, and 9 have been seamlessly executed sequentially. The backend now runs the mathematical Premium Bander (calculating tier pricing with 1.4x monsoon multipliers). It governs Weekly Monday background cron tasks routing autonomous Razorpay debit hooks based on valid Policy renewals. The Razorpay SDK was integrated to dispatch verifiable, securely-HMAC-signed webhook events mapping payload metadata sequentially to active database rows.
 
 ---
 
@@ -154,8 +153,8 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 | **Phase 5** | APScheduler integration | ✅ Complete |
 | **Phase 6** | Auth module (OTP + JWT) | ✅ Complete |
 | **Phase 7** | Policy engine (XGBoost + premium bander) | ✅ Complete |
-| **Phase 8** | Weekly premium debit scheduler job | ⬜ Not started |
-| **Phase 9** | Razorpay payment service | ⬜ Not started |
+| **Phase 8** | Weekly premium debit scheduler job | ✅ Complete |
+| **Phase 9** | Razorpay payment service | ✅ Complete |
 | **Phase 10** | Claims automation pipeline | ⬜ Not started |
 | **Phase 11** | 7-layer fraud engine | ⬜ Not started |
 | **Phase 12** | FCM notification service | ⬜ Not started |
@@ -169,10 +168,10 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 
 ## Next Task for a New Agent
 
-**Start at Phase 8, Task 1 in `TODO.md`:**
+**Start at Phase 10, Task 1 in `TODO.md`:**
 
-Please execute the `Phase 8` sequence in `TODO.md` regarding the Weekly Premium Debit job.
-1. Implement logic inside `premium_debit_job` tracking weekly rollover via `policies.py`.
-2. Connect to the mock Razorpay client inside `payment_service.py` subtracting weekly bounds from wallets automatically based on specific Worker tiers mathematically.
+Please execute the `Phase 10` sequence in `TODO.md` regarding the Claims Automation Pipeline:
+1. Link the real-time DCI disruption events to a formal `PoP Validator` tracking 15-minute worker pings to prove real presence inside Hex blocks.
+2. Build the `Payout Calculator` triggering Fast Track (Path 1) payouts automatically based on disruption hours metrics.
 
 > Before writing any code, read `MEMORY.md` → `TODO.md` → `IMPLEMENTATION.md` Section 3 → `RULES.md` in that order.

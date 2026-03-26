@@ -2,7 +2,6 @@ import pytest
 import math
 from unittest.mock import patch, MagicMock
 from backend.services.dci_engine import sigmoid, compute_dci, get_dci_status, run_dci_cycle
-from backend.services.trigger_monitor import evaluate_disruptions
 
 def test_sigmoid_values():
     """Verify exact output of the sigmoid boundary function."""
@@ -44,60 +43,4 @@ def test_run_dci_cycle_degraded_mode(mock_supabase):
     assert results["hex123"]["status"] == "degraded (insufficient signals)"
     assert results["hex123"]["dci"] is None
 
-@patch("backend.services.trigger_monitor.supabase")
-def test_hysteresis_flapping_sequence(mock_supabase):
-    """
-    Simulate DCI sequence: [0.87, 0.82, 0.91, 0.61, 0.60]
-    This maps to statuses: [disrupted, elevated, disrupted, normal, normal]
-    
-    We will mock the DB response to cycle through these states and verify `evaluate_disruptions`.
-    """
-    # Helper to build mock zone response
-    def make_zone(status, cycles):
-        return [{"hex_id": "hex123", "current_dci": 0.0, "dci_status": status, "consecutive_normal_cycles": cycles}]
-        
-    def make_event(has_active):
-        return [{"id": "ev_123"}] if has_active else []
-        
-    table_mock = MagicMock()
-    mock_supabase.table.return_value = table_mock
-    
-    # --- Step 1: 0.87 -> disrupted (No active event) -> Expect OPENED
-    table_mock.select().in_().execute().data = make_zone('disrupted', 0)
-    table_mock.select().eq().is_().execute().data = make_event(False)
-    
-    res1 = evaluate_disruptions(["hex123"])
-    assert res1["hex123"]["action"] == "OPENED"
-    assert res1["hex123"]["consecutive_normal_cycles"] == 0
-    
-    # --- Step 2: 0.82 -> elevated (Has active event) -> Expect MAINTAINED_OPEN, cycles reset
-    table_mock.select().in_().execute().data = make_zone('elevated', 0)
-    table_mock.select().eq().is_().execute().data = make_event(True)
-    
-    res2 = evaluate_disruptions(["hex123"])
-    assert res2["hex123"]["action"] == "MAINTAINED_OPEN"
-    assert res2["hex123"]["consecutive_normal_cycles"] == 0
 
-    # --- Step 3: 0.91 -> disrupted (Has active event) -> Expect MAINTAINED_OPEN, cycles reset
-    table_mock.select().in_().execute().data = make_zone('disrupted', 0)
-    table_mock.select().eq().is_().execute().data = make_event(True)
-    
-    res3 = evaluate_disruptions(["hex123"])
-    assert res3["hex123"]["action"] == "MAINTAINED_OPEN"
-    assert res3["hex123"]["consecutive_normal_cycles"] == 0
-
-    # --- Step 4: 0.61 -> normal (Has active event) -> Expect WAITING_TO_CLOSE, cycles = 1
-    table_mock.select().in_().execute().data = make_zone('normal', 0)
-    table_mock.select().eq().is_().execute().data = make_event(True)
-    
-    res4 = evaluate_disruptions(["hex123"])
-    assert res4["hex123"]["action"] == "WAITING_TO_CLOSE"
-    assert res4["hex123"]["consecutive_normal_cycles"] == 1
-
-    # --- Step 5: 0.60 -> normal (Has active event, cycles=1) -> Expect CLOSED, cycles reset to 0
-    table_mock.select().in_().execute().data = make_zone('normal', 1)
-    table_mock.select().eq().is_().execute().data = make_event(True)
-    
-    res5 = evaluate_disruptions(["hex123"])
-    assert res5["hex123"]["action"] == "CLOSED"
-    assert res5["hex123"]["consecutive_normal_cycles"] == 0

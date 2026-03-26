@@ -4,10 +4,12 @@ from fastapi import FastAPI
 import backend.api.workers as workers
 import backend.api.policies as policies
 import backend.api.claims as claims
-import backend.api.notifications as notifications
 import backend.api.chat as chat
 import backend.api.admin as admin
+import backend.api.notifications as notifications
 import backend.scheduler.jobs as jobs
+import backend.api.location_pings as location_pings
+import backend.api.location_pings as location_pings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,6 +24,7 @@ app = FastAPI(title="gigHood API", version="0.1.0", lifespan=lifespan)
 app.include_router(workers.router, prefix="/workers", tags=["workers"])
 app.include_router(policies.router, prefix="/policies", tags=["policies"])
 app.include_router(claims.router, prefix="/claims", tags=["claims"])
+app.include_router(location_pings.router, prefix="/location-pings", tags=["location_pings"])
 app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 app.include_router(chat.router, prefix="/chat", tags=["chat"])
 # app.include_router(admin.router, prefix="/admin", tags=["admin"])

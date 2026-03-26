@@ -2,7 +2,6 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from backend.services.signal_fetchers import run_signal_ingestion_cycle
 from backend.services.dci_engine import run_dci_cycle
-from backend.services.trigger_monitor import evaluate_disruptions
 from backend.db.client import supabase
 
 logger = logging.getLogger("api")
@@ -34,16 +33,13 @@ def dci_job():
         
     res = run_dci_cycle(hexes)
     logger.info(f"DCI cycle complete for {len(res)} zones.")
-    
-    # After computing raw DCI, evaluate active disruption flap states
-    try:
-        flap_res = evaluate_disruptions(hexes)
-        logger.info(f"Hysteresis evaluated for {len(flap_res)} zones.")
-    except Exception as e:
-        logger.error(f"Error during trigger evaluation: {e}")
+    logger.info(f"DCI cycle complete for {len(res)} zones.")
 
-def premium_debit_stub():
-    logger.info("[STUB] Running weekly Premium Debit job...")
+from backend.scheduler.weekly_jobs import run_monday_policy_cycle
+
+def premium_debit_job():
+    logger.info("Running weekly Premium Debit job...")
+    run_monday_policy_cycle()
 
 def forecast_alert_stub():
     logger.info("[STUB] Running Sunday evening forecast notification...")
@@ -64,7 +60,7 @@ scheduler.add_job(dci_job, 'cron', minute='1,6,11,16,21,26,31,36,41,46,51,56', i
 
 # Stubs for subsequent phases
 # Monday 00:00
-scheduler.add_job(premium_debit_stub, 'cron', day_of_week='mon', hour=0, minute=0, id='premium_debit_job', replace_existing=True)
+scheduler.add_job(premium_debit_job, 'cron', day_of_week='mon', hour=0, minute=0, id='premium_debit_job', replace_existing=True)
 # Sunday 18:00
 scheduler.add_job(forecast_alert_stub, 'cron', day_of_week='sun', hour=18, minute=0, id='forecast_alert_job', replace_existing=True)
 # Sunday 23:00

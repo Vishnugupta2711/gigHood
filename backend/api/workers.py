@@ -117,3 +117,16 @@ def register_worker(req: WorkerRegisterRequest):
 @router.get("/me")
 def get_me(worker: dict = Depends(get_current_worker)):
     return worker
+
+@router.get("/me/policy")
+def get_my_policy(worker: dict = Depends(get_current_worker)):
+    worker_id = worker.get("id")
+    try:
+        res = supabase.table('policies').select('*').eq('worker_id', worker_id).eq('status', 'active').execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="No active policy found. Please onboard your risk profile.")
+        return res.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

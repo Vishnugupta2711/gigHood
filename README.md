@@ -1446,6 +1446,26 @@ gigHood’s **H3 spatial model + DCI engine** aligns directly with this operatio
     Worker notified via app + FCM push notification
 
 **No claim. No paperwork. No delay.**
+
+<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
+
+### 🚫 Policy Exclusions
+
+gigHood is designed for income loss caused by **external, objective, infrastructure-level disruptions**. The following events fall outside the scope of coverage and will not trigger a payout:
+
+| Exclusion | Reason |
+|:----------|:-------|
+| **War, armed conflict, or civil war** | Force majeure — outside parametric risk modelling scope |
+| **Government-declared national emergency or pandemic shutdown** | System-wide closure invalidates zone-level DCI differentiation |
+| **Platform-initiated worker account deactivation** | Account suspension is an individual action, not a zone disruption |
+| **Disruptions lasting less than the minimum trigger duration** | DCI must remain above 0.85 for a sustained window — brief spikes do not qualify |
+| **Claims during the 7-day waiting period** | New accounts receive a reduced coverage cap (zone 50th percentile), not a full payout |
+| **Zones below the minimum policyholder density threshold** | Pool viability requires a minimum active worker base per hex to process claims |
+| **Self-inflicted platform outages (worker app issues, personal device failure)** | Individual technical failures are not zone-level disruptions |
+| **Disruptions in zones outside the worker's registered dark store assignment** | Coverage is tied to the registered hex — zone-hopping is detected and denied |
+
+These exclusions are standard across all non-life parametric insurance products operating under the IRDAI Regulatory Sandbox framework and are disclosed to workers at onboarding.
+
 <img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=db8947&section=footer" width="100%"/>
 
 ## 🤖 AI / ML Integration

@@ -252,17 +252,17 @@ _Depends on backend auth, policy, claims, and notification API endpoints being a
 
 _Depends on all backend API endpoints and DCI data being populated._
 
-- [ ] Initialize Next.js project in `admin/`: `npx create-next-app admin --typescript --tailwind`
+- [x] Initialize Next.js project in `admin/`: `npx create-next-app admin --typescript --tailwind`
 - [ ] Deploy to Vercel free tier; configure `NEXT_PUBLIC_API_URL` env var
-- [ ] Create `admin/lib/api.ts` — typed server-side API client for backend
-- [ ] Implement `GET /admin/hex-zones` backend endpoint — return all hex zones with current DCI score and status (admin-only, no JWT required for demo or use API key)
-- [ ] Implement Live H3 Hex Map page — render `hex_zones` using `MapLibre GL` or `deck.gl`; color hexes by DCI status: green (normal), amber (elevated), red (disrupted)
-- [ ] Implement Active Policies panel — table of workers grouped by tier and zone; total count
-- [ ] Implement Trigger Event Log — real-time table of `disruption_events` with hex, DCI peak, duration, and affected worker count
-- [ ] Implement Claims Table — list of `claims` with resolution path, payout amount, and status; filter by path (1/2/3/4)
-- [ ] Implement Fraud Metrics panel — aggregate fraud flags by type, zone-hop rate, mock location network count
-- [ ] Implement Payout Summary panel — total disbursed this week, average payout, loss ratio (payouts ÷ premiums collected)
-- [ ] Implement `GET /admin/stats` backend endpoint — return aggregated claim, payout, and fraud summary
+- [x] Create `admin/lib/api.ts` — typed server-side API client for backend
+- [x] Implement `GET /admin/hex-zones` backend endpoint — return all hex zones with current DCI score and status (admin-only, no JWT required for demo or use API key)
+- [x] Implement Live H3 Hex Map page — render `hex_zones` using `MapLibre GL` or `deck.gl`; color hexes by DCI status: green (normal), amber (elevated), red (disrupted)
+- [x] Implement Active Policies panel — table of workers grouped by tier and zone; total count
+- [x] Implement Trigger Event Log — real-time table of `disruption_events` with hex, DCI peak, duration, and affected worker count
+- [x] Implement Claims Table — list of `claims` with resolution path, payout amount, and status; filter by path (1/2/3/4)
+- [x] Implement Fraud Metrics panel — aggregate fraud flags by type, zone-hop rate, mock location network count
+- [x] Implement Payout Summary panel — total disbursed this week, average payout, loss ratio (payouts ÷ premiums collected)
+- [x] Implement `GET /admin/stats` backend endpoint — return aggregated claim, payout, and fraud summary
 
 ---
 

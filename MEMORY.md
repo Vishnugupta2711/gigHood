@@ -16,9 +16,13 @@ Full product scope: `README.md` | Full technical spec: `IMPLEMENTATION.md`
 
 ## Current Development Phase
 
-> **Phase 14 — Admin Dashboard (Next.js)**
+> **Phase 15 — AI Chat Assistant**
 
-Phase 13 (Worker App) has just been fully implemented. An Expo React Native Application was successfully wired internally. Authentication flows, Dashboard DCI interfaces, Payout history records, seamless Background Task Manager modules (for PoP tracking telemetry), FCM listeners, and Tier Upgrade components were completely written matching backend architectural typings cleanly.
+Phase 14 (Admin Dashboard) has been completed. The Next.js admin dashboard is fully implemented with:
+- `admin/lib/api.ts` — typed server-side API client for backend
+- `admin/app/page.tsx` — full dashboard with Live H3 Hex Map, Active Policies, Trigger Event Log, Claims Table (with 4-path resolution), Fraud Metrics panel, and Payout Summary panel
+- `backend/api/admin.py` — all required endpoints: `GET /admin/hex-zones`, `GET /admin/stats`, `GET /admin/claims`, `GET /admin/events`
+- `backend/main.py` — admin router registered and active
 
 ---
 
@@ -36,7 +40,7 @@ Phase 13 (Worker App) has just been fully implemented. An Expo React Native Appl
 | `.agents/skills/`          | ✅ Complete    | 20 installed agent skills (see below)                                                    |
 | `backend/`                 | ✅ Complete    | FastAPI backend scaffold with empty API/service modules                                  |
 | `mobile/`                  | ✅ Complete    | React Native (Expo) worker app built via Phase 13                                        |
-| `admin/`                   | ❌ Not started | Next.js admin dashboard                                                                  |
+| `admin/`                   | ✅ Complete    | Next.js admin dashboard — Phase 14                                                       |
 | `supabase/migrations/`     | ❌ Not started | SQL schema migrations                                                                    |
 | `ml/`                      | ❌ Not started | XGBoost model artefacts                                                                  |
 | `venv/`                    | ✅ Complete    | Python 3.11 virtual environment                                                          |
@@ -158,8 +162,8 @@ Full schema (all columns, types, FKs): `IMPLEMENTATION.md` Section 5.
 | **Phase 10** | Claims automation pipeline               | ✅ Complete    |
 | **Phase 11** | 7-layer fraud engine                     | ✅ Complete    |
 | **Phase 12** | FCM notification service                 | ✅ Complete    |
-| **Phase 13** | Worker mobile app (React Native)         | ⬜ Not started |
-| **Phase 14** | Admin dashboard (Next.js)                | ⬜ Not started |
+| **Phase 13** | Worker mobile app (React Native)         | ✅ Complete |
+| **Phase 14** | Admin dashboard (Next.js)                | ✅ Complete |
 | **Phase 15** | AI chat assistant                        | ⬜ Not started |
 | **Phase 16** | Forecasting + weekly retrain jobs        | ⬜ Not started |
 | **Phase 17** | Integration testing & validation         | ⬜ Not started |

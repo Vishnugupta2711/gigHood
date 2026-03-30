@@ -1,5 +1,6 @@
 # Python / Backend
 venv/
+.venv/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -25,6 +26,8 @@ share/python-wheels/
 .coverage
 htmlcov/
 uvicorn.log
+.mypy_cache/
+.ruff_cache/
 
 # Node.js / Frontend / Admin / Mobile
 node_modules/
@@ -34,20 +37,21 @@ yarn-error.log*
 .pnpm-debug.log*
 .next/
 out/
-build/
 .expo/
-dist/
 web-build/
 *.tsbuildinfo
 
+# Supabase
+.supabase/
+supabase/.temp/
+
 # Environment variables & Secrets
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 *.json.key
 firebase-credentials.json
+firebase-adminsdk.json
 
 # OS generated files
 .DS_Store
@@ -59,8 +63,8 @@ ehthumbs.db
 Thumbs.db
 
 # Machine Learning
-ml/*.pkl
-ml/*.model
+**/*.pkl
+**/*.model
 *.h5
 *.hdf5
 

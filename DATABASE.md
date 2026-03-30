@@ -125,3 +125,23 @@ Tracks the weekly subscription charges sent to Razorpay validating active covera
 - `status`: Enum (`pending`, `success`, `failed`)
 - `razorpay_payment_id`: Text
 - `attempted_at`: Timestampz
+
+### `fraud_evaluations`
+Logs 7-layer defense evaluations systematically to track dynamic routing outcomes securely.
+- `id`: UUID, Primary Key
+- `worker_id`: UUID, FK to `workers`
+- `event_id`: UUID, FK to `disruption_events`
+- `fraud_score`: Integer
+- `gate2_result`: Enum (`STRONG`, `WEAK`, `NONE`)
+- `flags`: JSONB (Array of triggered rules)
+- `evaluated_at`: Timestampz
+
+### `notification_log`
+Chronicles push notifications transmitted transparently to mapping engines (FCM).
+- `id`: UUID, Primary Key
+- `token_hint`: Text (Partial token for tracing)
+- `title`: Text
+- `notification_type`: Enum (`PAYOUT_PROCESSED`, `VERIFICATION_REQUIRED`, `ALERT`)
+- `fcm_message_id`: Text 
+- `status`: Enum (`sent`, `failed`)
+- `sent_at`: Timestampz

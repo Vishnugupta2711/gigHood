@@ -32,3 +32,8 @@ app.include_router(chat.router, prefix="/chat", tags=["chat"])
 @app.get("/")
 async def root():
     return {"message": "gigHood API is running"}
+
+
+
+
+

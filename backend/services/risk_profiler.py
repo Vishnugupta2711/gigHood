@@ -8,7 +8,8 @@ import logging
 logger = logging.getLogger("api")
 
 ML_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ml")
-MODEL_PATH = os.path.join(ML_DIR, "risk_profiler.pkl")
+MODEL_PATH_JSON = os.path.join(ML_DIR, "risk_profiler.json")
+MODEL_PATH_PKL  = os.path.join(ML_DIR, "risk_profiler.pkl")  # legacy — migrated on first load
 
 # Global in-memory cache for the loaded model to prevent I/O blocking
 _model = None
@@ -51,28 +52,37 @@ def train_and_save_model():
     
     model.fit(X, y)
     
-    # Serialize model securely
+    # Serialize model using XGBoost native JSON (no pickle deprecation warnings)
     os.makedirs(ML_DIR, exist_ok=True)
-    with open(MODEL_PATH, "wb") as f:
-        pickle.dump(model, f)
-        
-    logger.info(f"Successfully trained and serialized XGBoost model to {MODEL_PATH}")
+    model.save_model(MODEL_PATH_JSON)
+
+    logger.info(f"Successfully trained and serialized XGBoost model to {MODEL_PATH_JSON}")
 
 def load_model():
     """
-    Loads and caches the XGBoost model. If the file is missing, automatically train it.
+    Loads and caches the XGBoost model using native JSON format (no pickle warnings).
+    On first call, migrates any legacy .pkl to .json automatically.
+    If neither exists, triggers a fresh training cycle.
     """
     global _model
     if _model is not None:
         return _model
-        
-    if not os.path.exists(MODEL_PATH):
-        logger.warning(f"XGBoost model file {MODEL_PATH} missing. Automatically triggering training cycle...")
-        train_and_save_model()
-        
-    with open(MODEL_PATH, "rb") as f:
-        _model = pickle.load(f)
-        
+
+    if not os.path.exists(MODEL_PATH_JSON):
+        # One-time migration: re-save existing pkl as JSON to eliminate UserWarning
+        if os.path.exists(MODEL_PATH_PKL):
+            logger.info("Migrating legacy risk_profiler.pkl → risk_profiler.json (one-time)…")
+            with open(MODEL_PATH_PKL, "rb") as f:
+                migrated = pickle.load(f)
+            migrated.save_model(MODEL_PATH_JSON)
+            logger.info(f"Migration complete. JSON model saved to {MODEL_PATH_JSON}")
+        else:
+            logger.warning("No model file found. Triggering training cycle…")
+            train_and_save_model()
+
+    model = xgb.XGBClassifier()
+    model.load_model(MODEL_PATH_JSON)
+    _model = model
     return _model
 
 def predict_tier(worker_hex_history: list[float], seasonal_flag: bool, flood_proximity: float, claim_frequency: float) -> str:

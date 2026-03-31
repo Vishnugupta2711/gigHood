@@ -13,15 +13,18 @@ def calculate_premium(tier: str, avg_dci_4w: float, month: int) -> float:
     premium = 0.0
     
     # 1. Base Rates based on defined bounds inside IMPLEMENTATION.md
+    # Tier A: ₹20 (low DCI < 0.4) or ₹28 (high DCI >= 0.4)
+    # Tier B: ₹30 (low DCI < 0.6) or ₹42 (high DCI >= 0.6)
+    # Tier C: ₹42 (low DCI < 0.8) or ₹59 (high DCI >= 0.8)
     if tier == 'A':
-        premium = 30.0 if avg_dci_4w >= 0.4 else 20.0
+        premium = 28.0 if avg_dci_4w >= 0.4 else 20.0
     elif tier == 'B':
-        premium = 42.0 if avg_dci_4w >= 0.6 else 28.0
+        premium = 42.0 if avg_dci_4w >= 0.6 else 30.0
     elif tier == 'C':
         premium = 59.0 if avg_dci_4w >= 0.8 else 42.0
     else:
         # Fallback to B default
-        premium = 42.0 if avg_dci_4w >= 0.6 else 28.0
+        premium = 42.0 if avg_dci_4w >= 0.6 else 30.0
         
     # 2. Monsoon Multiplier check
     # Monsoon season is defined exactly as months 6 through 9 inclusive

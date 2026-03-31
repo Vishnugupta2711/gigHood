@@ -67,7 +67,7 @@ def seed_hex_zones(city: str, center_lat: float, center_lng: float, radius_km: f
         boundary_wkt = get_hex_boundary_wkt(hid)
         
         records.append({
-            "hex_id": hid,
+            "h3_index": hid,
             "city": city,
             "centroid": f"SRID=4326;POINT({c_lng} {c_lat})",
             "boundary": f"SRID=4326;{boundary_wkt}",

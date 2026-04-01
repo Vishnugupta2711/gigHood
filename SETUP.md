@@ -70,7 +70,7 @@ uvicorn backend.main:app --reload --host 0.0.0.0 --port 8001
 
 ## 4. Start the Worker Web App (Frontend)
 
-The worker-facing app is a **Next.js worker dashboard app** located at `frontend/worker-app/`.
+The canonical frontend app is a **Next.js web app** located at `frontend/worker-app/`.
 
 ```bash
 cd frontend/worker-app
@@ -86,13 +86,15 @@ npm run dev
 
 ### Current Worker App Routes
 
-- `/` → redirects to `/home`
-- `/login` → OTP/auth entry
-- `/register` → worker onboarding with mandatory Terms & Conditions consent
-- `/home` → dashboard, DCI status, and payout simulation controls
-- `/chat` → AI assistant chat
-- `/payouts` → payout history
-- `/profile` → profile, trust score, and coverage certificate
+- `/` → public landing website
+- `/worker-app` → redirects to `/worker-app/home`
+- `/worker-app/login` → OTP/auth entry
+- `/worker-app/register` → worker onboarding with mandatory Terms & Conditions consent
+- `/worker-app/home` → dashboard, DCI status, and payout simulation controls
+- `/worker-app/chat` → AI assistant chat
+- `/worker-app/payouts` → payout history
+- `/worker-app/profile` → profile, trust score, and coverage certificate
+- `/admin-dashboard` → admin surface placeholder
 
 ---
 

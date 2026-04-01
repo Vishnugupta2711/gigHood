@@ -157,20 +157,13 @@ gigHood/
 │   │   │   │   │   ├── home/                   # Main dashboard (DCI gauge, claims)
 │   │   │   │   │   ├── profile/                # Worker profile + settings
 │   │   │   │   │   └── ...
+│   │   │   │   ├── admin-dashboard/            # Admin route surface (same app)
 │   │   │   │   └── ...
 │   │   │   ├── components/                     # Reusable React components
 │   │   │   ├── hooks/                          # Custom React hooks (useQuery, useAuth, etc)
 │   │   │   ├── lib/                            # Utilities (API client, formatters, validators)
 │   │   │   └── store/                          # Zustand state management
 │   │   └── ...
-│   └── admin-dashboard/                        # Admin-facing Next.js app (React 19)
-│       ├── src/
-│       │   ├── app/                            # Admin pages (zones, policies, claims review)
-│       │   ├── components/
-│       │   ├── hooks/
-│       │   ├── lib/
-│       │   └── store/
-│       └── ...
 ├── supabase/
 │   └── migrations/                             # SQL migrations only (Postgres DDL)
 ├── dataset/                                    # Data assets (dummy worker lists, zone data, etc)
@@ -200,7 +193,7 @@ gigHood/
 ### Key Rules for File Structure
 
 1. **All backend logic goes in `backend/services/`.** Do not scatter business logic across `api/` and `scheduler/`.
-2. **All frontend components go in `frontend/worker-app/src/components/` or `frontend/admin-dashboard/src/components/`.** Do not scatter components.
+2. **All frontend components go in `frontend/worker-app/src/components/`.** Do not scatter components.
 3. **All schema changes go through `supabase/migrations/`.** Never mutate Postgres schema via raw SQL in Python code.
 4. **Keep new files within their module folders.** If adding a new signal fetcher, extend `signal_fetchers.py` in `services/` — don't create `backend/fetchers/`.
 5. **Workflow filenames must match convention:** `backend.yml`, `frontend.yml`. Keep them synchronized with actual job structure.

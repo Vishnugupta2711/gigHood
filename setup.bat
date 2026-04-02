@@ -30,6 +30,18 @@ if exist "backend\requirements.txt" (
     exit /b 1
 )
 
+:: 3b. Install frontend dependencies
+where npm >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [WARNING] npm is not installed. Frontend setup skipped.
+) else (
+    echo [INFO] Installing frontend dependencies...
+    pushd frontend
+    npm install
+    popd
+    echo [OK] Frontend dependencies installed.
+)
+
 :: 4. Setup .env file
 echo [INFO] Configuring environment variables...
 if not exist "backend\.env" (
@@ -48,6 +60,13 @@ if not exist "backend\firebase-credentials.json" (
     echo [OK] Firebase credentials found.
 )
 
+:: 6. Pre-train/load risk profiler model for reproducible first boot
+echo [INFO] Preparing risk profiler model...
+python -c "from backend.services.risk_profiler import load_model; load_model(); print('Risk profiler model is ready.')"
+if %errorlevel% neq 0 (
+    echo [WARNING] Risk model prewarm failed. It will retry on backend startup.
+)
+
 echo.
 echo =========================================
 echo   Setup Complete!
@@ -57,4 +76,5 @@ echo 1. Activate environment: venv\Scripts\activate
 echo 2. Add your keys to backend\.env
 echo 3. Run backend from repo root: uvicorn backend.main:app --reload --host 0.0.0.0 --port 8001
 echo 4. Run frontend in another terminal: cd frontend ^& npm install ^& npm run dev
+echo 5. Or run both with Docker: docker compose up --build
 pause

@@ -2,8 +2,8 @@
 Chat Service — AI Assistant context builder and LLM query interface.
 
 Priority chain:
-  1. Groq (qwen/qwen3-32b)       — fast, cheap, primary
-  2. OpenRouter (gemma-3-27b-it) — fallback if Groq fails
+    1. Groq (env-configurable model)       — fast, cheap, primary
+    2. OpenRouter (env-configurable model) — fallback if Groq fails
   3. Rule-based fallback          — if both APIs fail
 
 Context (policy, DCI, last claim) is injected as a system prompt
@@ -29,8 +29,10 @@ OPENROUTER_API_KEY  = settings.OPENROUTER_API_KEY or ""
 GROQ_URL            = "https://api.groq.com/openai/v1/chat/completions"
 OPENROUTER_URL      = "https://openrouter.ai/api/v1/chat/completions"
 
-GROQ_MODEL          = "qwen/qwen3-32b"           # confirmed via GET /models
-OPENROUTER_MODEL    = "google/gemma-3-27b-it"
+GROQ_MODEL          = settings.GROQ_MODEL_NAME
+OPENROUTER_MODEL    = settings.OPENROUTER_MODEL_NAME
+OPENROUTER_REFERER  = settings.OPENROUTER_HTTP_REFERER
+OPENROUTER_APP_NAME = settings.OPENROUTER_APP_TITLE
 
 # Startup diagnostics — visible in uvicorn logs
 print(f"[chat_service] GROQ_API_KEY loaded:       {bool(GROQ_API_KEY)}  (len={len(GROQ_API_KEY)})")
@@ -171,7 +173,7 @@ def build_context(worker_id: str) -> dict:
 # ── LLM callers ─────────────────────────────────────────────
 
 def _call_groq(system_prompt: str, user_message: str) -> str:
-    """Call Groq qwen/qwen3-32b. Raises on any failure."""
+    """Call Groq model configured via settings. Raises on any failure."""
     response = httpx.post(
         GROQ_URL,
         headers={
@@ -195,14 +197,14 @@ def _call_groq(system_prompt: str, user_message: str) -> str:
 
 
 def _call_openrouter(system_prompt: str, user_message: str) -> str:
-    """Call OpenRouter gemma-3-27b-it. Raises on any failure."""
+    """Call OpenRouter model configured via settings. Raises on any failure."""
     response = httpx.post(
         OPENROUTER_URL,
         headers={
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
             "Content-Type":  "application/json",
-            "HTTP-Referer":  "https://gighood.app",
-            "X-Title":       "gigHood Gig Copilot",
+            "HTTP-Referer":  OPENROUTER_REFERER,
+            "X-Title":       OPENROUTER_APP_NAME,
         },
         json={
             "model": OPENROUTER_MODEL,

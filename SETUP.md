@@ -60,6 +60,11 @@ Populate `backend/.env` with:
 7. `RAZORPAY_KEY_SECRET`
 8. `JWT_SECRET`
 9. `FIREBASE_CREDENTIALS_PATH`
+10. `GROQ_MODEL_NAME`
+11. `OPENROUTER_MODEL_NAME`
+12. `RISK_PROFILER_DATASET_PATH`
+13. `RISK_PROFILER_MODEL_JSON_PATH`
+14. `AUTO_TRAIN_RISK_MODEL_ON_STARTUP`
 
 ### 4) Run backend
 
@@ -117,6 +122,17 @@ cd /Users/apple/Documents/Projects/gigHood
 docker compose up --build -d
 ```
 
+This starts:
+
+1. Backend on `http://127.0.0.1:8001`
+2. Frontend on `http://localhost:3000`
+
+Model behavior in Docker:
+
+1. Training dataset is mounted into backend container
+2. Risk profiler auto-trains on first boot if model file is missing
+3. Chat model names are pulled from env vars (no code edits needed)
+
 ### 4) Stop containers
 
 ```bash
@@ -137,6 +153,7 @@ docker compose up --build -d
 3. Login flow works from `/worker-app/login`
 4. Home route works after auth at `/worker-app/home`
 5. Language selector appears on Home and defaults to English
+6. First backend boot logs include risk model preload success or auto-train fallback
 
 ## Common Pitfalls
 

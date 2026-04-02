@@ -90,6 +90,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Deployment local metadata
+.vercel/
+
 # Runtime/data artifacts
 *.db
 *.sqlite

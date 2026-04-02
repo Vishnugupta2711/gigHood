@@ -23,6 +23,16 @@ class Settings(BaseSettings):
     # AI Chat
     OPENROUTER_API_KEY: str = ""
     GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL_NAME: str = "qwen/qwen3-32b"
+    OPENROUTER_MODEL_NAME: str = "google/gemma-3-27b-it"
+    OPENROUTER_HTTP_REFERER: str = "https://gighood.app"
+    OPENROUTER_APP_TITLE: str = "gigHood Gig Copilot"
+
+    # ML (Risk Profiler)
+    RISK_PROFILER_MODEL_JSON_PATH: str = "backend/ml/risk_profiler.json"
+    RISK_PROFILER_MODEL_PKL_PATH: str = "backend/ml/risk_profiler.pkl"
+    RISK_PROFILER_DATASET_PATH: str = "dataset/synthetic_training_data.csv"
+    AUTO_TRAIN_RISK_MODEL_ON_STARTUP: bool = True
     
     # Security
     JWT_SECRET: str = "fallback_secret_key"

@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,9 +12,20 @@ import backend.api.notifications as notifications
 import backend.api.demo as demo
 import backend.scheduler.jobs as jobs
 import backend.api.location_pings as location_pings
+from backend.config import settings
+
+logger = logging.getLogger("startup")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if settings.AUTO_TRAIN_RISK_MODEL_ON_STARTUP:
+        try:
+            from backend.services.risk_profiler import load_model
+            load_model()
+            logger.info("Risk profiler model loaded at startup.")
+        except Exception as exc:
+            logger.exception(f"Risk profiler startup preload failed: {exc}")
+
     jobs.start_scheduler()
     yield
     jobs.shutdown_scheduler()

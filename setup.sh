@@ -27,6 +27,17 @@ else
     exit 1
 fi
 
+# 3b. Install frontend dependencies
+if command -v npm &> /dev/null; then
+    echo "📥 Installing frontend dependencies..."
+    cd frontend || exit 1
+    npm install
+    cd .. || exit 1
+    echo "✅ Frontend dependencies installed."
+else
+    echo "⚠️  npm is not installed. Frontend setup skipped."
+fi
+
 # 4. Setup .env file
 echo "⚙️ Configuring environment variables..."
 if [ ! -f "backend/.env" ]; then
@@ -45,6 +56,12 @@ else
     echo "✅ Firebase credentials found."
 fi
 
+# 6. Pre-train/load risk profiler model for reproducible first boot
+echo "🧠 Preparing risk profiler model..."
+python -c "from backend.services.risk_profiler import load_model; load_model(); print('Risk profiler model is ready.')" || {
+    echo "⚠️  Risk model prewarm failed. It will retry on backend startup."
+}
+
 echo ""
 echo "🎉 Setup Complete!"
 echo "To start the development server:"
@@ -52,3 +69,4 @@ echo "1. Activate the environment: source venv/bin/activate"
 echo "2. Add your keys to backend/.env"
 echo "3. Run backend from repo root: uvicorn backend.main:app --reload --host 0.0.0.0 --port 8001"
 echo "4. Run frontend in a second terminal: cd frontend && npm install && npm run dev"
+echo "5. Or run both with Docker: docker compose up --build"

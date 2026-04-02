@@ -5,11 +5,30 @@ services:
       dockerfile: Dockerfile
     container_name: gighood_backend
     ports:
-      - "8000:8000"
+      - "8001:8001"
     volumes:
       - ./backend:/app/backend
+      - ./dataset:/app/dataset
     env_file:
       - ./backend/.env
     restart: unless-stopped
     environment:
       - PYTHONPATH=/app
+    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8001"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gighood_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    restart: unless-stopped

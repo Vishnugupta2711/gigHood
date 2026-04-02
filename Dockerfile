@@ -18,13 +18,15 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
 COPY backend /app/backend
+# Copy training dataset so model bootstrap works inside containers
+COPY dataset /app/dataset
 
 # Create a non-root user and switch to it
 RUN adduser --disabled-password --gecos '' appuser
 USER appuser
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8001
 
 # Start FastAPI server
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8001"]

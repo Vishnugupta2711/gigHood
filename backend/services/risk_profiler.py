@@ -4,12 +4,22 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 import logging
+from backend.config import settings
 
 logger = logging.getLogger("api")
 
-ML_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ml")
-MODEL_PATH_JSON = os.path.join(ML_DIR, "risk_profiler.json")
-MODEL_PATH_PKL  = os.path.join(ML_DIR, "risk_profiler.pkl")  # legacy — migrated on first load
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+
+def _resolve_path(path_value: str) -> str:
+    if os.path.isabs(path_value):
+        return path_value
+    return os.path.abspath(os.path.join(PROJECT_ROOT, path_value))
+
+
+MODEL_PATH_JSON = _resolve_path(settings.RISK_PROFILER_MODEL_JSON_PATH)
+MODEL_PATH_PKL  = _resolve_path(settings.RISK_PROFILER_MODEL_PKL_PATH)  # legacy — migrated on first load
+DATASET_PATH    = _resolve_path(settings.RISK_PROFILER_DATASET_PATH)
 
 # Global in-memory cache for the loaded model to prevent I/O blocking
 _model = None
@@ -33,8 +43,7 @@ def train_and_save_model():
     Trains the XGBoost classifier on realistic data loaded from the dataset artifacts and saves weights.
     """
     logger.info("Loading realistic dataset CSV...")
-    csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "../dataset/synthetic_training_data.csv")
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(DATASET_PATH)
     
     # Calculate DCI Avg dynamically
     dci_cols = [f"dci_w{i}" for i in range(1, 13)]
@@ -65,7 +74,7 @@ def train_and_save_model():
     model.fit(X, y)
     
     # Serialize model using XGBoost native JSON (no pickle deprecation warnings)
-    os.makedirs(ML_DIR, exist_ok=True)
+    os.makedirs(os.path.dirname(MODEL_PATH_JSON), exist_ok=True)
     model.save_model(MODEL_PATH_JSON)
 
     logger.info(f"Successfully trained and serialized XGBoost model to {MODEL_PATH_JSON}")

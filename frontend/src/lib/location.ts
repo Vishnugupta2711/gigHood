@@ -127,7 +127,16 @@ export async function submitLocationPing(): Promise<void> {
   const ping = await createLocationPing();
   const api = (await import('./api')).default;
   
-  await api.post('/location-pings', ping);
+  try {
+    await api.post('/location-pings', ping);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.toLowerCase().includes('invalid api key')) {
+      console.warn('Location ping disabled: backend Supabase key is invalid. Update backend/.env keys.');
+      return;
+    }
+    throw error;
+  }
 }
 
 // Start continuous location tracking

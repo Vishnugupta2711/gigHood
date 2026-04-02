@@ -1,6 +1,10 @@
 @echo off
+setlocal ENABLEDELAYEDEXPANSION
+
+cd /d "%~dp0"
+
 echo =========================================
-echo   gigHood Backend Setup Script (Windows)
+echo   gigHood Smart Setup Script (Windows)
 echo =========================================
 echo.
 
@@ -13,10 +17,13 @@ if %errorlevel% neq 0 (
 echo [OK] Python found.
 
 :: 2. Setup Virtual Environment
-echo [INFO] Creating a new virtual environment (venv) locally because it is not tracked in Git...
+echo [INFO] Preparing virtual environment...
 if not exist "venv" (
     python -m venv venv
     echo [OK] Virtual environment created.
+)
+if exist "venv" (
+    echo [OK] Reusing existing virtual environment.
 )
 call venv\Scripts\activate.bat
 
@@ -24,9 +31,11 @@ call venv\Scripts\activate.bat
 echo [INFO] Installing requirements...
 python -m pip install --upgrade pip
 if exist "backend\requirements.txt" (
-    pip install -r backend\requirements.txt
+    python -m pip install -r backend\requirements.txt
+) else if exist "requirements.txt" (
+    python -m pip install -r requirements.txt
 ) else (
-    echo [ERROR] backend\requirements.txt not found. Are you in the project root?
+    echo [ERROR] No requirements file found (expected backend\requirements.txt or requirements.txt).
     exit /b 1
 )
 
@@ -37,7 +46,16 @@ if %errorlevel% neq 0 (
 ) else (
     echo [INFO] Installing frontend dependencies...
     pushd frontend
-    npm install
+    if exist package-lock.json (
+        npm ci
+    ) else (
+        npm install
+    )
+
+    if exist "node_modules\@types\node 2" (
+        rmdir /s /q "node_modules\@types\node 2"
+        echo [OK] Removed malformed type folder: node_modules\@types\node 2
+    )
     popd
     echo [OK] Frontend dependencies installed.
 )
@@ -50,6 +68,13 @@ if not exist "backend\.env" (
     echo [WARNING] IMPORTANT: Please open backend\.env and fill in your API keys!
 ) else (
     echo [OK] backend\.env already exists.
+)
+
+if not exist "frontend\.env.local" (
+    if exist "frontend\.env.example" (
+        copy frontend\.env.example frontend\.env.local >nul
+        echo [OK] Created frontend\.env.local from template.
+    )
 )
 
 :: 5. Check Firebase Credentials
@@ -75,6 +100,6 @@ echo To start the development server:
 echo 1. Activate environment: venv\Scripts\activate
 echo 2. Add your keys to backend\.env
 echo 3. Run backend from repo root: uvicorn backend.main:app --reload --host 0.0.0.0 --port 8001
-echo 4. Run frontend in another terminal: cd frontend ^& npm install ^& npm run dev
+echo 4. Run frontend in another terminal: cd frontend ^& npm run dev
 echo 5. Or run both with Docker: docker compose up --build
 pause

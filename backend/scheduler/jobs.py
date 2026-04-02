@@ -7,16 +7,29 @@ from backend.db.client import supabase
 from backend.config import settings
 
 logger = logging.getLogger("api")
+_hex_cursor = 0
 
 def fetch_all_hexes() -> list[str]:
     """Helper to get the current system hex IDs dynamically for the jobs."""
+    global _hex_cursor
     try:
         # Current schema uses h3_index as canonical zone id.
         response = supabase.table('hex_zones').select('h3_index').execute()
         rows = response.data or []
         hexes = [row.get('h3_index') for row in rows if row.get('h3_index')]
-        if settings.SCHEDULER_HEX_LIMIT > 0:
-            return hexes[:settings.SCHEDULER_HEX_LIMIT]
+
+        limit = settings.SCHEDULER_HEX_LIMIT
+        if limit > 0 and len(hexes) > limit:
+            if settings.SCHEDULER_ROTATE_HEX_BATCH:
+                start = _hex_cursor % len(hexes)
+                end = start + limit
+                batch = hexes[start:end]
+                if len(batch) < limit:
+                    batch.extend(hexes[: limit - len(batch)])
+                _hex_cursor = (start + limit) % len(hexes)
+                return batch
+            return hexes[:limit]
+
         return hexes
     except Exception as e:
         logger.error(f"Failed to fetch hex zones for scheduler: {e}")
@@ -40,7 +53,6 @@ def dci_job():
         return
         
     res = run_dci_cycle(hexes)
-    logger.info(f"DCI cycle complete for {len(res)} zones.")
     logger.info(f"DCI cycle complete for {len(res)} zones.")
 
 from backend.scheduler.weekly_jobs import run_monday_policy_cycle, run_sunday_forecast_cycle, run_sunday_xgboost_retrain

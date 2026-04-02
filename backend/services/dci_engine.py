@@ -1,7 +1,9 @@
 import math
+import time
 from datetime import datetime, timezone
 from backend.db.client import supabase
 from backend.db.supabase_retry import execute_with_retry
+from backend.config import settings
 
 def sigmoid(x: float) -> float:
     """Standard sigmoid function mapping any real number into the (0, 1) bounds."""
@@ -155,5 +157,8 @@ def run_dci_cycle(hex_ids: list[str]) -> dict:
         # Check trigger boundary limits securely injecting new DCI
         from backend.services.trigger_monitor import check_trigger_transitions
         check_trigger_transitions(hex_id, dci)
+
+        if settings.DCI_CYCLE_HEX_SLEEP_SECONDS > 0:
+            time.sleep(settings.DCI_CYCLE_HEX_SLEEP_SECONDS)
         
     return results

@@ -1,5 +1,9 @@
 # gigHood Frontend
 
+<div align="center">
+	<img src="./public/logo.jpeg" alt="gigHood logo" width="96" />
+</div>
+
 This directory is the single canonical Next.js frontend for gigHood.
 
 ## App Surfaces
@@ -12,7 +16,7 @@ This directory is the single canonical Next.js frontend for gigHood.
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 

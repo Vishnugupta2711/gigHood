@@ -39,8 +39,8 @@ export function showNotification(payload: NotificationPayload): void {
 
   new Notification(payload.title, {
     body: payload.body,
-    icon: iconMap[payload.type] || '/favicon.ico',
-    badge: '/favicon.ico',
+    icon: iconMap[payload.type] || '/logo.jpeg',
+    badge: '/logo.jpeg',
     tag: payload.type, // Replaces existing notification of same type
     data: payload.data,
   });

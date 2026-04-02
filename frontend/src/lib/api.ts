@@ -1,12 +1,27 @@
 import axios from 'axios';
 
-// Backend running at port 8001 — same machine on same WiFi
-// When serving from phone on same network, use machine IP instead of localhost
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+const DEFAULT_LOCAL_API_URL = 'http://localhost:8001';
+const DEFAULT_PROD_API_URL = 'https://gighood-backend-live.onrender.com';
+
+function resolveApiBaseUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_API_URL;
+  if (configured) return configured;
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return DEFAULT_LOCAL_API_URL;
+    }
+  }
+
+  return DEFAULT_PROD_API_URL;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -23,6 +38,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (r) => r,
   (error) => {
+    if (!error?.response) {
+      const networkErr = new Error(
+        `Network error: cannot reach API (${API_BASE_URL}). Check NEXT_PUBLIC_API_URL and backend availability.`
+      );
+      (networkErr as any).status = 0;
+      return Promise.reject(networkErr);
+    }
+
     const msg =
       error?.response?.data?.detail ||
       error?.message ||

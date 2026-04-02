@@ -1,6 +1,7 @@
 import json
 import random
 import requests
+import time
 from datetime import datetime, timezone
 from backend.config import settings
 from backend.db.client import supabase
@@ -14,11 +15,13 @@ def cache_signal(hex_id: str, signal_type: str, raw_data: dict, normalized_score
     """
     try:
         signal_type_db = signal_type.lower()
+        # Normalize to plain JSON-safe data to avoid accidental mutable mapping side effects.
+        stable_raw_data = json.loads(json.dumps(raw_data, default=str))
         execute_with_retry(
             lambda: supabase.table("signal_cache").upsert({
                 "hex_id": hex_id,
                 "signal_type": signal_type_db,
-                "raw_data": raw_data,
+                "raw_data": stable_raw_data,
                 "normalized_score": normalized_score,
                 "fetched_at": datetime.now(timezone.utc).isoformat(),
                 "source_available": True,
@@ -188,5 +191,9 @@ def run_signal_ingestion_cycle(hex_ids: list[str], city: str = "Bengaluru"):
             hex_result["errors"]["SOCIAL"] = str(e)
             
         results[hex_id] = hex_result
+
+        # Small pacing delay lowers burst pressure on DB and transport.
+        if settings.SIGNAL_INGESTION_HEX_SLEEP_SECONDS > 0:
+            time.sleep(settings.SIGNAL_INGESTION_HEX_SLEEP_SECONDS)
 
     return results

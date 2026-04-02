@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowRight,
   ShieldCheck,
@@ -58,7 +59,7 @@ export default function RootPage() {
       <header className="project-topbar project-navbar">
         <div className="project-navbar-inner">
         <div className="project-brand-wrap">
-          <span className="project-logo-chip">G</span>
+          <Image src="/logo.jpeg" alt="gigHood logo" width={28} height={28} className="project-logo-chip" />
           <p className="project-brand">gigHood</p>
         </div>
         <nav className="project-links project-nav-center">
@@ -180,7 +181,7 @@ export default function RootPage() {
               <span className="project-footer-cross corner-left" />
               <span className="project-footer-cross corner-right" />
               <div className="project-footer-brand">
-                <span className="project-logo-chip">G</span>
+                <Image src="/logo.jpeg" alt="gigHood logo" width={28} height={28} className="project-logo-chip" />
                 <a href="https://github.com/Vishnugupta2711/gigHood" target="_blank" rel="noopener noreferrer">gigHood</a>
               </div>
             </div>

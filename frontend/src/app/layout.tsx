@@ -5,6 +5,11 @@ import Providers from '@/components/Providers';
 export const metadata: Metadata = {
   title: 'gigHood | AI Income Protection for Gig Workers',
   description: 'Parametric income protection platform with project website, worker app, and admin surface.',
+  icons: {
+    icon: '/logo.jpeg',
+    shortcut: '/logo.jpeg',
+    apple: '/logo.jpeg',
+  },
 };
 
 export const viewport: Viewport = {

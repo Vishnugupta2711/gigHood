@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="./frontend/public/logo.jpeg" alt="gigHood logo" width="120" />
+</div>
+
 <table align="center">
 <tr>
 <td align="center">
@@ -13,6 +17,23 @@
 <br/>
 
 ![Status](https://img.shields.io/badge/Status-Active%20Development-22c55e?style=for-the-badge)
+
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Data%20Layer-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20DB-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-Frontend-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-UI-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220)
+![TypeScript](https://img.shields.io/badge/TypeScript-App%20Code-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Zustand](https://img.shields.io/badge/Zustand-State-7D4CDB?style=for-the-badge)
+![Docker](https://img.shields.io/badge/Docker-Local%20Infra-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-Frontend%20Hosting-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Render](https://img.shields.io/badge/Render-Backend%20Hosting-46E3B7?style=for-the-badge&logo=render&logoColor=0B1220)
+![APScheduler](https://img.shields.io/badge/APScheduler-Background%20Jobs-0F172A?style=for-the-badge)
+![Razorpay](https://img.shields.io/badge/Razorpay-Payouts-0C2451?style=for-the-badge&logo=razorpay&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Notifications-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+![OpenRouter](https://img.shields.io/badge/OpenRouter-LLM%20Gateway-111827?style=for-the-badge)
+![Groq](https://img.shields.io/badge/Groq-Inference-F55036?style=for-the-badge)
 
 <br/>
 
@@ -127,6 +148,18 @@
 </details>
 
 ---
+
+### 📄 Documentation Map
+
+| Markdown File | Purpose |
+|:--|:--|
+| `README.md` | Product overview, architecture story, and demo narrative. |
+| `SETUP.md` | Local and Docker setup instructions for contributors. |
+| `API.md` | Backend API contracts, payloads, and integration notes. |
+| `DATABASE.md` | Database schema, persistence model, and data flow references. |
+| `AGENTS.md` | Repository-level coding/agent workflow conventions. |
+| `frontend/README.md` | Frontend-specific run/build guidance and folder map. |
+| `frontend/AGENTS.md` | Frontend agent instructions and UI implementation constraints. |
 
 ### 📌 TL;DR
 

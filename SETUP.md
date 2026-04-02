@@ -44,8 +44,11 @@ setup.bat
 What this does:
 
 1. Creates `venv`
-2. Installs backend dependencies
-3. Prepares env template
+2. Reuses `venv` if already present
+3. Installs backend dependencies
+4. Installs frontend dependencies (`npm ci` when lockfile is present)
+5. Prepares env templates (`backend/.env`, `frontend/.env.local`)
+6. Repairs malformed local type folders (for example `node_modules/@types/node 2`)
 
 ### 3) Configure backend env
 
@@ -88,9 +91,13 @@ Open a second terminal:
 
 ```bash
 cd /Users/apple/Documents/Projects/gigHood/frontend
-npm install
+npm ci
 npm run dev
 ```
+
+If backend keys are not configured yet and you want a quieter local login flow, keep:
+
+1. `frontend/.env.local`: `NEXT_PUBLIC_ENABLE_LOCATION_TRACKING=false`
 
 Worker app routes:
 
@@ -168,3 +175,7 @@ docker compose up --build -d
 
 4. Expecting non-English default
 - Default is English; users can change language on Home
+
+5. TypeScript error: `Cannot find type definition file for 'node 2'`
+- Cause: interrupted npm install can leave an invalid folder `frontend/node_modules/@types/node 2`
+- Fix: rerun `./setup.sh` (or `setup.bat`) to auto-repair, or remove it manually and run `npm ci` in `frontend/`

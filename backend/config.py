@@ -41,11 +41,16 @@ class Settings(BaseSettings):
     SCHEDULER_MAX_INSTANCES: int = 1
     SCHEDULER_COALESCE: bool = True
     SCHEDULER_MISFIRE_GRACE_SECONDS: int = 300
-    SCHEDULER_HEX_LIMIT: int = 500
+    SCHEDULER_HEX_LIMIT: int = 150
+    SCHEDULER_ROTATE_HEX_BATCH: bool = True
+
+    # Smooth out write pressure against Supabase connection pools
+    SIGNAL_INGESTION_HEX_SLEEP_SECONDS: float = 0.02
+    DCI_CYCLE_HEX_SLEEP_SECONDS: float = 0.01
 
     # Supabase network resilience
-    SUPABASE_RETRY_ATTEMPTS: int = 3
-    SUPABASE_RETRY_BACKOFF_SECONDS: float = 0.35
+    SUPABASE_RETRY_ATTEMPTS: int = 5
+    SUPABASE_RETRY_BACKOFF_SECONDS: float = 0.5
 
     # CORS
     BACKEND_CORS_ORIGINS: str = "http://localhost:3000,https://gighood.vercel.app"

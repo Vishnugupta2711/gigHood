@@ -55,8 +55,21 @@ class _SupabaseProxy:
     """Create a fresh client per top-level call to avoid stale transport state."""
 
     def __getattr__(self, name: str):
-        client = get_supabase_client()
-        return getattr(client, name)
+        # unittest.mock and other tooling probe special attrs with hasattr().
+        # Avoid creating network clients for those introspection checks.
+        if name.startswith('__'):
+            raise AttributeError(name)
+
+        try:
+            client = get_supabase_client()
+            return getattr(client, name)
+        except RuntimeError as err:
+            # Return a lazy placeholder so patching/mocking can still replace this
+            # attribute in tests that intentionally run without Supabase env vars.
+            def _missing_supabase_attr(*args, **kwargs):
+                raise RuntimeError(str(err))
+
+            return _missing_supabase_attr
 
 
 supabase = _SupabaseProxy()

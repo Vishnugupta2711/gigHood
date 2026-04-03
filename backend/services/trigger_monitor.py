@@ -77,10 +77,17 @@ def get_active_policyholders_in_hex(hex_id: str) -> list[dict]:
     Returns list of dicts: [{'worker_id': id, 'policy_id': id}]
     """
     try:
-        workers_res = execute_with_retry(
-            lambda: supabase.table('workers').select('id, device_token').eq('home_hex', hex_id).eq('status', 'active').execute(),
-            op_name=f"trigger_monitor:fetch_workers:{hex_id}",
-        )
+        workers_res = None
+        try:
+            workers_res = execute_with_retry(
+                lambda: supabase.table('workers').select('id, device_token').eq('hex_id', hex_id).eq('status', 'active').execute(),
+                op_name=f"trigger_monitor:fetch_workers_hex_id:{hex_id}",
+            )
+        except Exception:
+            workers_res = execute_with_retry(
+                lambda: supabase.table('workers').select('id, device_token').eq('home_hex', hex_id).eq('status', 'active').execute(),
+                op_name=f"trigger_monitor:fetch_workers_home_hex:{hex_id}",
+            )
         worker_map = {w['id']: w.get('device_token') for w in workers_res.data}
         worker_ids = list(worker_map.keys())
         
@@ -103,6 +110,7 @@ def _open_disruption_event(hex_id: str, dci_peak: float):
         event_res = execute_with_retry(
             lambda: supabase.table('disruption_events').insert({
                 'hex_id': hex_id,
+                'h3_index': hex_id,
                 'dci_peak': dci_peak,
                 'started_at': now_iso,
                 'trigger_signals': {"note": "Triggered by engine loop crossing 0.85 threshold"}

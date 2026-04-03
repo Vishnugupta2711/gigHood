@@ -13,10 +13,21 @@ def fetch_all_hexes() -> list[str]:
     """Helper to get the current system hex IDs dynamically for the jobs."""
     global _hex_cursor
     try:
-        # Current schema uses h3_index as canonical zone id.
-        response = supabase.table('hex_zones').select('h3_index').execute()
-        rows = response.data or []
-        hexes = [row.get('h3_index') for row in rows if row.get('h3_index')]
+        rows = []
+        # Handle both schema variants (`h3_index` and `hex_id`) without assuming either exists.
+        for cols in ('h3_index', 'hex_id', 'h3_index,hex_id'):
+            try:
+                response = supabase.table('hex_zones').select(cols).execute()
+                rows = response.data or []
+                if rows:
+                    break
+            except Exception:
+                continue
+
+        hexes = [row.get('h3_index') or row.get('hex_id') for row in rows if (row.get('h3_index') or row.get('hex_id'))]
+
+        # Preserve order while removing duplicates.
+        hexes = list(dict.fromkeys(hexes))
 
         limit = settings.SCHEDULER_HEX_LIMIT
         if limit > 0 and len(hexes) > limit:

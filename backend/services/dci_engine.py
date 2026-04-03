@@ -78,12 +78,23 @@ def run_dci_cycle(hex_ids: list[str]) -> dict:
                 execute_with_retry(
                     lambda: supabase.table('hex_zones').update({
                         "current_dci": None,
-                        "dci_status": "normal"
+                        "dci_status": "normal",
+                        "last_computed_at": datetime.now(timezone.utc).isoformat(),
                     }).eq('h3_index', hex_id).execute(),
                     op_name=f"dci_cycle:degraded_update_hex:{hex_id}",
                 )
             except Exception:
-                pass
+                try:
+                    execute_with_retry(
+                        lambda: supabase.table('hex_zones').update({
+                            "current_dci": None,
+                            "dci_status": "normal",
+                            "last_computed_at": datetime.now(timezone.utc).isoformat(),
+                        }).eq('hex_id', hex_id).execute(),
+                        op_name=f"dci_cycle:degraded_update_hex_compat:{hex_id}",
+                    )
+                except Exception:
+                    pass
             continue
             
         # Defaults for missing signals safely mapped to 0 if required (since >=3 exist, max 2 are 0)
@@ -142,12 +153,23 @@ def run_dci_cycle(hex_ids: list[str]) -> dict:
             execute_with_retry(
                 lambda: supabase.table('hex_zones').update({
                     "current_dci": dci,
-                    "dci_status": status
+                    "dci_status": status,
+                    "last_computed_at": now_iso,
                 }).eq('h3_index', hex_id).execute(),
                 op_name=f"dci_cycle:update_hex:{hex_id}",
             )
         except Exception as e:
-            print(f"Error updating hex_zones for {hex_id}: {e}")
+            try:
+                execute_with_retry(
+                    lambda: supabase.table('hex_zones').update({
+                        "current_dci": dci,
+                        "dci_status": status,
+                        "last_computed_at": now_iso,
+                    }).eq('hex_id', hex_id).execute(),
+                    op_name=f"dci_cycle:update_hex_compat:{hex_id}",
+                )
+            except Exception:
+                print(f"Error updating hex_zones for {hex_id}: {e}")
             
         results[hex_id] = {
             "dci": dci,

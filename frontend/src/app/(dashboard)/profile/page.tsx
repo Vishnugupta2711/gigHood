@@ -376,7 +376,7 @@ export default function ProfilePage() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {worker?.is_platform_verified ? '✅ Verified Partner' : '⚠️ Not Verified'}
+                {worker?.is_platform_verified ? 'Verified Partner' : 'Not Verified'}
               </span>
             </div>
           </div>
@@ -386,7 +386,7 @@ export default function ProfilePage() {
         <section className="stagger-3 glass-panel" style={{ padding: '18px' }}>
           <div style={{ marginBottom: '14px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'white', marginBottom: '8px' }}>
-              🛡️ gigHood Protect: Active Coverage
+              gigHood Protect: Active Coverage
             </h3>
             <div style={{
               display: 'inline-flex',
@@ -427,7 +427,7 @@ export default function ProfilePage() {
           </div>
 
           <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '12px' }}>
-            <p style={{ fontSize: '12px', fontWeight: 700, color: '#67E8F9', marginBottom: '5px' }}>⚡ How it Works</p>
+            <p style={{ fontSize: '12px', fontWeight: 700, color: '#67E8F9', marginBottom: '5px' }}>How it Works</p>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
               Payouts are automatic. No claims required. If the Dynamic Coverage Index (DCI) in your zone exceeds 0.85 due to severe weather or traffic, your coverage is triggered.
             </p>
@@ -436,6 +436,17 @@ export default function ProfilePage() {
               <p style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '8px', fontSize: '12px', color: '#FBBF24' }}>
                 <AlertCircle size={12} /> 7-day waiting period active
               </p>
+            )}
+            {policy?.tier_explanation && (
+              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed rgba(148,163,184,0.3)' }}>
+                <p style={{ fontSize: '11px', color: '#93C5FD', fontWeight: 700, marginBottom: '6px' }}>Tier Decision Factors</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  4-week DCI avg: {policy.tier_explanation.avg_dci_4w} | Claim frequency (28d): {policy.tier_explanation.claim_frequency_28d} | Seasonal: {policy.tier_explanation.seasonal_flag ? 'Monsoon' : 'Regular'}
+                </p>
+                <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.5 }}>
+                  {policy.tier_explanation.reason}
+                </p>
+              </div>
             )}
           </div>
         </section>

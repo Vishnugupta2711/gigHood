@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { register, parseUserAgent, RegisterPayload } from '@/lib/auth';
 import { seedDemo } from '@/lib/worker';
 import { useAuthStore } from '@/store/authStore';
@@ -407,9 +408,7 @@ export default function RegisterFormContent() {
       <main className="page-content" style={{ padding: '32px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', marginBottom: '40px' }} className="stagger-1">
         <div style={{ width: '80px', height: '80px', background: 'var(--bg-card)', borderRadius: '24px', backdropFilter: 'var(--glass-blur)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', boxShadow: 'var(--shadow-glow)', border: '1px solid var(--border-light)' }}>
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary-glow)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-          </svg>
+          <Image src="/logo.jpeg" alt="gigHood logo" width={44} height={44} style={{ borderRadius: '12px' }} priority />
         </div>
         <h1 style={{ fontSize: '32px', fontWeight: '700', letterSpacing: '-0.5px' }}>Complete Your <span className="text-gradient">Profile</span></h1>
         <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '15px' }}>Get protected in seconds</p>
@@ -489,7 +488,7 @@ export default function RegisterFormContent() {
                 }}
               >
                 {isVerifyingPlatformId && <span className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} />}
-                {isVerifyingPlatformId ? 'Contacting Partner API...' : isPlatformVerified ? '✅ Verified' : 'Verify ID'}
+                {isVerifyingPlatformId ? 'Contacting Partner API...' : isPlatformVerified ? 'Verified' : 'Verify ID'}
               </button>
             </div>
           </div>

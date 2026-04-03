@@ -1,4 +1,8 @@
-from pydantic_settings import BaseSettings
+try:
+    from pydantic_settings import BaseSettings
+except Exception:
+    # Fallback for corrupted/missing pydantic-settings installations.
+    from pydantic.v1 import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { sendOtp, verifyOtp } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 
@@ -106,15 +107,7 @@ export default function LoginPage() {
       
       <div style={{ textAlign: 'center', marginBottom: '40px' }} className="stagger-1">
         <div style={{ width: '80px', height: '80px', background: 'var(--bg-card)', borderRadius: '24px', backdropFilter: 'var(--glass-blur)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', boxShadow: 'var(--shadow-glow)', border: '1px solid var(--border-light)' }}>
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary-glow)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" stroke="url(#blueGrad)" />
-            <defs>
-              <linearGradient id="blueGrad" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#3B82F6" />
-                <stop offset="1" stopColor="#8B5CF6" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <Image src="/logo.jpeg" alt="gigHood logo" width={44} height={44} style={{ borderRadius: '12px' }} priority />
         </div>
         <h1 style={{ fontSize: '32px', fontWeight: '700', letterSpacing: '-0.5px' }}>
           gigHood <span className="text-gradient">Protect</span>

@@ -20,6 +20,7 @@ interface ClaimReceipt {
   fraud_score: number;
   resolution_path: string;
   payout_amount: number;
+  status: string;
   razorpay_payment_id: string;
   payout_transaction_id?: string;
   payout_channel?: string;
@@ -171,7 +172,11 @@ export default function DashboardPage() {
       const channel = ((receipt as ClaimReceipt).payout_channel || 'UPI').toUpperCase();
       const phone = dashboard?.worker?.phone || '';
       const normalizedPhone = phone.startsWith('+91') ? phone : `+91 ${phone}`;
-      setSmsToast(`🔔 SMS Sent to ${normalizedPhone}: ₹${(receipt as ClaimReceipt).payout_amount.toLocaleString('en-IN')} credited to your account via ${channel}.`);
+      if ((receipt as ClaimReceipt).status === 'paid') {
+        setSmsToast(`SMS sent to ${normalizedPhone}: ₹${(receipt as ClaimReceipt).payout_amount.toLocaleString('en-IN')} credited via ${channel}.`);
+      } else {
+        setSmsToast(`Claim updated for ${normalizedPhone}: status is ${(receipt as ClaimReceipt).status.toUpperCase()}.`);
+      }
       setTimeout(() => setSmsToast(null), 5000);
     } catch (err: unknown) {
       console.error('Claim processing error:', err);
@@ -255,7 +260,7 @@ export default function DashboardPage() {
   const statusColor = isNormal ? 'var(--dci-normal)' : (isElevated ? 'var(--dci-elevated)' : 'var(--dci-disrupted)');
   const statusBg = isNormal ? 'var(--dci-normal-bg)' : (isElevated ? 'var(--dci-elevated-bg)' : 'var(--dci-disrupted-bg)');
   const statusLabel = isNormal ? 'NORMAL' : (isElevated ? 'ELEVATED' : 'DISRUPTED');
-  const dciText = isNormal ? 'Zone operates optimally.' : (isElevated ? '⚠️ Your zone is at risk. Stay alert.' : '⚡ Disruption detected. Claim processing ready.');
+  const dciText = isNormal ? 'Zone operates optimally.' : (isElevated ? 'Your zone is at risk. Stay alert.' : 'Disruption detected. Claim processing available.');
 
   const lastUpdated = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   const radius = 60;
@@ -292,23 +297,32 @@ export default function DashboardPage() {
 
   // ===== RECEIPT VIEW (Phase 3 Success) =====
   if (claimReceipt) {
+    const payoutSuccess = claimReceipt.status === 'paid';
+    const receiptTitle = payoutSuccess ? 'Payout Successful' : claimReceipt.status === 'denied' ? 'Claim Denied' : 'Claim In Review';
+    const receiptSubtitle = payoutSuccess
+      ? 'Your claim has been processed and approved'
+      : claimReceipt.status === 'denied'
+        ? 'Your claim could not be approved for this event'
+        : 'Your claim is being validated before payout';
+    const receiptAccent = payoutSuccess ? '#10B981' : claimReceipt.status === 'denied' ? '#EF4444' : '#F59E0B';
+
     return (
       <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '28px', minHeight: '100vh', justifyContent: 'center', alignItems: 'center', paddingBottom: '32px' }}>
         
         {/* Receipt Card */}
         <div style={{ width: '100%', maxWidth: '400px' }} className="stagger-1">
-          <div className="glass-panel" style={{ padding: '32px 24px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+          <div className="glass-panel" style={{ padding: '32px 24px', textAlign: 'center', background: payoutSuccess ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)' : claimReceipt.status === 'denied' ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(127, 29, 29, 0.06) 100%)' : 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(120, 53, 15, 0.06) 100%)', border: `1px solid ${receiptAccent}55` }}>
             
             {/* Success Icon */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
               <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'pulse 2s infinite' }}>
-                <CheckCircle size={48} color="#10B981" />
+                <CheckCircle size={48} color={receiptAccent} />
               </div>
             </div>
 
             {/* Title */}
-            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#10B981', marginBottom: '8px' }}>Payout Successful</h1>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '32px' }}>Your claim has been processed and approved</p>
+            <h1 style={{ fontSize: '28px', fontWeight: 700, color: receiptAccent, marginBottom: '8px' }}>{receiptTitle}</h1>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '32px' }}>{receiptSubtitle}</p>
 
             {/* Claim Details Grid */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
@@ -329,7 +343,7 @@ export default function DashboardPage() {
               <div style={{ padding: '16px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '12px' }}>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fraud Score</p>
                 <p style={{ fontSize: '16px', fontWeight: 700, color: claimReceipt.fraud_score === 0 ? '#10B981' : '#F59E0B' }}>
-                  {claimReceipt.fraud_score.toFixed(2)} {claimReceipt.fraud_score === 0 ? '✓ Clean' : '⚠ Review'}
+                  {claimReceipt.fraud_score.toFixed(0)}/100 {claimReceipt.fraud_score === 0 ? 'Clean' : 'Review'}
                 </p>
               </div>
 
@@ -351,7 +365,7 @@ export default function DashboardPage() {
               <div style={{ padding: '16px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '12px' }}>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Proof of Presence</p>
                 <p style={{ fontSize: '16px', fontWeight: 700, color: claimReceipt.pop_validated ? '#10B981' : '#EF4444' }}>
-                  {claimReceipt.pop_validated ? '✓ Validated' : '✗ Failed'}
+                  {claimReceipt.pop_validated ? 'Validated' : 'Failed'}
                 </p>
               </div>
 

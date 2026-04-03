@@ -227,7 +227,7 @@ export default function PayoutsPage() {
                         border: '1px solid rgba(245, 158, 11, 0.25)',
                       }}>
                         <AlertTriangle size={11} />
-                        Risk {(claim.fraud_score * 100).toFixed(0)}%
+                        Fraud Score {Math.min(100, Math.max(0, claim.fraud_score)).toFixed(0)}/100
                       </span>
                     )}
                   </div>

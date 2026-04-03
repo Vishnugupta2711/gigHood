@@ -22,6 +22,15 @@ export interface PolicyData {
   week_start?: string; week_end?: string;
   start_date?: string; end_date?: string; created_at: string;
   expiry?: string;
+  tier_explanation?: {
+    tier: string;
+    avg_dci_4w: number;
+    claim_frequency_28d: number;
+    seasonal_flag: boolean;
+    city: string;
+    history_points_used: number;
+    reason: string;
+  };
 }
 
 export interface DciData {
@@ -70,7 +79,23 @@ export async function getMe(): Promise<WorkerProfile> {
   return (await api.get('/workers/me')).data;
 }
 export async function getMyPolicy(): Promise<PolicyData> {
-  return (await api.get('/workers/me/policy')).data;
+  try {
+    return (await api.get('/workers/me/policy')).data;
+  } catch (error: unknown) {
+    const status =
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error &&
+      typeof (error as { response?: { status?: number } }).response?.status === 'number'
+        ? (error as { response: { status: number } }).response.status
+        : null;
+
+    if (status === 404) {
+      await api.post('/policies/create');
+      return (await api.get('/workers/me/policy')).data;
+    }
+    throw error;
+  }
 }
 export async function getDci(): Promise<DciData> {
   return (await api.get('/workers/me/hex/dci')).data;

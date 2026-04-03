@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Optional
 import logging
 from backend.db.client import supabase
 from backend.services.pop_validator import validate_pop
@@ -7,7 +8,7 @@ from backend.services.payment_service import initiate_upi_payout
 
 logger = logging.getLogger("api")
 
-def route_claim(fraud_score: int, gate2_result: str, flags: list[str] | None = None) -> str:
+def route_claim(fraud_score: int, gate2_result: str, flags: Optional[list[str]] = None) -> str:
     """
     Standard 4-path routing constraint map determining financial limits.
     Rules defined in the documented claim-routing contract and current tests.

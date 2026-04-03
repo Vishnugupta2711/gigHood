@@ -1,0 +1,66 @@
+name: Render CD
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      backend_deploy_hook_url:
+        description: "Render backend deploy hook URL"
+        required: false
+        default: ""
+      backend_healthcheck_url:
+        description: "Backend healthcheck URL"
+        required: false
+        default: ""
+
+jobs:
+  render-backend-deploy:
+    name: Render Backend Deploy
+    runs-on: ubuntu-latest
+    env:
+      RENDER_BACKEND_DEPLOY_HOOK_URL: ${{ github.event.inputs.backend_deploy_hook_url || '' }}
+      RENDER_BACKEND_HEALTHCHECK_URL: ${{ github.event.inputs.backend_healthcheck_url || '' }}
+    steps:
+      - name: Trigger backend deploy
+        run: |
+          if [ -z "$RENDER_BACKEND_DEPLOY_HOOK_URL" ]; then
+            echo "Backend deploy hook not configured. Skipping."
+            exit 0
+          fi
+          curl -fsSL -X POST "$RENDER_BACKEND_DEPLOY_HOOK_URL"
+
+      - name: Wait for backend rollout
+        run: sleep 30
+
+      - name: Backend health check
+        run: |
+          if [ -n "$RENDER_BACKEND_HEALTHCHECK_URL" ]; then
+            curl -fsSL "$RENDER_BACKEND_HEALTHCHECK_URL"
+          else
+            echo "Backend healthcheck URL not configured. Skipping."
+          fi
+
+  render-config-summary:
+    name: Render Config Summary
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    env:
+      RENDER_BACKEND_DEPLOY_HOOK_URL: ${{ github.event.inputs.backend_deploy_hook_url || '' }}
+      RENDER_BACKEND_HEALTHCHECK_URL: ${{ github.event.inputs.backend_healthcheck_url || '' }}
+    steps:
+      - name: Print setup hints
+        run: |
+          echo "Render workflow finished." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Configured inputs:" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$RENDER_BACKEND_DEPLOY_HOOK_URL" ]; then
+            echo "- Backend deploy hook: provided" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Backend deploy hook: not provided" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -n "$RENDER_BACKEND_HEALTHCHECK_URL" ]; then
+            echo "- Backend healthcheck: provided" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Backend healthcheck: not provided" >> "$GITHUB_STEP_SUMMARY"
+          fi

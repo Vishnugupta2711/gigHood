@@ -226,7 +226,17 @@ def _ensure_active_policy(worker_id: str) -> dict[str, Any]:
     return create_policy(worker_id)
 
 
-def _ensure_active_event(hex_id: str) -> dict[str, Any]:
+def _ensure_active_event(hex_id: str, force_new: bool = False) -> dict[str, Any]:
+    if force_new:
+        try:
+            supabase.table("disruption_events").update(
+                {
+                    "ended_at": datetime.now(timezone.utc).isoformat(),
+                }
+            ).eq("hex_id", hex_id).is_("ended_at", "null").execute()
+        except Exception:
+            pass
+
     active = (
         supabase.table("disruption_events")
         .select("id,started_at,dci_peak")
@@ -305,7 +315,7 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
     worker_id, hex_id = _require_worker_fields(worker)
     _ensure_hex_zone_exists(hex_id, worker.get("city"))
     policy = _ensure_active_policy(worker_id)
-    event = _ensure_active_event(hex_id)
+    event = _ensure_active_event(hex_id, force_new=True)
     claim = _ensure_pending_claim(worker_id, policy.get("id"), event.get("id"))
 
     claim_id = claim.get("id")
@@ -335,24 +345,35 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
     maturation_cap = hist_avg * 2.5
     payout_amount = round(min(capped, maturation_cap), 2)
 
-    # Step 9: Razorpay sandbox payout.
-    try:
-        rzp = initiate_upi_payout(
-            upi_id=worker.get("upi_id") or "generic@ybl",
-            amount_rupees=payout_amount,
-            reference_id=claim_id,
-        )
-        razorpay_payment_id = rzp.get("id")
-        payout_transaction_id = rzp.get("transaction_id") or razorpay_payment_id
-        payout_channel = rzp.get("channel", "UPI")
-    except Exception:
-        # Keep demo flow alive even if payout client fails.
-        razorpay_payment_id = f"pout_demo_{claim_id}"
-        payout_transaction_id = razorpay_payment_id
-        payout_channel = "UPI"
+    # Step 9: payout is only executed for valid fast-track claims.
+    pop_validated = bool(pop_res.get("present", False))
+    final_status = "processing"
+    razorpay_payment_id = None
+    payout_transaction_id = None
+    payout_channel = None
 
-    # Step 10: persist final claim state exactly like demo runner finalization.
-    final_status = "paid"
+    if not pop_validated or path == "denied":
+        final_status = "denied"
+        payout_amount = 0.0
+    elif path == "fast_track":
+        try:
+            rzp = initiate_upi_payout(
+                upi_id=worker.get("upi_id") or "generic@ybl",
+                amount_rupees=payout_amount,
+                reference_id=claim_id,
+            )
+            razorpay_payment_id = rzp.get("id")
+            payout_transaction_id = rzp.get("transaction_id") or razorpay_payment_id
+            payout_channel = rzp.get("channel", "UPI")
+            final_status = "paid"
+        except Exception:
+            # Keep demo flow alive even if payout client fails.
+            razorpay_payment_id = f"pout_demo_{claim_id}"
+            payout_transaction_id = razorpay_payment_id
+            payout_channel = "UPI"
+            final_status = "paid"
+
+    # Step 10: persist final claim state with realistic status transitions.
     try:
         supabase.table("claims").update(
             {
@@ -360,7 +381,7 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
                 "razorpay_payment_id": razorpay_payment_id,
                 "payout_transaction_id": payout_transaction_id,
                 "payout_channel": payout_channel,
-                "pop_validated": bool(pop_res.get("present", False)),
+                "pop_validated": pop_validated,
                 "fraud_score": fraud_score,
                 "resolution_path": path,
                 "status": final_status,
@@ -372,7 +393,7 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
             {
                 "payout_amount": payout_amount,
                 "razorpay_payment_id": razorpay_payment_id,
-                "pop_validated": bool(pop_res.get("present", False)),
+                "pop_validated": pop_validated,
                 "fraud_score": fraud_score,
                 "resolution_path": path,
                 "status": final_status,
@@ -392,7 +413,7 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
         "razorpay_payment_id": razorpay_payment_id,
         "payout_transaction_id": payout_transaction_id,
         "payout_channel": payout_channel,
-        "pop_validated": bool(pop_res.get("present", False)),
+        "pop_validated": pop_validated,
         "status": final_status,
     }
 

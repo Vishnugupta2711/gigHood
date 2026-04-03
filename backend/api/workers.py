@@ -1,6 +1,6 @@
 import hashlib
 import traceback
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
@@ -9,6 +9,9 @@ from backend.db.client import supabase
 from backend.services.auth_service import create_jwt, get_current_worker
 from backend.services.spatial import lat_lng_to_hex
 from backend.services.dci_engine import get_dci_status
+from backend.services.signal_fetchers import run_signal_ingestion_cycle
+from backend.services.dci_engine import run_dci_cycle
+from backend.services.policy_manager import create_policy, explain_policy_decision
 
 router = APIRouter()
 
@@ -84,6 +87,41 @@ def hash_dark_store_to_coords(dark_store_name: str) -> tuple[float, float]:
     lng = 77.5 + (lng_val * (77.8 - 77.5))
     return lat, lng
 
+
+def ensure_hex_zone_exists(hex_id: str, city: Optional[str] = None) -> None:
+    payload_base = {
+        "city": city or "Unknown",
+        "current_dci": 0.0,
+        "dci_status": "normal",
+        "active_worker_count": 0,
+    }
+
+    try:
+        supabase.table('hex_zones').upsert({
+            **payload_base,
+            "h3_index": hex_id,
+        }, on_conflict='h3_index').execute()
+        return
+    except Exception:
+        pass
+
+    try:
+        supabase.table('hex_zones').upsert({
+            **payload_base,
+            "hex_id": hex_id,
+        }, on_conflict='hex_id').execute()
+    except Exception:
+        pass
+
+
+def _parse_iso_timestamp(ts: Optional[str]) -> Optional[datetime]:
+    if not ts:
+        return None
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
 # --- Endpoints ---
 @router.post("/auth/otp/send")
 def send_otp(req: OTPRequest):
@@ -149,6 +187,7 @@ def register_worker(req: WorkerRegisterRequest):
             
         worker_row = insert_res.data[0]
         worker_id = worker_row['id']
+        ensure_hex_zone_exists(hex_id, req.city)
         token = create_jwt(worker_id)
         return {
             "access_token": token,
@@ -196,9 +235,22 @@ def get_my_policy(worker: dict = Depends(get_current_worker)):
     worker_id = worker.get("id")
     try:
         res = supabase.table('policies').select('*').eq('worker_id', worker_id).eq('status', 'active').execute()
+        active_policy = None
         if not res.data:
-            raise HTTPException(status_code=404, detail="No active policy found. Please onboard your risk profile.")
-        return res.data[0]
+            # Auto-issue first policy for newly registered users so the app never hard-fails on cold start.
+            created = create_policy(worker_id)
+            if created:
+                active_policy = created
+            else:
+                raise HTTPException(status_code=404, detail="No active policy found. Please onboard your risk profile.")
+        else:
+            active_policy = res.data[0]
+
+        policy_explanation = explain_policy_decision(worker_id, tier=active_policy.get('tier'))
+        return {
+            **active_policy,
+            "tier_explanation": policy_explanation,
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -226,6 +278,7 @@ def convert_location_to_hex(req: CoordinatesToHexRequest, worker: dict = Depends
         hex_id = lat_lng_to_hex(req.latitude, req.longitude)
         if worker_id and hex_id:
             supabase.table('workers').update({'hex_id': hex_id}).eq('id', worker_id).execute()
+            ensure_hex_zone_exists(hex_id, worker.get('city'))
         return {"hex_id": hex_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -245,10 +298,14 @@ def get_my_hex_dci(worker: dict = Depends(get_current_worker)):
 
         # Try common schema variants without assuming all columns exist.
         query_attempts = [
+            ('h3_index,current_dci,dci_status,city,last_computed_at', 'h3_index'),
+            ('hex_id,current_dci,dci_status,city,last_computed_at', 'hex_id'),
+            ('h3_index,current_dci,dci_status,last_computed_at', 'h3_index'),
+            ('hex_id,current_dci,dci_status,last_computed_at', 'hex_id'),
+            ('current_dci,dci_status,last_computed_at', 'h3_index'),
+            ('current_dci,dci_status,last_computed_at', 'hex_id'),
             ('h3_index,current_dci,dci_status,city', 'h3_index'),
             ('hex_id,current_dci,dci_status,city', 'hex_id'),
-            ('h3_index,current_dci,dci_status', 'h3_index'),
-            ('hex_id,current_dci,dci_status', 'hex_id'),
             ('current_dci,dci_status', 'h3_index'),
             ('current_dci,dci_status', 'hex_id'),
         ]
@@ -261,6 +318,7 @@ def get_my_hex_dci(worker: dict = Depends(get_current_worker)):
             except Exception:
                 continue
         if not zone:
+            ensure_hex_zone_exists(hex_id, worker.get('city'))
             return {
                 "hex_id": hex_id,
                 "current_dci": 0.0,
@@ -269,6 +327,22 @@ def get_my_hex_dci(worker: dict = Depends(get_current_worker)):
                 "dark_store_zone": worker.get("dark_store_zone"),
                 "note": "Hex zone not yet seeded."
             }
+
+        # If the snapshot is stale or missing, refresh this zone once on-demand.
+        last_computed = _parse_iso_timestamp(zone.get('last_computed_at'))
+        stale_cutoff = datetime.now(timezone.utc) - timedelta(minutes=25)
+        if last_computed is None or last_computed < stale_cutoff:
+            run_signal_ingestion_cycle([hex_id], city=(worker.get('city') or 'Bengaluru'))
+            run_dci_cycle([hex_id])
+
+            for select_cols, where_col in query_attempts:
+                try:
+                    refreshed = supabase.table('hex_zones').select(select_cols).eq(where_col, hex_id).execute()
+                    if refreshed.data:
+                        zone = refreshed.data[0]
+                        break
+                except Exception:
+                    continue
 
         dci_val = float(zone.get('current_dci') or 0.0)
         return {

@@ -15,11 +15,12 @@ Authentication:
 ## Mounted Router Prefixes
 
 1. `/workers`
-2. `/policies`
-3. `/claims`
-4. `/location-pings`
-5. `/notifications`
-6. `/chat`
+2. `/workers/me/demo/*` (mounted from demo router)
+3. `/policies`
+4. `/claims`
+5. `/location-pings`
+6. `/notifications`
+7. `/chat`
 
 `/admin` is currently not mounted.
 
@@ -74,13 +75,19 @@ Required fields:
 1. `phone`
 2. `name`
 3. `city`
-4. `dark_store_zone`
-5. `avg_daily_earnings`
-6. `upi_id`
-7. `device_model`
-8. `device_os_version`
-9. `sim_carrier`
-10. `sim_registration_date`
+4. `platform_affiliation`
+5. `platform_id`
+6. `dark_store_zone`
+7. `avg_daily_earnings`
+8. `upi_id`
+9. `device_model`
+10. `device_os_version`
+11. `sim_carrier`
+12. `sim_registration_date`
+
+Optional field:
+
+1. `is_platform_verified` (defaults to `false`)
 
 ### `GET /workers/me`
 
@@ -131,6 +138,11 @@ Returns current DCI snapshot for worker's assigned hex.
 ### `GET /workers/me/claims`
 
 Returns current worker claim history (newest first).
+
+Each claim can include payout execution metadata:
+
+1. `payout_channel`
+2. `payout_transaction_id`
 
 ## Demo Endpoints
 

@@ -19,7 +19,7 @@ This schema document is aligned to SQL migrations in `supabase/migrations/`.
 
 ## Core Tables
 
-### `workers` (`001_create_workers.sql` + `012_add_device_token.sql`)
+### `workers` (`001_create_workers.sql` + `012_add_device_token.sql` + `014_add_platform_affiliation_to_workers.sql` + `015_add_platform_id_verification_to_workers.sql`)
 
 1. `id` UUID PK
 2. `phone` VARCHAR(15) UNIQUE NOT NULL
@@ -37,6 +37,9 @@ This schema document is aligned to SQL migrations in `supabase/migrations/`.
 14. `trust_score` INTEGER DEFAULT 50
 15. `status` `worker_status` DEFAULT `active`
 16. `device_token` TEXT
+17. `platform_affiliation` VARCHAR(50) DEFAULT `Other`
+18. `platform_id` VARCHAR(80)
+19. `is_platform_verified` BOOLEAN DEFAULT `false`
 
 ### `hex_zones` (`002_create_hex_zones.sql` + `011_add_hysteresis_tracking.sql`)
 
@@ -106,7 +109,7 @@ This schema document is aligned to SQL migrations in `supabase/migrations/`.
 6. `duration_hours` DECIMAL(4,2)
 7. `trigger_signals` JSONB
 
-### `claims` (`008_create_claims.sql`)
+### `claims` (`008_create_claims.sql` + `016_add_payout_channel_transaction_to_claims.sql`)
 
 1. `id` UUID PK
 2. `worker_id` UUID FK -> `workers(id)` ON DELETE CASCADE
@@ -122,6 +125,8 @@ This schema document is aligned to SQL migrations in `supabase/migrations/`.
 12. `created_at` TIMESTAMPTZ DEFAULT now()
 13. `resolved_at` TIMESTAMPTZ
 14. UNIQUE constraint on (`worker_id`, `event_id`)
+15. `payout_channel` VARCHAR(20)
+16. `payout_transaction_id` VARCHAR(120)
 
 ### `fraud_flags` (`009_create_fraud_flags.sql`)
 

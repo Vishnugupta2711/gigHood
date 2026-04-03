@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   User, LogOut, ShieldCheck, Download, Award,
   ChevronRight, Bell, TrendingUp, X, Check,
@@ -112,7 +112,6 @@ function SettingsRow({
 
 export default function ProfilePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
   const [toast, setToast] = useState<string | null>(null);
@@ -120,12 +119,12 @@ export default function ProfilePage() {
   const [earningsInput, setEarningsInput] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const action = searchParams.get('action');
   useEffect(() => {
+    const action = new URLSearchParams(window.location.search).get('action');
     if (action === 'update-earnings') {
       setShowEarningsSheet(true);
     }
-  }, [action]);
+  }, []);
 
   // ── Data fetching ───────────────────────────────────────
   const { data: worker, isLoading: workerLoading } = useQuery({

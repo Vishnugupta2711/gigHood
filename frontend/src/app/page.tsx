@@ -7,9 +7,11 @@ import {
 import {
   SiDocker,
   SiFastapi,
-  SiGooglecloud,
+  SiNextdotjs,
+  SiPostgresql,
   SiReact,
   SiSupabase,
+  SiTypescript,
 } from '@icons-pack/react-simple-icons';
 import { PipelineVisual } from '@/components/landing/PipelineVisual';
 import { TechStackMarquee } from '@/components/landing/TechStackMarquee';
@@ -28,27 +30,39 @@ const architectureCards = [
     tone: 'tone-cyan',
   },
   {
-    icon: SiGooglecloud,
-    title: 'Model + Retrieval Layer',
-    text: 'Claim context and disruption evidence are retrieved from high-dimensional vector neighborhoods to support deterministic payout decisions.',
-    tone: 'tone-red',
+    icon: SiNextdotjs,
+    title: 'Next.js Worker + Ops UI',
+    text: 'App Router surfaces are optimized for worker onboarding, live DCI visibility, claim status, and operator actions from one consistent frontend.',
+    tone: 'tone-cyan',
   },
   {
     icon: SiReact,
-    title: 'React Worker Portal',
-    text: 'Workers and operations teams get low-latency portal surfaces for filing, validating, and tracking disruption claims with full transparency.',
+    title: 'React + Zustand State',
+    text: 'UI state, session context, and per-worker live updates stay predictable so dashboards remain responsive under disruption traffic spikes.',
     tone: 'tone-emerald',
   },
   {
+    icon: SiTypescript,
+    title: 'TypeScript Safety',
+    text: 'Shared payload contracts and strict typing reduce integration drift between worker app, dashboard, and API responses.',
+    tone: 'tone-amber',
+  },
+  {
+    icon: SiPostgresql,
+    title: 'Postgres + Durable Audit',
+    text: 'Claims, policy windows, disruption telemetry, and payout outcomes are persisted for traceability, appeals, and insurer-grade audit workflows.',
+    tone: 'tone-red',
+  },
+  {
     icon: SiDocker,
-    title: 'Sandbox Simulation',
-    text: 'Candidate payout actions are executed in isolated simulation environments before release to prevent destructive side effects.',
+    title: 'Dockerized Delivery',
+    text: 'Consistent local and hosted runtime environments keep backend jobs and frontend builds reproducible across contributors.',
     tone: 'tone-amber',
   },
   {
     icon: ShieldCheck,
-    title: 'Fraud + Trust Layers',
-    text: 'Every claim is routed through layered validation before payout, preserving speed for honest workers and control for operations.',
+    title: '7-Layer Claim Defense',
+    text: 'Claims pass through seven gated checks from intake to settlement release, balancing payout speed with fraud resilience.',
     tone: 'tone-rose',
   },
 ];
@@ -82,7 +96,7 @@ export default function RootPage() {
       <section className="project-hero project-hero-template">
         <p className="project-announcement">
           <span className="project-announcement-dot" />
-          gigHood raises resilience for gig workers with a 5-layer payout pipeline
+          gigHood raises resilience for gig workers with a 7-layer payout pipeline
           <ArrowRight size={13} />
         </p>
         <h1>

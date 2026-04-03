@@ -49,7 +49,7 @@ Use and update these docs in tandem with code:
 1. [README.md](README.md) for architecture intent
 2. [API.md](API.md) for route contracts and payloads
 3. [DATABASE.md](DATABASE.md) for schema and migration-backed fields
-4. [SETUP.md](SETUP.md) for local, script, and Docker workflows
+4. [SOLUTION.md](SOLUTION.md) for extended technical narrative
 
 If there is a conflict:
 
@@ -106,7 +106,6 @@ gigHood/
   README.md
   API.md
   DATABASE.md
-  SETUP.md
   AGENTS.md
 ```
 

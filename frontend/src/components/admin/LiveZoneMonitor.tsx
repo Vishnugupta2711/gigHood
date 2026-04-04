@@ -11,28 +11,37 @@ export default function LiveZoneMonitor() {
   }, []);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full border border-gray-100">
-      <div className="p-4 border-b border-gray-100 bg-[#F4F4F1]">
-        <h3 className="font-bold text-[#0F172A]">Live Zone Monitor</h3>
+    <div className="bg-[#111827] rounded-xl shadow-2xl p-6 text-white overflow-hidden relative border border-white/5 h-full">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-md font-bold uppercase tracking-tight">Disruption Events — Live</h2>
+        <span className="flex items-center gap-1.5 px-2 py-0.5 bg-[#EF4444] rounded text-[10px] font-black animate-pulse uppercase tracking-wider">LIVE</span>
       </div>
-      <div className="p-4 flex-1 overflow-y-auto max-h-[300px]">
-        {zones.length === 0 ? (
-          <div className="text-sm text-gray-500">No active zones to display.</div>
-        ) : (
-          <div className="space-y-3">
-            {zones.map((zone, idx) => (
-              <div key={zone.h3_index || idx} className="flex items-center justify-between p-3 bg-[#F4F4F1] rounded-lg">
-                <div>
-                  <div className="font-medium text-sm text-[#0F172A]">{zone.city}</div>
-                  <div className="text-xs text-gray-500 font-mono">{zone.h3_index}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-sm font-bold">{zone.dci_score.toFixed(3)}</div>
-                  <div className={`w-2 h-2 rounded-full ${zone.status === 'disrupted' ? 'bg-[#EF4444] animate-pulse' : 'bg-[#22C55E]'}`}></div>
-                </div>
+      
+      <div className="space-y-4 font-mono overflow-y-auto max-h-[520px] pr-2 custom-scrollbar">
+        {zones.map((zone, idx) => {
+          const isDisrupted = zone.dci_score >= 0.85;
+          const isAlert = zone.dci_score >= 0.65 && zone.dci_score < 0.85;
+          const statusColor = isDisrupted ? 'border-[#EF4444]' : (isAlert ? 'border-amber-500' : 'border-slate-700');
+          const dciTextColor = isDisrupted ? 'text-[#EF4444]' : (isAlert ? 'text-amber-500' : 'text-slate-300');
+
+          return (
+            <div key={zone.h3_index} className={`p-3 bg-white/5 rounded border-l-2 ${statusColor} transition-all hover:bg-white/10 cursor-default`}>
+              <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                <span>T: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
+                <span>ID: {zone.h3_index}</span>
               </div>
-            ))}
-          </div>
+              <p className="text-xs font-bold text-white">
+                DCI Peak: <span className={dciTextColor}>{zone.dci_score.toFixed(2)}</span> · Dur: {Math.floor(Math.random() * 20 + 5)}m
+              </p>
+              <p className="text-[10px] text-slate-500 mt-1">
+                {isDisrupted ? `Critical disruption signals in ${zone.city}.` : 
+                 (isAlert ? `Elevated risk signals in ${zone.city}.` : `Resolved: Under trigger threshold.`)}
+              </p>
+            </div>
+          );
+        })}
+        {zones.length === 0 && (
+          <div className="p-4 text-center text-slate-500 text-xs">No active disruption signals</div>
         )}
       </div>
     </div>

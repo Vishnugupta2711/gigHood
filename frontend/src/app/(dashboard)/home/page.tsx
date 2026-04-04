@@ -226,12 +226,12 @@ export default function DashboardPage() {
       }
 
       if (successfulPings === 0) {
-        throw new Error(
-          getErrorMessage(
-            lastPingError,
-            'Could not capture your location. Please enable precise location and retry.'
-          )
+        const pingHint = getErrorMessage(
+          lastPingError,
+          'Could not capture your latest location. Continuing with recent location history.'
         );
+        setSmsToast(pingHint);
+        setTimeout(() => setSmsToast(null), 4000);
       }
 
       const receipt = await processClaim();

@@ -10,6 +10,7 @@ from backend.db.client import supabase
 from backend.services.auth_service import get_current_worker
 from backend.services.claim_approver import route_claim
 from backend.services.claim_approver import explain_claim_decision
+from backend.services.claim_approver import is_city_compatible
 from backend.services.dci_engine import get_dci_status, sigmoid
 from backend.services.fraud_engine import FraudEvaluator
 from backend.services.payment_service import initiate_upi_payout
@@ -366,6 +367,13 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
     claim_id = claim.get("id")
     disruption_start = _parse_iso_timestamp(event.get("started_at"))
 
+    evaluator = FraudEvaluator()
+    gate2_preview = evaluator._evaluate_gate2_orders(worker_id)
+    fraud_res = evaluator.evaluate(worker_id, event.get("id"), disruption_start)
+    fraud_score = int(fraud_res.get("fraud_score", 0))
+    gate2_result = fraud_res.get("gate2_result", gate2_preview)
+    flags = fraud_res.get("flags", [])
+
     # Temporary simplified guardrail requested by product:
     # allow claim processing only when worker city matches disruption zone city.
     zone_city = None
@@ -379,19 +387,15 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
             continue
 
     worker_city = worker.get("city")
-    city_match = (
-        bool(worker_city)
-        and bool(zone_city)
-        and worker_city.strip().lower() == zone_city.strip().lower()
-    )
+    city_match = bool(worker_city) and bool(zone_city) and is_city_compatible(worker_city, zone_city)
 
     if not city_match:
         decision_explanation = explain_claim_decision(
-            fraud_score=0,
-            gate2_result="NONE",
+            fraud_score=fraud_score,
+            gate2_result=gate2_result,
             path="denied",
             pop_validated=False,
-            flags=[],
+            flags=flags,
             reason_code="CITY_ZONE_MISMATCH",
         )
 
@@ -399,7 +403,7 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
             {
                 "payout_amount": 0,
                 "pop_validated": False,
-                "fraud_score": 0,
+                "fraud_score": fraud_score,
                 "resolution_path": "denied",
                 "status": "denied",
                 "resolved_at": datetime.now(timezone.utc).isoformat(),
@@ -410,9 +414,9 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
             "claim_id": claim_id,
             "event_id": event.get("id"),
             "policy_id": policy.get("id"),
-            "fraud_score": 0,
-            "fraud_flags": [],
-            "gate2_result": "NONE",
+            "fraud_score": fraud_score,
+            "fraud_flags": flags,
+            "gate2_result": gate2_result,
             "resolution_path": "denied",
             "payout_amount": 0,
             "razorpay_payment_id": None,
@@ -426,14 +430,7 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
     # For temporary mode, city match acts as eligibility gate for PoP.
     pop_res = {"present": True}
 
-    evaluator = FraudEvaluator()
-    gate2_preview = evaluator._evaluate_gate2_orders(worker_id)
-
     # Step 7: 7-layer fraud scoring and route mapping.
-    fraud_res = evaluator.evaluate(worker_id, event.get("id"), disruption_start)
-    fraud_score = int(fraud_res.get("fraud_score", 0))
-    gate2_result = fraud_res.get("gate2_result", gate2_preview)
-    flags = fraud_res.get("flags", [])
     path = route_claim(fraud_score, gate2_result, flags)
 
     # Step 8: payout math using real event duration context.

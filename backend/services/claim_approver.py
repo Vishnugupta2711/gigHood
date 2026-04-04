@@ -9,6 +9,33 @@ from backend.services.payment_service import initiate_upi_payout
 logger = logging.getLogger("api")
 
 
+def _normalize_city_token(city: str | None) -> str:
+    if not city:
+        return ""
+    lowered = city.strip().lower()
+    return "".join(ch for ch in lowered if ch.isalnum())
+
+
+def is_city_compatible(worker_city: str | None, zone_city: str | None) -> bool:
+    """
+    City compatibility for claim guardrails.
+    Includes Chennai outskirts aliases used by workers in metro periphery.
+    """
+    w = _normalize_city_token(worker_city)
+    z = _normalize_city_token(zone_city)
+    if not w or not z:
+        return False
+    if w == z:
+        return True
+
+    chennai_metro_aliases = {
+        "chennai",
+        "potheri",
+        "kattankulathur",
+    }
+    return w in chennai_metro_aliases and z in chennai_metro_aliases
+
+
 def evaluate_location_guardrails(worker_id: str, event_id: str, disruption_start: datetime) -> tuple[bool, str | None, int]:
     """
     Enforce hard location guardrails before any payout path is considered.
@@ -35,7 +62,7 @@ def evaluate_location_guardrails(worker_id: str, event_id: str, disruption_start
             except Exception:
                 continue
 
-        if worker_city and zone_city and worker_city.strip().lower() != zone_city.strip().lower():
+        if worker_city and zone_city and not is_city_compatible(worker_city, zone_city):
             return False, 'CITY_ZONE_MISMATCH', 0
 
         window_start = disruption_start - timedelta(minutes=90)
@@ -269,6 +296,14 @@ def process_claim(worker_id: str, event_id: str, policy_id: str) -> dict:
          disruption_start = datetime.fromisoformat(event['started_at'].replace("Z", "+00:00"))
          duration_hours = event.get('duration_hours', 4.0)
 
+         # Compute fraud context early so denied outcomes still expose meaningful risk values.
+         from backend.services.fraud_engine import FraudEvaluator
+         evaluator = FraudEvaluator()
+         fraud_res = evaluator.evaluate(worker_id, event_id, disruption_start)
+         fraud_score = int(fraud_res.get('fraud_score', 0))
+         gate2_result = fraud_res.get('gate2_result', 'NONE')
+         flags = fraud_res.get('flags', [])
+
          # Hard guardrails: deny claims when location service evidence is missing,
          # out-of-zone, insufficient, or city/zone mismatch.
          allowed, reason_code, in_zone_count = evaluate_location_guardrails(worker_id, event_id, disruption_start)
@@ -277,6 +312,7 @@ def process_claim(worker_id: str, event_id: str, policy_id: str) -> dict:
                  'status': 'denied',
                  'resolution_path': 'denied',
                  'payout_amount': 0,
+                 'fraud_score': fraud_score,
                  'pop_validated': False,
                  'resolved_at': datetime.now(timezone.utc).isoformat(),
              }).eq('id', claim_id).execute()
@@ -291,20 +327,14 @@ def process_claim(worker_id: str, event_id: str, policy_id: str) -> dict:
               logger.info(f"Claim {claim_id} denied after secondary PoP check.")
               supabase.table('claims').update({
                   'pop_validated': False,
+                  'fraud_score': fraud_score,
                   'status': 'denied',
                   'resolution_path': 'denied',
                   'resolved_at': datetime.now(timezone.utc).isoformat()
               }).eq('id', claim_id).execute()
               return {"path": "denied", "reason_code": "INSUFFICIENT_IN_ZONE_PINGS"}
-              
+
          # 2. Fraud Engine (Phase 11 7-Layer Defense)
-         from backend.services.fraud_engine import FraudEvaluator
-         evaluator = FraudEvaluator()
-         fraud_res = evaluator.evaluate(worker_id, event_id, disruption_start)
-         
-         fraud_score = fraud_res.get('fraud_score', 0)
-         gate2_result = fraud_res.get('gate2_result', 'NONE')
-         flags = fraud_res.get('flags', [])
          
          # 3. Rule Router
          path = route_claim(fraud_score, gate2_result, flags)

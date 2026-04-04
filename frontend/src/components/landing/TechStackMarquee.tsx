@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Timer } from 'lucide-react';
 import {
   SiDocker,
   SiFastapi,
@@ -48,8 +47,16 @@ const techStack = [
     logo: <SiPython size={28} color="#3776AB" />,
   },
   {
-    name: 'APScheduler',
-    logo: <Timer size={28} color="#0F172A" strokeWidth={2.2} />,
+    name: 'Groq',
+    logo: (
+      <img
+        src="https://cdn.simpleicons.org/groq/F55036"
+        alt="Groq logo"
+        width={28}
+        height={28}
+        className="project-tech-icon-image"
+      />
+    ),
   },
   {
     name: 'Docker',

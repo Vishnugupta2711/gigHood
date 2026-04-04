@@ -15,6 +15,7 @@ from backend.services.policy_manager import create_policy, explain_policy_decisi
 from backend.services.trust_score import calculate_dynamic_trust
 from backend.services.claim_approver import explain_claim_decision
 from backend.services.claim_approver import evaluate_location_guardrails
+from backend.services.claim_approver import is_city_compatible
 from backend.services.payout_calculator import calculate_payout
 
 router = APIRouter()
@@ -564,7 +565,7 @@ def get_my_claims(worker: dict = Depends(get_current_worker)):
             gate2_result = 'NONE' if path == 'denied' and fraud_score < 90 else 'WEAK'
 
             event_city = _event_city(claim.get('event_id'))
-            if normalized_path == 'denied' and worker_city and event_city and worker_city != event_city:
+            if normalized_path == 'denied' and worker_city and event_city and not is_city_compatible(worker_city, event_city):
                 reason_code = 'CITY_ZONE_MISMATCH'
 
             if normalized_path == 'denied' and reason_code is None and claim.get('event_id'):

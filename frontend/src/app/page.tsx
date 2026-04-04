@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   ArrowRight,
+  Bot,
   ShieldCheck,
 } from 'lucide-react';
 import {
@@ -65,6 +66,12 @@ const architectureCards = [
     text: 'Claims pass through seven gated checks from intake to settlement release, balancing payout speed with fraud resilience.',
     tone: 'tone-rose',
   },
+  {
+    icon: Bot,
+    title: 'LLM Decision Support',
+    text: 'Groq-backed inference with OpenRouter failover powers policy and payout explainability so workers get instant, transparent guidance at scale.',
+    tone: 'tone-indigo',
+  },
 ];
 
 export default function RootPage() {
@@ -83,10 +90,10 @@ export default function RootPage() {
         </nav>
         <div className="project-actions">
           <Link href="/worker-app/login" className="project-link-ghost">
-            Submit a claim
+            Register
           </Link>
-          <Link href="/worker-app/login" className="project-link-primary project-link-primary-dark">
-            Agent Dashboard
+          <Link href="/admin-dashboard" className="project-link-primary project-link-primary-dark">
+            Admin Dashboard
             <ArrowRight size={14} />
           </Link>
         </div>
@@ -107,11 +114,11 @@ export default function RootPage() {
           proven safety and human-in-the-loop oversight.
         </p>
         <div className="project-cta-row">
-          <Link href="/worker-app/register" className="project-pill-btn project-hero-primary">
-            Get started
+          <Link href="/worker-app/login" className="project-pill-btn project-hero-primary">
+            Sign Up
           </Link>
-          <Link href="/admin-dashboard" className="project-pill-btn project-hero-secondary">
-            See agent portal
+          <Link href="/worker-app/login" className="project-pill-btn project-hero-secondary">
+            Sign In
           </Link>
         </div>
       </section>
@@ -206,7 +213,7 @@ export default function RootPage() {
               <div>
                 <p>Product</p>
                 <Link href="/worker-app/register">Worker Portal</Link>
-                <Link href="/worker-app/login">Agent Dashboard</Link>
+                <Link href="/admin-dashboard">Admin Dashboard</Link>
                 <a href="#pipeline">Disruption Claim Flow</a>
               </div>
               <div>

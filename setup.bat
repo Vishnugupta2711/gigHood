@@ -25,43 +25,44 @@ if not exist "venv" (
 if exist "venv" (
     echo [OK] Reusing existing virtual environment.
 )
-call venv\Scripts\activate.bat
+if not defined VIRTUAL_ENV (
+    call venv\Scripts\activate.bat
+)
 
 :: 3. Install Dependencies
 echo [INFO] Installing requirements...
-python -m pip install --upgrade pip
+python -m pip install --upgrade pip >nul 2>&1
 if exist "backend\requirements.txt" (
     python -m pip install -r backend\requirements.txt
-) else if exist "requirements.txt" (
-    python -m pip install -r requirements.txt
 ) else (
-    echo [ERROR] No requirements file found (expected backend\requirements.txt or requirements.txt).
-    exit /b 1
+    if exist "requirements.txt" (
+        python -m pip install -r requirements.txt
+    ) else (
+        echo [ERROR] No requirements file found.
+        exit /b 1
+    )
 )
 
 :: 3b. Install frontend dependencies
 where npm >nul 2>&1
 if %errorlevel% neq 0 (
     echo [WARNING] npm is not installed. Frontend setup skipped.
-) else (
-    echo [INFO] Installing frontend dependencies...
-    pushd frontend
-    if exist package-lock.json (
-        npm ci
-    ) else (
-        npm install
-    )
-
-    if exist "node_modules\@types\node 2" (
-        rmdir /s /q "node_modules\@types\node 2"
-        echo [OK] Removed malformed type folder: node_modules\@types\node 2
-    )
-    popd
-    echo [OK] Frontend dependencies installed.
+    goto :env_setup
 )
 
-:: 4. Setup .env file
-echo [INFO] Configuring environment variables...
+echo [INFO] Installing frontend dependencies...
+if not exist frontend\package.json (
+    echo [WARNING] frontend/package.json not found. Skipping npm install.
+) else (
+    if exist frontend\package-lock.json (
+        call npm ci --prefix frontend --force
+    ) else (
+        call npm install --prefix frontend --force
+    )
+    echo [INFO] Frontend installation completed.
+)
+
+echo [INFO] Proceeding with environment setup...
 if not exist "backend\.env" (
     copy backend\.env.example backend\.env >nul
     echo [OK] Created backend\.env from template.

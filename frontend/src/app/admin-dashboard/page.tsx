@@ -1,54 +1,39 @@
-import Link from 'next/link';
-import { ArrowRight, LayoutDashboard, ShieldAlert, Wallet } from 'lucide-react';
+import FinancialKPIs from '@/components/admin/FinancialKPIs';
+import LiveZoneMonitor from '@/components/admin/LiveZoneMonitor';
+import RiskForecastPanel from '@/components/admin/RiskForecast';
+import FraudQueue from '@/components/admin/FraudQueue';
 
-const modules = [
-  {
-    title: 'Live Zone Monitoring',
-    detail: 'Track disruption states, DCI thresholds, and zone-level event activity in one control surface.',
-    icon: LayoutDashboard,
-  },
-  {
-    title: 'Fraud Review Queue',
-    detail: 'Inspect high-risk claims routed to manual verification and maintain decision traceability.',
-    icon: ShieldAlert,
-  },
-  {
-    title: 'Payout Operations',
-    detail: 'Review payout lifecycle metrics and settlement status across policy tiers and city clusters.',
-    icon: Wallet,
-  },
-];
-
-export default function AdminDashboardLandingPage() {
+export default function AdminDashboardPage() {
   return (
-    <main className="admin-site">
-      <section className="admin-hero">
-        <p className="project-kicker">Admin Dashboard Surface</p>
-        <h1>Admin control plane is being assembled for production workflows.</h1>
-        <p>
-          This route is now active at <strong>/admin-dashboard</strong>. Full dashboards will be rolled out next
-          with live zone map, claims triage, and payout operations modules.
-        </p>
-        <div className="admin-actions">
-          <Link href="/worker-app/home" className="project-cta-main">
-            Open Worker App
-            <ArrowRight size={16} />
-          </Link>
-          <Link href="/" className="project-cta-secondary">
-            Back to Project Website
-          </Link>
+    <div className="min-h-screen bg-[#FAFAF7] font-sans pb-12">
+      <header className="bg-[#0F172A] p-4 text-white">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-wide">gigHood <span className="font-light text-gray-400">Admin</span></h1>
+          <div className="text-sm opacity-80">Command Center</div>
         </div>
-      </section>
+      </header>
 
-      <section className="admin-module-grid">
-        {modules.map((module) => (
-          <article key={module.title}>
-            <module.icon size={18} />
-            <h2>{module.title}</h2>
-            <p>{module.detail}</p>
-          </article>
-        ))}
-      </section>
-    </main>
+      <main className="max-w-[85rem] mx-auto p-4 sm:p-6 space-y-8 mt-4">
+        {/* Top Tier: KPIs */}
+        <section>
+          <FinancialKPIs />
+        </section>
+
+        {/* Middle Tier: Live Zones & Risk */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <LiveZoneMonitor />
+          </div>
+          <div className="lg:col-span-1">
+            <RiskForecastPanel />
+          </div>
+        </section>
+
+        {/* Bottom Tier: Fraud Queue */}
+        <section>
+          <FraudQueue />
+        </section>
+      </main>
+    </div>
   );
 }

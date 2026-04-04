@@ -50,7 +50,7 @@ app.include_router(claims.router, prefix="/claims", tags=["claims"])
 app.include_router(location_pings.router, prefix="/location-pings", tags=["location_pings"])
 app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 app.include_router(chat.router, prefix="/chat", tags=["chat"])
-# app.include_router(admin.router, prefix="/admin", tags=["admin"])
+app.include_router(admin.router, prefix="/admin", tags=["admin"])
 
 @app.get("/")
 async def root():

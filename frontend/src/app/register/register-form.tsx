@@ -180,6 +180,33 @@ export default function RegisterFormContent() {
       return CITIES.includes(title) ? title : null;
     };
 
+    const inferCityFromIp = async (): Promise<string | null> => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        if (!response.ok) return null;
+        const data = await response.json();
+        const rawCity = (data?.city as string | undefined) || (data?.region as string | undefined) || null;
+        return normalizeCity(rawCity);
+      } catch {
+        return null;
+      }
+    };
+
+    const applyDetectedCity = (city: string) => {
+      const zones = DARK_STORE_ZONES[city] || [];
+      setFormData((prev) => ({
+        ...prev,
+        city,
+        dark_store_zone: zones[0] || '',
+      }));
+      setLocationStatus('detected');
+    };
+
+    const getPosition = (options: PositionOptions): Promise<GeolocationPosition> =>
+      new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+      });
+
     const detectCityFromLocation = async () => {
       if (typeof navigator === 'undefined' || !navigator.geolocation || !window.isSecureContext) {
         setLocationStatus('unsupported');
@@ -188,55 +215,71 @@ export default function RegisterFormContent() {
 
       setLocationStatus('detecting');
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            let normalized: string | null = null;
-
-            try {
-              const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
-              );
-              if (response.ok) {
-                const data = await response.json();
-                const address = data?.address ?? {};
-                const rawCity = address.city ?? address.town ?? address.village ?? address.state_district ?? address.state;
-                normalized = normalizeCity(rawCity);
-              }
-            } catch {
-              normalized = null;
-            }
-
-            if (!normalized) {
-              normalized = inferNearestSupportedCity(latitude, longitude);
-            }
-
-            if (normalized) {
-              const zones = DARK_STORE_ZONES[normalized] || [];
-              setFormData((prev) => ({
-                ...prev,
-                city: normalized,
-                dark_store_zone: zones[0] || '',
-              }));
-              setLocationStatus('detected');
-              return;
-            }
-
-            setLocationStatus('manual');
-          } catch {
-            setLocationStatus('manual');
-          }
-        },
-        () => {
-          setLocationStatus('denied');
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 12000,
-          maximumAge: 5 * 60 * 1000,
+      try {
+        let position: GeolocationPosition;
+        try {
+          position = await getPosition({
+            enableHighAccuracy: true,
+            timeout: 12000,
+            maximumAge: 5 * 60 * 1000,
+          });
+        } catch {
+          // Retry once with relaxed options; high-accuracy often fails indoors.
+          position = await getPosition({
+            enableHighAccuracy: false,
+            timeout: 20000,
+            maximumAge: 10 * 60 * 1000,
+          });
         }
-      );
+
+        const { latitude, longitude } = position.coords;
+        let normalized: string | null = null;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            const address = data?.address ?? {};
+            const rawCity = address.city ?? address.town ?? address.village ?? address.state_district ?? address.state;
+            normalized = normalizeCity(rawCity);
+          }
+        } catch {
+          normalized = null;
+        }
+
+        if (!normalized) {
+          normalized = inferNearestSupportedCity(latitude, longitude);
+        }
+
+        if (normalized) {
+          applyDetectedCity(normalized);
+          return;
+        }
+
+        const ipCity = await inferCityFromIp();
+        if (ipCity) {
+          applyDetectedCity(ipCity);
+          return;
+        }
+
+        setLocationStatus('manual');
+      } catch (geoError: unknown) {
+        const err = geoError as GeolocationPositionError;
+        const ipCity = await inferCityFromIp();
+        if (ipCity) {
+          applyDetectedCity(ipCity);
+          return;
+        }
+
+        if (err?.code === 1) {
+          setLocationStatus('denied');
+          return;
+        }
+
+        setLocationStatus('manual');
+      }
     };
 
     detectCityFromLocation();
@@ -494,8 +537,8 @@ export default function RegisterFormContent() {
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
               {locationStatus === 'detecting' && 'Detecting your location...'}
               {locationStatus === 'detected' && 'Location detected and city selected automatically.'}
-              {locationStatus === 'denied' && 'Location permission denied. Please choose your city manually.'}
-              {locationStatus === 'manual' && 'Could not auto-detect city from maps. We tried nearest-city fallback, but still need manual selection.'}
+              {locationStatus === 'denied' && 'Location permission is blocked in browser settings for this site. Enable location for this site and retry, or choose your city manually.'}
+              {locationStatus === 'manual' && 'Live GPS position is currently unavailable. We tried nearest-city and IP fallback, but still need manual selection.'}
               {locationStatus === 'unsupported' && 'Auto-detect needs HTTPS and browser geolocation support. Please choose your city manually.'}
             </p>
           </div>

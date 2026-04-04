@@ -103,7 +103,7 @@ export default function DashboardPage() {
   const inferLanguageFromCity = useLanguageStore((s) => s.inferLanguageFromCity);
 
   // Load worker profile
-  const { data: worker } = useQuery({
+  const { data: worker, refetch: refetchWorker } = useQuery({
     queryKey: ['worker'],
     queryFn: workerApi.getMe,
     staleTime: 5 * 60 * 1000,
@@ -111,7 +111,7 @@ export default function DashboardPage() {
   });
 
   // Load policy independently
-  const { data: activePolicy } = useQuery({
+  const { data: activePolicy, refetch: refetchPolicy } = useQuery({
     queryKey: ['policy'],
     queryFn: workerApi.getMyPolicy,
     staleTime: 5 * 60 * 1000,
@@ -119,7 +119,7 @@ export default function DashboardPage() {
   });
 
   // Load DCI independently (refresh more often)
-  const { data: dciData } = useQuery({
+  const { data: dciData, refetch: refetchDci } = useQuery({
     queryKey: ['dci'],
     queryFn: workerApi.getDci,
     staleTime: 60 * 1000,
@@ -127,7 +127,7 @@ export default function DashboardPage() {
   });
 
   // Load claims independently
-  const { data: claims = [] } = useQuery({
+  const { data: claims = [], refetch: refetchClaims } = useQuery({
     queryKey: ['claims'],
     queryFn: workerApi.getClaims,
     staleTime: 3 * 60 * 1000,
@@ -151,9 +151,9 @@ export default function DashboardPage() {
 
   const isLoading = !worker || !activePolicy;
   const error: unknown = null;
-  const refetch = () => {
-    /* no-op */
-  };
+  const refetch = useCallback(async () => {
+    await Promise.allSettled([refetchWorker(), refetchPolicy(), refetchDci(), refetchClaims()]);
+  }, [refetchWorker, refetchPolicy, refetchDci, refetchClaims]);
 
   // Phase 2 & 3 State
   const [isSimulating, setIsSimulating] = useState(false);

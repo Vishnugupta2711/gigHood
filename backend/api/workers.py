@@ -352,13 +352,24 @@ def get_my_hex_dci(worker: dict = Depends(get_current_worker)):
                 "note": "Hex zone is not seeded with live DCI yet."
             }
 
-        # If the snapshot is stale, refresh once on-demand.
-        # Do not refresh immediately when a valid snapshot exists but has no timestamp yet
-        # (common right after demo simulation writes).
+        # If the snapshot is stale (or still a bootstrap placeholder), refresh once on-demand.
+        # A newly created hex row often starts with current_dci=0 and no timestamp; treat it as uninitialized.
         last_computed = _parse_iso_timestamp(zone.get('last_computed_at'))
         stale_cutoff = datetime.now(timezone.utc) - timedelta(minutes=25)
-        has_snapshot = zone.get('current_dci') is not None
-        should_refresh = (last_computed is not None and last_computed < stale_cutoff) or (last_computed is None and not has_snapshot)
+        dci_raw_snapshot = zone.get('current_dci')
+        has_snapshot = dci_raw_snapshot is not None
+        is_bootstrap_placeholder = False
+        if last_computed is None and has_snapshot:
+            try:
+                is_bootstrap_placeholder = float(dci_raw_snapshot) == 0.0 and (zone.get('dci_status') in {None, 'normal'})
+            except Exception:
+                is_bootstrap_placeholder = False
+
+        should_refresh = (
+            (last_computed is not None and last_computed < stale_cutoff)
+            or (last_computed is None and not has_snapshot)
+            or is_bootstrap_placeholder
+        )
         if should_refresh:
             run_signal_ingestion_cycle([hex_id], city=(worker.get('city') or 'Bengaluru'))
             run_dci_cycle([hex_id])
@@ -399,6 +410,69 @@ def get_my_hex_dci(worker: dict = Depends(get_current_worker)):
             }
 
         dci_val = float(dci_raw)
+
+        # Demo isolation guard:
+        # If this zone is disrupted due to a demo-triggered event, but this worker has no claim
+        # against that event, refresh from live ingestion once before returning UI state.
+        # This prevents cross-account leakage where one user's demo click makes all workers in
+        # the same hex appear permanently disrupted.
+        try:
+            status_now = zone.get('dci_status') or get_dci_status(dci_val)
+            if dci_val > 0.85 and status_now == 'disrupted':
+                latest_event = None
+                for where_col in ('h3_index', 'hex_id'):
+                    try:
+                        ev_res = (
+                            supabase.table('disruption_events')
+                            .select('id,trigger_signals,started_at,ended_at')
+                            .eq(where_col, hex_id)
+                            .is_('ended_at', 'null')
+                            .order('started_at', desc=True)
+                            .limit(1)
+                            .execute()
+                        )
+                        if ev_res.data:
+                            latest_event = ev_res.data[0]
+                            break
+                    except Exception:
+                        continue
+
+                trigger = (latest_event or {}).get('trigger_signals') or {}
+                is_demo_event = isinstance(trigger, dict) and bool(trigger.get('demo'))
+
+                if is_demo_event and latest_event and latest_event.get('id'):
+                    has_worker_claim = False
+                    try:
+                        claim_res = (
+                            supabase.table('claims')
+                            .select('id')
+                            .eq('worker_id', worker.get('id'))
+                            .eq('event_id', latest_event.get('id'))
+                            .limit(1)
+                            .execute()
+                        )
+                        has_worker_claim = bool(claim_res.data)
+                    except Exception:
+                        has_worker_claim = False
+
+                    if not has_worker_claim:
+                        run_signal_ingestion_cycle([hex_id], city=(worker.get('city') or 'Bengaluru'))
+                        run_dci_cycle([hex_id])
+                        for select_cols, where_col in query_attempts:
+                            try:
+                                refreshed = supabase.table('hex_zones').select(select_cols).eq(where_col, hex_id).execute()
+                                if refreshed.data:
+                                    zone = refreshed.data[0]
+                                    break
+                            except Exception:
+                                continue
+
+                        dci_raw_after_refresh = zone.get('current_dci')
+                        if dci_raw_after_refresh is not None:
+                            dci_val = float(dci_raw_after_refresh)
+        except Exception:
+            pass
+
         return {
             "hex_id": hex_id,
             "current_dci": round(dci_val, 4),

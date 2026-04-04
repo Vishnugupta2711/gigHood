@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -95,6 +95,7 @@ function wait(ms: number): Promise<void> {
 }
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -166,16 +167,20 @@ export default function DashboardPage() {
   const [smsToast, setSmsToast] = useState<string | null>(null);
   const coverageCarouselRef = useRef<HTMLDivElement | null>(null);
 
-  // Initialize DCI/status from dashboard payload.
+  // Initialize DCI/status from live DCI query payload.
+  // Use primitive dependencies to avoid re-running on every render.
   useEffect(() => {
-    if (!dashboard?.worker) return;
-
-    const rawDci = dashboard.worker.dynamic_coverage_index;
+    const rawDci = dciData?.current_dci;
     const nextDci = typeof rawDci === 'number' && Number.isFinite(rawDci) ? rawDci : null;
     setDciScore(nextDci);
 
     if (nextDci === null) {
       setDciStatus('degraded');
+      return;
+    }
+
+    if (dciData?.dci_status) {
+      setDciStatus(dciData.dci_status);
       return;
     }
 
@@ -186,7 +191,7 @@ export default function DashboardPage() {
     } else {
       setDciStatus('normal');
     }
-  }, [dashboard]);
+  }, [dciData?.current_dci, dciData?.dci_status]);
 
   useEffect(() => {
     if (!dashboard?.worker?.city) {
@@ -209,32 +214,43 @@ export default function DashboardPage() {
     setSimulationError(null);
 
     try {
-      // Call simulate endpoint - returns FINAL DCI status immediately
-      // Weights: w=3.0 (weather), t=1.5 (traffic), p=2.0 (platform), s=1.2 (social)
-      // Formula: DCI = sigmoid(0.45*3.0 + 0.25*1.5 + 0.20*2.0 + 0.10*1.2) ≈ sigmoid(2.155) ≈ 0.896 (disrupted)
+      // Use bounded jitter so each simulation is realistic and not a fixed hard-coded score.
+      const jitter = (base: number, spread: number) => {
+        const next = base + (Math.random() * 2 - 1) * spread;
+        return Math.max(0, Number(next.toFixed(3)));
+      };
+
       const result = await simulateDisruption({
-        w: 3.0,   // Increased from 2.5 for more reliable disruption
-        t: 1.5,   // Increased from 1.2
-        p: 2.0,   // Increased from 1.8
-        s: 1.2,   // Increased from 1.0
+        w: jitter(2.9, 0.35),
+        t: jitter(1.45, 0.25),
+        p: jitter(1.95, 0.30),
+        s: jitter(1.10, 0.20),
       });
 
-      // Use response directly instead of polling - backend already calculated final DCI
-      if (result && result.dci_status === 'disrupted') {
+      // Apply response immediately so UI does not wait for stale query refresh.
+      if (result) {
         setDciScore(result.current_dci);
-        setDciStatus('disrupted');
-        // Refresh dashboard data
-        await refetch();
-      } else {
-        setSimulationError(`Simulation completed but did not reach disruption threshold (DCI: ${result?.current_dci?.toFixed(3) ?? 'N/A'}, Status: ${result?.dci_status ?? 'unknown'}). Try again with higher weights.`);
+        setDciStatus(result.dci_status);
+        queryClient.setQueryData(['dci'], {
+          ...(dciData ?? {}),
+          current_dci: result.current_dci,
+          dci_status: result.dci_status,
+        });
       }
+
+      if (result && result.dci_status !== 'disrupted') {
+        setSimulationError(`Simulation completed (DCI: ${result.current_dci.toFixed(3)}, Status: ${result.dci_status}). Raise signals to cross disruption threshold.`);
+      }
+
+      // Refresh non-DCI panels in background; DCI is already updated from simulation response.
+      await Promise.allSettled([refetchWorker(), refetchPolicy(), refetchClaims()]);
     } catch (err: unknown) {
       console.error('Simulation error:', err);
       setSimulationError(getErrorMessage(err, 'Simulation failed. Please try again.'));
     } finally {
       setIsSimulating(false);
     }
-  }, [refetch]);
+  }, [queryClient, dciData, refetchWorker, refetchPolicy, refetchClaims]);
 
   // Phase 3: Process Claim
   const handleProcessClaim = useCallback(async () => {

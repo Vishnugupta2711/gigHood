@@ -25,7 +25,7 @@ export interface FraudQueueItem {
   worker_name: string;
   city: string;
   status: string;
-  resolution_path: string;
+  resolution_path: string | null;
   fraud_score: number;
   dci_score: number;
   flags: string[];
@@ -104,7 +104,45 @@ export async function fetchRiskForecast(): Promise<RiskForecast[]> {
   return data;
 }
 
+export interface FraudMetrics {
+  avg_fraud_score: number;
+  mock_locations_24h: number;
+  velocity_violations: number;
+  blacklisted_devices: number;
+}
+
+export interface FraudSignal {
+  label: string;
+  value: number;
+}
+
+export interface FraudWorker {
+  id: string;
+  violation: string;
+  risk: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  lastActive: string;
+}
+
+export async function fetchFraudMetrics(): Promise<FraudMetrics> {
+  const { data } = await api.get('/admin/fraud/metrics');
+  return data;
+}
+
+export async function fetchFraudSignals(): Promise<FraudSignal[]> {
+  const { data } = await api.get<FraudSignal[]>('/admin/fraud/signals');
+  return data;
+}
+
+export async function fetchFraudWorkers(): Promise<FraudWorker[]> {
+  const { data } = await api.get<FraudWorker[]>('/admin/fraud/workers');
+  return data;
+}
+
+export async function fetchFraudEvents(): Promise<string[]> {
+  const { data } = await api.get<string[]>('/admin/fraud/events');
+  return data;
+}
 export async function fetchFraudQueue(): Promise<FraudQueueItem[]> {
-  const { data } = await api.get<FraudQueueItem[]>('/admin/dashboard/fraud-queue');
+  const { data } = await api.get('/admin/dashboard/fraud-queue');
   return data;
 }

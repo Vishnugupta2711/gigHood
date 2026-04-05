@@ -1,6 +1,7 @@
 'use client'
 
 import { ReactNode, useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react'
 
 import api from '@/lib/api'
+import icon from '@/app/icon.jpg'
 
 /* =========================
    SIDEBAR
@@ -38,16 +40,21 @@ const Sidebar = () => {
   ]
 
   return (
-    <div className="w-56 bg-sidebar text-sidebar-foreground flex flex-col h-screen fixed left-0 top-0 border-r border-sidebar-border">
+    <div className="w-56 bg-[#0B1220] text-gray-300 flex flex-col h-screen fixed left-0 top-0 border-r border-white/5">
+      
       {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
+      <div className="p-6 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">K</span>
+          <div className="relative w-8 h-8 rounded-lg overflow-hidden">
+            <Image src={icon} alt="GigHood logo" fill sizes="32px" className="object-cover" />
           </div>
           <div>
-            <h1 className="font-bold text-white text-base">Kinetic Ledger</h1>
-            <p className="text-xs opacity-70">PARAMETRIC OPS</p>
+            <h1 className="font-semibold text-orange-400 text-sm tracking-wide">
+              gigHood
+            </h1>
+            <p className="text-[10px] text-gray-500">
+              PARAMETRIC CONTROL
+            </p>
           </div>
         </div>
       </div>
@@ -64,8 +71,8 @@ const Sidebar = () => {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                 active
-                  ? 'bg-sidebar-primary bg-opacity-20 text-sidebar-primary font-medium'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent text-opacity-80'
+                  ? 'bg-orange-500/10 text-orange-400 border border-orange-400/20 shadow-[0_0_0_1px_rgba(251,146,60,0.15)]'
+                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
               <Icon size={20} />
@@ -76,10 +83,10 @@ const Sidebar = () => {
       </nav>
 
       {/* Bottom */}
-      <div className="border-t border-sidebar-border p-4 space-y-2">
+      <div className="border-t border-white/5 p-4 space-y-2">
         <Link
           href="/admin-dashboard/settings"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sidebar-accent"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white"
         >
           <Settings size={20} />
           <span className="text-sm">Settings</span>
@@ -87,7 +94,7 @@ const Sidebar = () => {
 
         <Link
           href="#"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sidebar-accent"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white"
         >
           <HelpCircle size={20} />
           <span className="text-sm">Support</span>
@@ -98,7 +105,7 @@ const Sidebar = () => {
 }
 
 /* =========================
-   HEADER (NOW DYNAMIC)
+   HEADER
 ========================= */
 
 const Header = () => {
@@ -106,7 +113,6 @@ const Header = () => {
   const [alerts, setAlerts] = useState(0)
   const [search, setSearch] = useState('')
 
-  // Fetch user + alerts
   useEffect(() => {
     const fetchHeaderData = async () => {
       try {
@@ -123,7 +129,6 @@ const Header = () => {
     fetchHeaderData()
   }, [])
 
-  // Debounced search
   useEffect(() => {
     if (!search) return
 
@@ -144,13 +149,13 @@ const Header = () => {
       {/* SEARCH */}
       <div className="flex items-center gap-4 flex-1">
         <div className="relative w-96">
-          <Search className="absolute left-3 top-3 text-muted-foreground" size={18} />
+          <Search className="absolute left-3 top-3 text-gray-400" size={18} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             type="text"
             placeholder="Search claims, workers..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-background"
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-400 bg-gray-50"
           />
         </div>
       </div>
@@ -204,7 +209,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <div className="flex-1">
         <Header />
 
-        <main className="ml-56 bg-background min-h-[calc(100vh-73px)] overflow-y-auto">
+        <main className="ml-56 bg-[#F8FAFC] min-h-[calc(100vh-73px)] overflow-y-auto">
           {children}
         </main>
       </div>

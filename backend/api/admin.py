@@ -1,4 +1,5 @@
 import traceback
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from backend.db.client import supabase
 
@@ -59,6 +60,95 @@ def get_risk_forecast():
         {"city": "Delhi", "risk": 20},
     ]
 
+@router.get("/dashboard/payout-trends")
+def get_payout_trends():
+    try:
+        res = supabase.table('claims').select('created_at,payout_amount,status').execute()
+        claims = res.data or []
+        monthly_totals: dict[str, float] = {}
+        now = datetime.now(timezone.utc)
+
+        for claim in claims:
+            if claim.get('status') != 'paid':
+                continue
+
+            created_at = claim.get('created_at')
+            if not created_at:
+                continue
+
+            try:
+                created_ts = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+            except Exception:
+                continue
+
+            month_label = created_ts.strftime('%b')
+            monthly_totals[month_label] = monthly_totals.get(month_label, 0.0) + float(claim.get('payout_amount') or 0.0)
+
+        trends = []
+        for offset in range(5, -1, -1):
+            month = (now.month - offset - 1) % 12 + 1
+            year = now.year + ((now.month - offset - 1) // 12)
+            label = datetime(year, month, 1).strftime('%b')
+            trends.append({
+                'month': label,
+                'payouts': round(monthly_totals.get(label, 0.0), 2),
+            })
+
+        return trends
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/payouts/summary")
+def get_payout_summary():
+    try:
+        res = supabase.table('claims').select('payout_amount,status').execute()
+        claims = res.data or []
+        total_payouts = sum(float(item.get('payout_amount') or 0.0) for item in claims if item.get('status') == 'paid')
+        paid_count = sum(1 for item in claims if item.get('status') == 'paid')
+        total_claims = len(claims)
+        avg_payout = total_payouts / paid_count if paid_count else 0.0
+        pending_amount = sum(float(item.get('payout_amount') or 0.0) for item in claims if item.get('status') == 'pending')
+        success_rate = (paid_count / total_claims * 100) if total_claims else 0.0
+
+        return {
+            'total_payouts': round(total_payouts, 2),
+            'avg_payout': round(avg_payout, 2),
+            'success_rate': round(success_rate, 2),
+            'pending_amount': round(pending_amount, 2),
+        }
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/payouts/recent")
+def get_recent_payouts():
+    try:
+        claims_res = supabase.table('claims').select('id,worker_id,payout_amount,status,created_at').order('created_at', desc=True).limit(20).execute()
+        claims_data = claims_res.data or []
+        worker_ids = [claim['worker_id'] for claim in claims_data if claim.get('worker_id')]
+        workers = {}
+
+        if worker_ids:
+            workers_res = supabase.table('workers').select('id,name').in_('id', worker_ids).execute()
+            for worker in (workers_res.data or []):
+                workers[worker['id']] = worker.get('name', 'Unknown Worker')
+
+        result = []
+        for claim in claims_data:
+            result.append({
+                'id': claim['id'],
+                'worker_name': workers.get(claim.get('worker_id'), 'Unknown Worker'),
+                'amount': float(claim.get('payout_amount') or 0.0),
+                'status': claim.get('status', 'pending'),
+                'created_at': claim.get('created_at'),
+            })
+
+        return result
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/dashboard/fraud-queue")
 def get_fraud_queue():
     try:
@@ -76,7 +166,24 @@ def get_fraud_queue():
             workers_res = supabase.table('workers').select('id, name, city').in_('id', worker_ids).execute()
             for w in (workers_res.data or []):
                 workers_dict[w['id']] = w
-                
+
+        event_ids = [c['event_id'] for c in claims_data if c.get('event_id')]
+        event_hex_map: dict[str, str] = {}
+        zone_dci_map: dict[str, float] = {}
+
+        if event_ids:
+            event_res = supabase.table('disruption_events').select('id,hex_id').in_('id', event_ids).execute()
+            for e in (event_res.data or []):
+                if e.get('id') and e.get('hex_id'):
+                    event_hex_map[e['id']] = e['hex_id']
+
+        if event_hex_map:
+            hex_ids = list(set(event_hex_map.values()))
+            zone_res = supabase.table('hex_zones').select('hex_id,current_dci').in_('hex_id', hex_ids).execute()
+            for z in (zone_res.data or []):
+                if z.get('hex_id'):
+                    zone_dci_map[z['hex_id']] = float(z.get('current_dci') or 0.0)
+
         flags_dict = {cid: [] for cid in claim_ids}
         if claim_ids:
             flags_res = supabase.table('fraud_flags').select('claim_id, flag_type').in_('claim_id', claim_ids).execute()
@@ -87,6 +194,7 @@ def get_fraud_queue():
         result = []
         for c in claims_data:
             c_worker = workers_dict.get(c['worker_id'], {})
+            event_hex = event_hex_map.get(c.get('event_id'))
             result.append({
                 "claim_id": c['id'],
                 "created_at": c['created_at'],
@@ -95,6 +203,7 @@ def get_fraud_queue():
                 "status": c.get('status', 'unknown'),
                 "resolution_path": c.get('resolution_path', 'unknown'),
                 "fraud_score": c.get('fraud_score', 0),
+                "dci_score": zone_dci_map.get(event_hex, 0.0),
                 "flags": flags_dict.get(c['id'], [])
             })
         return result

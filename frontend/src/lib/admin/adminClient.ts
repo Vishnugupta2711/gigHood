@@ -27,7 +27,66 @@ export interface FraudQueueItem {
   status: string;
   resolution_path: string;
   fraud_score: number;
+  dci_score: number;
   flags: string[];
+}
+
+export interface PayoutSummary {
+  total_payouts: number;
+  avg_payout: number;
+  success_rate: number;
+  pending_amount: number;
+}
+
+export interface PayoutItem {
+  id: string;
+  worker_name: string;
+  amount: number;
+  status: string;
+  created_at: string;
+}
+
+export interface PolicyStats {
+  total_value_locked: number;
+  active_nodes: number;
+  loss_ratio: number;
+}
+
+export interface PolicyTier {
+  tier: string;
+  workers: number;
+  avg_coverage: number;
+}
+
+export interface MonthlyTrend {
+  month: string;
+  premiums?: number;
+  payouts: number;
+}
+
+export async function fetchPolicyStats(): Promise<PolicyStats> {
+  const { data } = await api.get('/admin/policies/stats');
+  return data;
+}
+
+export async function fetchPolicyTiers(): Promise<PolicyTier[]> {
+  const { data } = await api.get('/admin/policies/tiers');
+  return data;
+}
+
+export async function fetchPayoutTrends(): Promise<MonthlyTrend[]> {
+  const { data } = await api.get<MonthlyTrend[]>('/admin/dashboard/payout-trends');
+  return data;
+}
+
+export async function fetchPayoutSummary(): Promise<PayoutSummary> {
+  const { data } = await api.get('/admin/payouts/summary');
+  return data;
+}
+
+export async function fetchRecentPayouts(): Promise<PayoutItem[]> {
+  const { data } = await api.get('/admin/payouts/recent');
+  return data;
 }
 
 export async function fetchKPIs(): Promise<AdminKPIs> {

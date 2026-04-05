@@ -140,7 +140,7 @@ export default function MapPage() {
            style={{ height: 650 }}>
 
         {/* MAP TINT */}
-        <div className="absolute inset-0 bg-[#0b1a2b]/60 mix-blend-multiply z-[150]" />
+        <div className="absolute inset-0 bg-[#0b1a2b]/60 mix-blend-multiply z-[150] pointer-events-none" />
 
         {/* LEFT TOP PANEL */}
         <div className="absolute top-4 left-4 z-[400] w-56 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-3">

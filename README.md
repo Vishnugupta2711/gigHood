@@ -22,28 +22,30 @@
 ## Documentation Index
 
 1. `README.md`: setup, environment, runbook.
-2. `API.md`: backend routes and endpoint contracts.
-3. `DATABASE.md`: schema and migration mapping.
-4. `CONTEXT.md`: architecture and deployment context for future contributors/LLMs.
+2. `docs/API.md`: backend routes and endpoint contracts.
+3. `docs/DATABASE.md`: schema and migration mapping.
+4. `docs/CONTEXT.md`: architecture, deployment, and release context for contributors/LLMs.
 5. `AGENTS.md`: coding/contribution guardrails.
-6. `SOLUTION.md`: product and architecture narrative.
+6. `docs/SOLUTION.md`: product and architecture narrative.
 
 ## Repository Structure
 
 ```text
 gigHood/
 ├── backend/
+├── docs/
 ├── frontend/
 ├── supabase/
 ├── scripts/
 ├── tests/
 ├── docker-compose.yml
 ├── README.md
-├── API.md
-├── DATABASE.md
-├── CONTEXT.md
 ├── AGENTS.md
-└── SOLUTION.md
+└── docs/
+   ├── API.md
+   ├── DATABASE.md
+   ├── CONTEXT.md
+   └── SOLUTION.md
 ```
 
 ## Prerequisites
@@ -88,7 +90,9 @@ setup.bat
 1. `NEXT_PUBLIC_API_URL`
    - production API base URL
 2. `NEXT_PUBLIC_API_URL_PREVIEW`
-   - preview/staging API base URL for Vercel previews
+   - preview/staging API base URL
+3. `NEXT_PUBLIC_VERCEL_ENV` (optional when auto-exposed by Vercel)
+   - helps frontend choose preview vs production URL deterministically
 
 ## Run Locally
 
@@ -127,10 +131,24 @@ docker compose down
 
 ## Deployment Notes
 
-1. Production frontend should use `NEXT_PUBLIC_API_URL`.
-2. Preview frontend can use `NEXT_PUBLIC_API_URL_PREVIEW` to target an isolated backend.
-3. Admin frontend previews require a backend that mounts `/admin/*`.
-4. Render backend deploys in this repo require root `.python-version` pinned to `3.11.9` to avoid Python 3.14 package build failures (`pydantic-core` source build errors).
+1. Frontend supports both `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_API_URL_PREVIEW`.
+2. Resolution order in browser:
+   - local host -> local backend
+   - preview deployment -> `NEXT_PUBLIC_API_URL_PREVIEW` (fallback to `NEXT_PUBLIC_API_URL`)
+   - production/other -> `NEXT_PUBLIC_API_URL`
+3. Recommended: always set both values in Vercel (`Preview` + `Production`) to avoid accidental routing drift.
+4. Admin frontend previews require a backend that mounts `/admin/*`.
+5. Render backend deploys in this repo require root `.python-version` pinned to `3.11.9` to avoid Python 3.14 package build failures (`pydantic-core` source build errors).
+
+## Pre-Merge Release Checklist
+
+1. Confirm `NEXT_PUBLIC_API_URL` is set in both Vercel `Preview` and `Production` environments.
+2. Confirm `NEXT_PUBLIC_API_URL_PREVIEW` is set for Vercel `Preview` (recommended).
+3. Confirm admin backend (`admin` branch service) latest deploy is `live` on Render.
+4. Confirm production backend (`main` branch service) latest deploy is `live` on Render.
+5. Validate frontend with `npm run build` from `frontend/`.
+6. Validate backend with `pytest` from repository root.
+7. Ensure docs in `docs/` match code behavior before opening merge PR.
 
 ## UI Surface Contract
 

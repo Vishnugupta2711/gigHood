@@ -108,16 +108,40 @@ Representative outputs include:
 
 ### Preview / Branch Validation
 
-1. preview frontend builds (Vercel) may use `NEXT_PUBLIC_API_URL_PREVIEW`
-2. this allows admin-branch previews to target an isolated backend
-3. avoids mutating production frontend API base
+1. preview frontend builds (Vercel) can use `NEXT_PUBLIC_API_URL_PREVIEW`
+2. `NEXT_PUBLIC_API_URL` remains the production/default API variable
+3. runtime resolver prefers preview variable for preview deployments and falls back safely to production variable
 4. backend Render deploys should run on Python 3.11.9 (root `.python-version`) for dependency compatibility in this repo
 
 Runtime selection is implemented in `frontend/src/lib/api.ts`:
 
 1. localhost -> local backend
-2. non-production vercel host -> preview backend (if configured)
-3. otherwise -> production backend
+2. preview deployment -> `NEXT_PUBLIC_API_URL_PREVIEW` (fallback to `NEXT_PUBLIC_API_URL`)
+3. production/other -> `NEXT_PUBLIC_API_URL`
+4. fallback default -> `https://gighood-backend-live.onrender.com`
+
+## 4.1 Frontend Environment Matrix
+
+Use this matrix before merge:
+
+1. Local development
+   - file: `frontend/.env.local`
+   - key: `NEXT_PUBLIC_API_URL`
+   - typical value: `http://127.0.0.1:8001`
+2. Vercel Preview
+   - environment scope: `Preview`
+   - key: `NEXT_PUBLIC_API_URL_PREVIEW` (recommended)
+   - value: admin/staging backend URL
+   - fallback key: `NEXT_PUBLIC_API_URL`
+3. Vercel Production
+   - environment scope: `Production`
+   - key: `NEXT_PUBLIC_API_URL`
+   - value: production backend URL
+
+Important:
+
+1. If both variables are set globally without environment scope, production can be routed incorrectly; keep values separated by Vercel env scope.
+2. If preview frontend points at a missing Render URL, users see the network error raised by `frontend/src/lib/api.ts`.
 
 ## 5. Known Branch-Specific Context
 
@@ -147,6 +171,14 @@ To keep preview UX usable during backend mismatch/outage,
 
 Fallback activates for status 404 and network-unreachable scenarios.
 
+## 5.1 Release-Candidate Production Notes
+
+Before merge of `admin` into `main`, verify:
+
+1. `/admin/*` endpoints required by the dashboard are available on the target backend.
+2. Preview dashboard fallback data is only a resilience layer, not a substitute for backend readiness.
+3. API URL values in Vercel match intended environment/backend pairs.
+
 ## 6. Worker Theme and Layout Contract
 
 Worker UX contract:
@@ -164,6 +196,12 @@ Admin/public contract:
 
 This prevents style leakage across surfaces and preserves expected role-based UX.
 
+## 6.1 UI Regression Focus Areas Before Merge
+
+1. worker routes (`/worker-app/*`, and legacy aliases) remain dark and phone-shell constrained.
+2. admin routes remain light and desktop-width.
+3. route transitions do not leak shell or theme classes between surfaces.
+
 ## 7. Operational Guardrails for Future Work
 
 1. if routes change, update `API.md` in same branch
@@ -171,6 +209,13 @@ This prevents style leakage across surfaces and preserves expected role-based UX
 3. if deployment behavior changes, update `README.md` and this file
 4. keep `AGENTS.md` synchronized with workflow rules used by contributors and coding agents
 5. avoid production config changes when task scope is preview/staging-only
+
+## 7.1 Git and Deploy Guardrails for Merge
+
+1. merge changes from `admin` to `main` only after successful frontend build and backend tests.
+2. confirm Render backend service for target branch is live before frontend release promotion.
+3. avoid changing both frontend and backend env URLs during incident response unless rollback plan is prepared.
+4. tag or annotate release commits with deployment intent when possible.
 
 ## 8. Suggested Quick Verification Matrix
 
@@ -183,6 +228,27 @@ This prevents style leakage across surfaces and preserves expected role-based UX
    - admin routes remain light/full-width
 6. preview environment:
    - verify API base selection under preview host
+
+## 8.1 Push-Readiness Checklist (Admin Branch)
+
+1. `git status` clean except intentional docs/code updates.
+2. `frontend/src/lib/api.ts` uses `NEXT_PUBLIC_API_URL` strategy.
+3. docs updated to reflect single env key strategy (`README.md`, `docs/CONTEXT.md`, `AGENTS.md`).
+4. `npm run build` succeeds in `frontend/`.
+5. backend tests succeed (`pytest`).
+6. Render latest admin backend deploy is `live`.
+7. Vercel preview environment has correct `NEXT_PUBLIC_API_URL` value.
+
+## 8.2 Recommended Cutover Sequence
+
+1. Freeze non-release changes on `admin`.
+2. Validate checklist in section 8.1.
+3. Merge `admin` -> `main`.
+4. Verify backend health (`GET /`) and key admin/worker endpoints.
+5. Verify production frontend smoke paths:
+   - worker login/home
+   - admin dashboard landing
+6. Keep rollback reference commit/hash ready.
 
 ## 9. Source-of-Truth Ordering
 

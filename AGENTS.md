@@ -38,11 +38,12 @@ It combines zone disruption indexing, policy logic, claim routing, fraud control
 
 ## Multi-Environment Rules
 
-1. Production frontend must continue using `NEXT_PUBLIC_API_URL`.
-2. Preview frontend may use `NEXT_PUBLIC_API_URL_PREVIEW` for isolated backend testing.
-3. Admin frontend previews should target backend builds that mount `/admin/*`.
-4. Do not modify production infrastructure while debugging preview branches unless explicitly requested.
-5. Keep root `.python-version` pinned (`3.11.9`) unless Render service-level runtime pinning is explicitly configured and verified.
+1. Frontend API resolution supports both `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_API_URL_PREVIEW`.
+2. Preview deployments should prefer `NEXT_PUBLIC_API_URL_PREVIEW` and fall back to `NEXT_PUBLIC_API_URL`.
+3. Production deployments should resolve to `NEXT_PUBLIC_API_URL`.
+4. Admin frontend previews should target backend builds that mount `/admin/*`.
+5. Do not modify production infrastructure while debugging preview branches unless explicitly requested.
+6. Keep root `.python-version` pinned (`3.11.9`) unless Render service-level runtime pinning is explicitly configured and verified.
 
 ## Engineering Rules
 

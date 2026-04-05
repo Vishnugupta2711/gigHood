@@ -7,6 +7,7 @@ const DEFAULT_PREVIEW_API_URL = 'https://gighood-backend-admin.onrender.com';
 function resolveApiBaseUrl(): string {
   const configuredProd = process.env.NEXT_PUBLIC_API_URL;
   const configuredPreview = process.env.NEXT_PUBLIC_API_URL_PREVIEW;
+  const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
 
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
@@ -14,17 +15,28 @@ function resolveApiBaseUrl(): string {
       return DEFAULT_LOCAL_API_URL;
     }
 
-    // Allow preview deployments to use an isolated backend URL without touching production config.
+    // Most reliable path on Vercel when system env vars are exposed.
+    if (vercelEnv === 'preview') {
+      return configuredPreview || configuredProd || DEFAULT_PREVIEW_API_URL;
+    }
+
+    if (vercelEnv === 'production') {
+      return configuredProd || DEFAULT_PROD_API_URL;
+    }
+
+    // Fallback for environments where NEXT_PUBLIC_VERCEL_ENV is not exposed.
     const isVercelPreview =
       host.endsWith('.vercel.app') &&
       !host.includes('gighood.vercel.app');
 
     if (isVercelPreview) {
-      return configuredPreview || DEFAULT_PREVIEW_API_URL;
+      return configuredPreview || configuredProd || DEFAULT_PREVIEW_API_URL;
     }
   }
 
   if (configuredProd) return configuredProd;
+
+  if (configuredPreview) return configuredPreview;
 
   return DEFAULT_PROD_API_URL;
 }

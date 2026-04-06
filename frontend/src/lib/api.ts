@@ -2,17 +2,41 @@ import axios from 'axios';
 
 const DEFAULT_LOCAL_API_URL = 'http://localhost:8001';
 const DEFAULT_PROD_API_URL = 'https://gighood-backend-live.onrender.com';
+const DEFAULT_PREVIEW_API_URL = 'https://gighood-backend-admin.onrender.com';
 
 function resolveApiBaseUrl(): string {
-  const configured = process.env.NEXT_PUBLIC_API_URL;
-  if (configured) return configured;
+  const configuredProd = process.env.NEXT_PUBLIC_API_URL;
+  const configuredPreview = process.env.NEXT_PUBLIC_API_URL_PREVIEW;
+  const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
 
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1') {
       return DEFAULT_LOCAL_API_URL;
     }
+
+    // Most reliable path on Vercel when system env vars are exposed.
+    if (vercelEnv === 'preview') {
+      return configuredPreview || configuredProd || DEFAULT_PREVIEW_API_URL;
+    }
+
+    if (vercelEnv === 'production') {
+      return configuredProd || DEFAULT_PROD_API_URL;
+    }
+
+    // Fallback for environments where NEXT_PUBLIC_VERCEL_ENV is not exposed.
+    const isVercelPreview =
+      host.endsWith('.vercel.app') &&
+      !host.includes('gighood.vercel.app');
+
+    if (isVercelPreview) {
+      return configuredPreview || configuredProd || DEFAULT_PREVIEW_API_URL;
+    }
   }
+
+  if (configuredProd) return configuredProd;
+
+  if (configuredPreview) return configuredPreview;
 
   return DEFAULT_PROD_API_URL;
 }

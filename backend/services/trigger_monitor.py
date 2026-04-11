@@ -49,20 +49,95 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Callable, Coroutine, Optional
 
 from backend.config import settings
 from backend.db.client import get_db_connection, supabase_admin
 from backend.services.dci_engine import DCICycleResult, HexDCIResult
 
 logger = logging.getLogger(__name__)
+audit_logger = logging.getLogger("trigger_monitor.audit")
 
 # Claim batch size — process this many workers per hex in one asyncio.gather()
 _CLAIM_BATCH_SIZE: int = 50
+
+# Concurrency limiter: max simultaneous _process_worker_claim coroutines.
+# At 25 concurrent workers, a 10,000-worker hex processes in ~400 batches
+# without starving the event loop or asyncpg pool.
+_WORKER_SEMAPHORE = asyncio.Semaphore(25)
+
+# Dead-letter queue: worker claims that failed after all retries.
+# Logged separately so ops can replay them without re-running the full cycle.
+_DEAD_LETTER_QUEUE: list[dict] = []
+
+
+# =============================================================================
+# RETRY HELPER
+# =============================================================================
+
+async def _with_retry(
+    coro_fn: Callable[[], Coroutine[Any, Any, Any]],
+    label: str,
+    retries: int = 3,
+    fallback: Any = None,
+) -> Any:
+    """
+    Retry wrapper with exponential backoff for external API and DB calls.
+    Returns `fallback` if all attempts are exhausted.
+    """
+    delay = 0.15
+    for attempt in range(1, retries + 1):
+        try:
+            return await coro_fn()
+        except Exception as exc:
+            logger.warning(
+                "[trigger_monitor] %s failed (attempt %d/%d): %s",
+                label, attempt, retries, exc,
+            )
+            if attempt < retries:
+                await asyncio.sleep(delay)
+                delay *= 2
+    return fallback
+
+
+# =============================================================================
+# PAYOUT SAFETY VALIDATOR
+# =============================================================================
+
+def _validate_payout_safety(
+    outcome:  "WorkerClaimOutcome",
+    policy:   dict,
+    claim_data: dict,
+) -> tuple[bool, str]:
+    """
+    Payment safety gate — called before any FAST_TRACK payout is approved.
+    Returns (safe: bool, reason: str).
+
+    Checks:
+      1. Fraud score re-evaluation: must still be < FRAUD_SCORE_SOFT_QUEUE
+      2. Payout <= effective daily cap (never overpay)
+      3. claim_id must be present (idempotency guard)
+    """
+    if not outcome.claim_id:
+        return False, "No claim_id — idempotency guard triggered"
+
+    # Re-check fraud score hasn't changed
+    if outcome.fraud_score >= int(settings.FRAUD_SCORE_SOFT_QUEUE * 100):
+        return False, f"Fraud score {outcome.fraud_score} exceeds FAST_TRACK threshold"
+
+    # Payout cap guard
+    cap_paise = int(policy.get("effective_daily_cap_paise") or 0)
+    if cap_paise > 0 and outcome.payout_paise > cap_paise:
+        return False, (
+            f"Payout {outcome.payout_paise} paise exceeds cap {cap_paise} paise"
+        )
+
+    return True, "ok"
 
 
 # =============================================================================
@@ -128,11 +203,9 @@ async def _get_claimable_policies(hex_id: str) -> list[dict]:
     Returns all ACTIVE, CONFIRMED policies in the given hex zone.
     Reads from the claimable_policies view (migration 003) which joins
     workers to get trust_score, platform_worker_id, upi_id, fcm_device_token.
-
-    Returns:
-        List of policy dicts with embedded worker fields.
+    Retried up to 3x with exponential backoff (circuit-breaker fallback → []).
     """
-    try:
+    async def _do_fetch() -> list[dict]:
         response = (
             supabase_admin.raw()
             .table("claimable_policies")
@@ -141,9 +214,12 @@ async def _get_claimable_policies(hex_id: str) -> list[dict]:
             .execute()
         )
         return response.data or []
-    except Exception as exc:
-        logger.error("_get_claimable_policies(%s) failed: %s", hex_id, exc)
+
+    result = await _with_retry(_do_fetch, f"_get_claimable_policies({hex_id})", fallback=None)
+    if result is None:
+        logger.error("_get_claimable_policies(%s) exhausted retries — returning []", hex_id)
         return []
+    return result
 
 
 # =============================================================================
@@ -169,13 +245,20 @@ async def _check_gate2_order_activity(
     Production: calls real Zepto/Blinkit platform API via data partnership.
     Demo: deterministic mock seeded by worker_id + hour.
     """
-    try:
-        from backend.services.mock_external_apis import verify_zepto_worker_activity
-        payload = await asyncio.to_thread(verify_zepto_worker_activity, worker_id)
-    except Exception as exc:
-        logger.warning(
-            "Gate 2 platform API unavailable for %s: %s", worker_id, exc
-        )
+    from backend.services.mock_external_apis import verify_zepto_worker_activity
+
+    async def _call_gate2() -> dict:
+        return await asyncio.to_thread(verify_zepto_worker_activity, worker_id)
+
+    payload = await _with_retry(
+        _call_gate2,
+        f"Gate2:{worker_id}",
+        retries=3,
+        fallback={"status": "unavailable"},
+    )
+
+    if payload is None or payload.get("status") == "unavailable":
+        logger.warning("Gate 2 platform API unavailable for %s (exhausted retries)", worker_id)
         return {
             "result":        "PLATFORM_UNAVAILABLE",
             "order_count":   0,
@@ -291,7 +374,9 @@ def _compute_fraud_score(
     if pop_result.get("gate3_velocity_violation", False):
         flags["GATE3_VELOCITY_VIOLATION"] = 0  # Gate 3 is secondary — routes to SOFT_QUEUE
 
-    total = min(100, score)
+    # Clamp to [0, 100] — scores above 100 are a model error, not a signal.
+    total = max(0, min(100, score))
+    assert 0 <= total <= 100, f"Fraud score out of bounds: {total}"  # noqa: S101
     return total, flags
 
 
@@ -346,99 +431,178 @@ async def _process_worker_claim(
 ) -> WorkerClaimOutcome:
     """
     Processes a single worker's claim for a disruption event.
-    Steps: Gate 2 check → fraud score → path assignment → claim creation.
+    Steps: Gate 2 check → fraud score → path assignment → payout safety → claim creation.
+    Wrapped in a semaphore to cap total concurrent workers at 25.
     """
-    worker_id  = policy["worker_id"]
-    policy_id  = policy["policy_id"]
-    outcome    = WorkerClaimOutcome(worker_id=worker_id, policy_id=policy_id)
+    async with _WORKER_SEMAPHORE:
+        worker_id  = policy["worker_id"]
+        policy_id  = policy["policy_id"]
+        outcome    = WorkerClaimOutcome(worker_id=worker_id, policy_id=policy_id)
+        t_worker   = time.perf_counter()
 
-    try:
-        # Pop validation result from batch (already computed for the whole hex)
-        pop_result = hex_pop_results.get(worker_id, {})
-        outcome.pop_validated = bool(pop_result.get("pop_validated", False))
+        try:
+            # ── Pop validation result (pre-computed for the whole hex) ──────
+            pop_result = hex_pop_results.get(worker_id, {})
+            outcome.pop_validated = bool(pop_result.get("pop_validated", False))
 
-        # Gate 2: platform order activity
-        g2 = await _check_gate2_order_activity(
-            worker_id=worker_id,
-            platform_worker_id=policy.get("platform_worker_id"),
-            disruption_start=disruption_start,
-        )
-        outcome.gate2_result = g2["result"]
+            # ── Degraded-mode fast exit: skip Gate 2, force SOFT_QUEUE ─────
+            # If the hex has < SIGNAL_DEGRADED_MODE_THRESHOLD signal sources,
+            # we cannot confidently score the worker — route to manual review.
+            if is_degraded:
+                outcome.gate2_result    = "PLATFORM_UNAVAILABLE"
+                outcome.fraud_score     = 0
+                outcome.resolution_path = "SOFT_QUEUE"
+                # Still create the claim row, just with SOFT_QUEUE path
+                g2 = {"result": "PLATFORM_UNAVAILABLE", "order_count": 0, "last_order_at": None}
+                flags: dict[str, int] = {}
+            else:
+                # ── Gate 2: platform order activity (retried externally) ───
+                g2 = await _check_gate2_order_activity(
+                    worker_id=worker_id,
+                    platform_worker_id=policy.get("platform_worker_id"),
+                    disruption_start=disruption_start,
+                )
+                outcome.gate2_result = g2["result"]
 
-        # Fraud score
-        fraud_score, flags = _compute_fraud_score(pop_result, g2, policy)
-        outcome.fraud_score = fraud_score
+                # ── Fraud score (clamped [0, 100]) ─────────────────────────
+                fraud_score, flags = _compute_fraud_score(pop_result, g2, policy)
+                outcome.fraud_score = fraud_score
 
-        # Path assignment
-        path = _assign_path(g2["result"], fraud_score, is_degraded)
-        outcome.resolution_path = path
+                # ── Path assignment ────────────────────────────────────────
+                path = _assign_path(g2["result"], fraud_score, is_degraded)
+                outcome.resolution_path = path
 
-        # Create claim via fn_create_claim()
-        pings_in_window = pop_result.get("ping_count_in_hex", 0)
-        jitter = pop_result.get("jitter_pattern", "UNKNOWN")
-        variance = pop_result.get("coordinate_variance", 0.0)
-        velocity = pop_result.get("gate3_velocity_violation", False)
+                # ── Payout safety gate (FAST_TRACK only) ──────────────────
+                if path == "FAST_TRACK":
+                    # Pre-validate before claim row is created — catch cap
+                    # violations before any money moves.
+                    cap_paise = int(policy.get("effective_daily_cap_paise") or 0)
+                    if cap_paise > 0:
+                        # estimated payout — will be confirmed after fn_create_claim
+                        est_payout = int(
+                            policy.get("avg_daily_earnings_paise", 0) or 0
+                        )
+                        if est_payout > cap_paise:
+                            logger.warning(
+                                "Payout safety: rerouting worker %s to SOFT_QUEUE "
+                                "(est %d > cap %d paise)",
+                                worker_id, est_payout, cap_paise,
+                            )
+                            outcome.resolution_path = "SOFT_QUEUE"
 
-        response = supabase_admin.raw().rpc(
-            "fn_create_claim",
-            {
-                "p_worker_id":                      worker_id,
-                "p_policy_id":                      policy_id,
-                "p_disruption_event_id":            disruption_event_id,
-                "p_disrupted_hours_raw":             disrupted_hours,
-                "p_disrupted_hours_verified":        disrupted_hours,
-                "p_worker_avg_daily_earnings_paise": policy.get("avg_daily_earnings_paise", 0) or 0,
-                "p_effective_daily_cap_paise":       policy.get("effective_daily_cap_paise", 0) or 0,
-                "p_pop_validated":                   outcome.pop_validated,
-                "p_pop_ping_count":                  pings_in_window,
-                "p_pop_fallback_used":               pings_in_window < settings.POP_MIN_PINGS_IN_HEX,
-                "p_pop_coordinate_variance":         variance,
-                "p_pop_jitter_pattern":              jitter,
-                "p_pop_entry_velocity_kmh":          pop_result.get("entry_velocity_kmh"),
-                "p_pop_velocity_violation":          velocity,
-                "p_pop_validation_run_id":           None,
-                "p_gate2_result":                    g2["result"],
-                "p_gate2_order_count":               g2.get("order_count", 0),
-                "p_gate2_last_order_at":             (
-                    g2["last_order_at"].isoformat()
-                    if g2.get("last_order_at") else None
-                ),
-                "p_worker_upi_id":                  policy.get("upi_id"),
-                "p_payout_channel":                  policy.get("payout_channel", "UPI"),
-            }
-        ).execute()
+            # ── Create claim via fn_create_claim() ─────────────────────────
+            pings_in_window = pop_result.get("ping_count_in_hex", 0)
+            jitter   = pop_result.get("jitter_pattern", "UNKNOWN")
+            variance = pop_result.get("coordinate_variance", 0.0)
+            velocity = pop_result.get("gate3_velocity_violation", False)
 
-        claim_data = (response.data or [{}])[0]
-        if not claim_data:
-            outcome.error = "fn_create_claim returned empty"
-            return outcome
-
-        outcome.claim_id    = str(claim_data.get("claim_id", ""))
-        outcome.payout_paise = int(claim_data.get("payout_amount_paise", 0))
-
-        # Assign path via fn_assign_claim_path()
-        if outcome.claim_id:
-            supabase_admin.raw().rpc(
-                "fn_assign_claim_path",
+            response = supabase_admin.raw().rpc(
+                "fn_create_claim",
                 {
-                    "p_claim_id":     outcome.claim_id,
-                    "p_gate2_result": g2["result"],
-                    "p_fraud_score":  fraud_score,
-                    "p_trust_score":  policy.get("trust_score", 50),
+                    "p_worker_id":                      worker_id,
+                    "p_policy_id":                      policy_id,
+                    "p_disruption_event_id":            disruption_event_id,
+                    "p_disrupted_hours_raw":             disrupted_hours,
+                    "p_disrupted_hours_verified":        disrupted_hours,
+                    "p_worker_avg_daily_earnings_paise": policy.get("avg_daily_earnings_paise", 0) or 0,
+                    "p_effective_daily_cap_paise":       policy.get("effective_daily_cap_paise", 0) or 0,
+                    "p_pop_validated":                   outcome.pop_validated,
+                    "p_pop_ping_count":                  pings_in_window,
+                    "p_pop_fallback_used":               pings_in_window < settings.POP_MIN_PINGS_IN_HEX,
+                    "p_pop_coordinate_variance":         variance,
+                    "p_pop_jitter_pattern":              jitter,
+                    "p_pop_entry_velocity_kmh":          pop_result.get("entry_velocity_kmh"),
+                    "p_pop_velocity_violation":          velocity,
+                    "p_pop_validation_run_id":           None,
+                    "p_gate2_result":                    g2["result"],
+                    "p_gate2_order_count":               g2.get("order_count", 0),
+                    "p_gate2_last_order_at":             (
+                        g2["last_order_at"].isoformat()
+                        if g2.get("last_order_at") else None
+                    ),
+                    "p_worker_upi_id":                  policy.get("upi_id"),
+                    "p_payout_channel":                  policy.get("payout_channel", "UPI"),
                 }
             ).execute()
 
-            # Write individual fraud flags to fraud_flags table
-            await _write_fraud_flags(outcome.claim_id, worker_id, flags)
+            claim_data = (response.data or [{}])[0]
+            if not claim_data:
+                outcome.error = "fn_create_claim returned empty"
+                _DEAD_LETTER_QUEUE.append({
+                    "worker_id": worker_id, "policy_id": policy_id,
+                    "event_id": disruption_event_id, "reason": outcome.error,
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                })
+                logger.warning(
+                    "[dead-letter] claim creation returned empty: worker=%s event=%s",
+                    worker_id, disruption_event_id,
+                )
+                return outcome
 
-    except Exception as exc:
-        outcome.error = str(exc)
-        logger.error(
-            "Worker claim processing failed: worker=%s event=%s: %s",
-            worker_id, disruption_event_id, exc,
-        )
+            outcome.claim_id     = str(claim_data.get("claim_id", ""))
+            outcome.payout_paise = int(claim_data.get("payout_amount_paise", 0))
 
-    return outcome
+            # ── Post-creation payout safety re-check (FAST_TRACK only) ────
+            if outcome.resolution_path == "FAST_TRACK":
+                safe, reason = _validate_payout_safety(outcome, policy, claim_data)
+                if not safe:
+                    logger.warning(
+                        "Payout safety gate blocked FAST_TRACK: worker=%s reason=%s",
+                        worker_id, reason,
+                    )
+                    outcome.resolution_path = "SOFT_QUEUE"
+
+            # ── Assign path via fn_assign_claim_path() ─────────────────────
+            if outcome.claim_id:
+                supabase_admin.raw().rpc(
+                    "fn_assign_claim_path",
+                    {
+                        "p_claim_id":     outcome.claim_id,
+                        "p_gate2_result": g2["result"],
+                        "p_fraud_score":  outcome.fraud_score,
+                        "p_trust_score":  policy.get("trust_score", 50),
+                    }
+                ).execute()
+
+                # Write fraud flags (non-blocking)
+                await _write_fraud_flags(outcome.claim_id, worker_id, flags)
+
+            # ── Structured audit log per claim ─────────────────────────────
+            audit_logger.info(json.dumps({
+                "event":        "claim_decision",
+                "worker_id":    worker_id,
+                "claim_id":     outcome.claim_id,
+                "policy_id":    policy_id,
+                "fraud_score":  outcome.fraud_score,
+                "gate2":        outcome.gate2_result,
+                "path":         outcome.resolution_path,
+                "payout_paise": outcome.payout_paise,
+                "pop_ok":       outcome.pop_validated,
+                "is_degraded":  is_degraded,
+                "duration_ms":  int((time.perf_counter() - t_worker) * 1000),
+                "ts":           datetime.now(timezone.utc).isoformat(),
+            }))
+
+        except Exception as exc:
+            outcome.error = str(exc)
+            logger.error(
+                "Worker claim processing failed: worker=%s event=%s: %s",
+                worker_id, disruption_event_id, exc,
+            )
+            # Push to dead-letter queue for ops replay
+            _DEAD_LETTER_QUEUE.append({
+                "worker_id": worker_id, "policy_id": policy_id,
+                "event_id": disruption_event_id,
+                "error": str(exc),
+                "ts": datetime.now(timezone.utc).isoformat(),
+            })
+            if len(_DEAD_LETTER_QUEUE) % 10 == 0:
+                # Periodic summary so dead-letter growth is visible in Sentry/logs
+                logger.error(
+                    "[dead-letter] queue depth: %d items", len(_DEAD_LETTER_QUEUE)
+                )
+
+        return outcome
 
 
 # =============================================================================
@@ -514,11 +678,12 @@ async def _batch_pop_validation(
     """
     Calls fn_batch_validate_hex_pop() via asyncpg to validate PoP for
     all workers in a hex in a single SQL query.
+    Retried up to 3x (circuit-breaker fallback → {}).
 
     Returns:
         {worker_id: pop_result_dict}
     """
-    try:
+    async def _do_pop() -> dict[str, dict]:
         async with get_db_connection() as conn:
             rows = await conn.fetch(
                 """
@@ -533,11 +698,14 @@ async def _batch_pop_validation(
                 settings.POP_WINDOW_MINUTES,
             )
         return {str(row["worker_id"]): dict(row) for row in rows}
-    except Exception as exc:
+
+    result = await _with_retry(_do_pop, f"fn_batch_validate_hex_pop({hex_id})", fallback=None)
+    if result is None:
         logger.error(
-            "fn_batch_validate_hex_pop(%s) failed: %s", hex_id, exc
+            "fn_batch_validate_hex_pop(%s) exhausted retries — returning {}", hex_id
         )
         return {}
+    return result
 
 
 # =============================================================================
@@ -550,36 +718,48 @@ async def _send_disruption_notifications(
 ) -> int:
     """
     Sends FCM push notifications to workers about their claim status.
-    Fire-and-forget — notification failure does not block claim processing.
+    Fire-and-forget — parallelised via asyncio.gather for maximum throughput.
+    Notification failure does not block claim processing.
 
     Returns: count of notifications sent.
     """
-    sent = 0
     try:
         from backend.services.notification_service import send_claim_notification
-        for outcome in outcomes:
-            if not outcome.claim_id:
-                continue
-            policy = policies_by_worker.get(outcome.worker_id, {})
-            fcm_token = policy.get("fcm_device_token")
-            if not fcm_token:
-                continue
-            try:
-                await send_claim_notification(
-                    fcm_token=fcm_token,
-                    claim_id=outcome.claim_id,
-                    resolution_path=outcome.resolution_path or "SOFT_QUEUE",
-                    payout_paise=outcome.payout_paise,
-                )
-                outcome.notification_sent = True
-                sent += 1
-            except Exception as exc:
-                logger.warning(
-                    "FCM notification failed for worker %s: %s",
-                    outcome.worker_id, exc,
-                )
     except ImportError:
         logger.warning("notification_service not available — skipping FCM")
+        return 0
+
+    async def _notify_one(outcome: WorkerClaimOutcome) -> bool:
+        if not outcome.claim_id:
+            return False
+        policy    = policies_by_worker.get(outcome.worker_id, {})
+        fcm_token = policy.get("fcm_device_token")
+        if not fcm_token:
+            return False
+
+        async def _do_notify() -> None:
+            await send_claim_notification(
+                fcm_token=fcm_token,
+                claim_id=outcome.claim_id,
+                resolution_path=outcome.resolution_path or "SOFT_QUEUE",
+                payout_paise=outcome.payout_paise,
+            )
+
+        result = await _with_retry(_do_notify, f"FCM:{outcome.worker_id}", retries=2, fallback="failed")
+        if result == "failed":
+            logger.warning("FCM notification failed for worker %s (exhausted retries)", outcome.worker_id)
+            return False
+
+        outcome.notification_sent = True
+        return True
+
+    # Fire all notifications in parallel — return_exceptions=True ensures one
+    # failed FCM call doesn't cancel the others.
+    notif_results = await asyncio.gather(
+        *[_notify_one(o) for o in outcomes],
+        return_exceptions=True,
+    )
+    sent = sum(1 for r in notif_results if r is True)
     return sent
 
 
@@ -738,20 +918,12 @@ async def _notify_elevated_watch_workers(
 # 12. MAIN CYCLE ENTRY POINT
 # =============================================================================
 
-async def process_dci_cycle_results(
+async def _process_dci_cycle_inner(
     dci_cycle: DCICycleResult,
 ) -> TriggerMonitorCycleResult:
     """
-    Processes the output of run_dci_cycle() to initiate claims, send
-    notifications, and manage disruption event state.
-
-    Called by APScheduler AFTER dci_engine.run_dci_cycle() returns.
-
-    Args:
-        dci_cycle: The result from the DCI computation cycle.
-
-    Returns:
-        TriggerMonitorCycleResult with aggregate statistics.
+    Inner implementation — wrapped by process_dci_cycle_results with a
+    120-second timeout guard. All external calls go through here.
     """
     monitor_result = TriggerMonitorCycleResult(
         cycle_at=datetime.now(timezone.utc)
@@ -785,27 +957,28 @@ async def process_dci_cycle_results(
     monitor_result.hexes_already_disrupted = len(already_disrupted)
     monitor_result.hexes_cleared           = len(newly_cleared)
 
-    # -------------------------------------------------------------------------
-    # Process newly disrupted hexes — initiate claims
-    # -------------------------------------------------------------------------
+    # ── Process newly disrupted hexes — initiate claims ───────────────────────
+    all_hex_batches: list[HexClaimBatchResult] = []
+
     if newly_disrupted:
         logger.info(
             "Trigger: %d hexes newly DISRUPTED — initiating claims",
             len(newly_disrupted),
         )
 
-        # Process all newly disrupted hexes concurrently (not sequentially)
-        # Each hex is independent — no shared mutable state between them
         claim_tasks = [
             _process_hex_claims(r, r.disruption_event_id)
             for r in newly_disrupted
             if r.disruption_event_id
         ]
-        hex_batch_results = await asyncio.gather(
-            *claim_tasks, return_exceptions=False
-        )
+        hex_batch_results = await asyncio.gather(*claim_tasks, return_exceptions=True)
 
         for batch in hex_batch_results:
+            if isinstance(batch, Exception):
+                logger.error("Hex claim batch failed with exception: %s", batch)
+                monitor_result.errors.append(str(batch))
+                continue
+            all_hex_batches.append(batch)
             monitor_result.total_claims_initiated += batch.claims_created
             monitor_result.total_fast_track       += batch.fast_track_count
             monitor_result.total_soft_queue       += batch.soft_queue_count
@@ -814,45 +987,78 @@ async def process_dci_cycle_results(
             monitor_result.total_payout_paise     += batch.total_payout_paise
             monitor_result.errors.extend(batch.errors)
 
-    # -------------------------------------------------------------------------
-    # Send elevated watch alerts (non-blocking)
-    # -------------------------------------------------------------------------
+    # ── Elevated watch alerts (non-blocking) ──────────────────────────────────
     if elevated_watch:
         notifs = await _notify_elevated_watch_workers(elevated_watch)
         monitor_result.notifications_sent += notifs
 
-    # -------------------------------------------------------------------------
-    # Initiate UPI payouts for FAST_TRACK claims
-    # -------------------------------------------------------------------------
-    fast_track_claims = [
-        outcome
-        for batch in (
-            _process_hex_claims.__wrapped__ if hasattr(_process_hex_claims, "__wrapped__") else []
-        )
-        for outcome in getattr(batch, "worker_outcomes", [])
-        if outcome.resolution_path == "FAST_TRACK" and outcome.claim_id
-    ]
-    # Note: fast_track UPI initiation is handled by payment_service.py
-    # which polls the pending_claims_queue view continuously. No direct
-    # call needed here — the claim rows are already in FAST_TRACK status.
-
+    # ── Cycle metrics ─────────────────────────────────────────────────────────
     monitor_result.duration_ms = int((time.perf_counter() - t0) * 1000)
 
+    total_claims = monitor_result.total_claims_initiated
+    fraud_rate     = round(
+        monitor_result.total_denied / max(total_claims, 1) * 100, 1
+    )
+    fast_track_ratio = round(
+        monitor_result.total_fast_track / max(total_claims, 1) * 100, 1
+    )
+    avg_payout_rs = round(
+        monitor_result.total_payout_paise / max(monitor_result.total_fast_track, 1) / 100, 2
+    )
+    dead_letter_depth = len(_DEAD_LETTER_QUEUE)
+
     logger.info(
-        "Trigger monitor cycle complete: "
-        "new_disrupted=%d claims=%d FT=%d SQ=%d AV=%d DN=%d "
-        "payouts=₹%.0f duration=%dms",
+        "Trigger monitor cycle complete | "
+        "new_disrupted=%d claims=%d FT=%d(%.1f%%) SQ=%d AV=%d DN=%d "
+        "| fraud_rate=%.1f%% avg_payout=₹%.2f "
+        "| dead_letter=%d notifs=%d duration=%dms",
         monitor_result.hexes_newly_disrupted,
-        monitor_result.total_claims_initiated,
-        monitor_result.total_fast_track,
+        total_claims,
+        monitor_result.total_fast_track, fast_track_ratio,
         monitor_result.total_soft_queue,
         monitor_result.total_active_verify,
         monitor_result.total_denied,
-        monitor_result.total_payout_paise / 100,
+        fraud_rate,
+        avg_payout_rs,
+        dead_letter_depth,
+        monitor_result.notifications_sent,
         monitor_result.duration_ms,
     )
 
+    # Note: FAST_TRACK UPI initiation is handled by payment_service.py
+    # which polls the pending_claims_queue view continuously.
     return monitor_result
+
+
+async def process_dci_cycle_results(
+    dci_cycle: DCICycleResult,
+) -> TriggerMonitorCycleResult:
+    """
+    Processes the output of run_dci_cycle() to initiate claims, send
+    notifications, and manage disruption event state.
+
+    Called by APScheduler AFTER dci_engine.run_dci_cycle() returns.
+    Wraps the inner implementation with a 120-second global timeout guard.
+
+    Args:
+        dci_cycle: The result from the DCI computation cycle.
+
+    Returns:
+        TriggerMonitorCycleResult with aggregate statistics.
+    """
+    try:
+        return await asyncio.wait_for(
+            _process_dci_cycle_inner(dci_cycle),
+            timeout=120.0,
+        )
+    except asyncio.TimeoutError:
+        logger.error(
+            "process_dci_cycle_results timed out after 120s — returning partial result"
+        )
+        partial = TriggerMonitorCycleResult(cycle_at=datetime.now(timezone.utc))
+        partial.errors.append("Trigger monitor timed out after 120s")
+        partial.duration_ms = 120_000
+        return partial
 
 
 # =============================================================================

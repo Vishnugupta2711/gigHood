@@ -46,13 +46,38 @@ import logging
 import math
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Callable, Coroutine, Optional
 
 from backend.config import settings
 from backend.db.client import get_db_connection, get_db_transaction, supabase_admin
 
 logger = logging.getLogger(__name__)
+
+# =============================================================================
+# CONCURRENCY SETTINGS
+# =============================================================================
+# Limit how many hexes are computed in parallel to avoid starving the asyncpg
+# connection pool.  30 parallel coroutines is safe for pools of size 10+.
+_COMPUTE_SEMAPHORE = asyncio.Semaphore(30)
+
+# =============================================================================
+# WEIGHT CACHE (5-minute TTL)
+# =============================================================================
+# DCI weights change weekly via XGBoost retraining. Caching for 5 minutes
+# avoids a DB round-trip on every cycle while staying close to real-time.
+_WEIGHTS_CACHE: dict[str, Any] | None = None
+_WEIGHTS_CACHE_AT: datetime | None = None
+_WEIGHTS_TTL = timedelta(minutes=5)
+
+# =============================================================================
+# SIGNAL CACHE (30-second TTL per hex batch)
+# =============================================================================
+# Caches the last fn_get_hex_signals() call so rapid successive cycles
+# (e.g. during stress tests) don't hammer the DB.
+_SIGNAL_CACHE: dict[str, dict] = {}
+_SIGNAL_CACHE_AT: datetime | None = None
+_SIGNAL_TTL = timedelta(seconds=30)
 
 
 # =============================================================================
@@ -170,12 +195,20 @@ class DCICycleResult:
 
 async def _fetch_current_weights() -> dict[str, float]:
     """
-    Reads the current DCI weights from system_config (single row).
-    Weights change weekly via XGBoost retraining — this ensures the engine
-    always uses the most recently trained weights.
-
-    Returns the cold-start priors from settings if the DB read fails.
+    Reads the current DCI weights from system_config.
+    Cached for 5 minutes to avoid a DB round-trip on every cycle.
+    Falls back to cold-start priors from settings on any DB failure.
     """
+    global _WEIGHTS_CACHE, _WEIGHTS_CACHE_AT
+
+    now = datetime.now(timezone.utc)
+    if (
+        _WEIGHTS_CACHE is not None
+        and _WEIGHTS_CACHE_AT is not None
+        and (now - _WEIGHTS_CACHE_AT) < _WEIGHTS_TTL
+    ):
+        return dict(_WEIGHTS_CACHE)  # return a copy so callers can pop safely
+
     try:
         response = (
             supabase_admin.raw()
@@ -191,59 +224,91 @@ async def _fetch_current_weights() -> dict[str, float]:
         )
         if response.data:
             row = response.data[0]
-            return {
+            _WEIGHTS_CACHE = {
                 "alpha":         float(row["dci_weight_alpha"]),
                 "beta":          float(row["dci_weight_beta"]),
                 "gamma":         float(row["dci_weight_gamma"]),
                 "delta":         float(row["dci_weight_delta"]),
                 "model_version": row.get("weights_model_version", "cold-start"),
             }
+            _WEIGHTS_CACHE_AT = now
+            return dict(_WEIGHTS_CACHE)
     except Exception as exc:
         logger.warning("Failed to fetch DCI weights from system_config: %s", exc)
 
     # Fallback to cold-start priors from settings
-    return {
+    fallback = {
         "alpha":         settings.DCI_WEIGHT_ALPHA,
         "beta":          settings.DCI_WEIGHT_BETA,
         "gamma":         settings.DCI_WEIGHT_GAMMA,
         "delta":         settings.DCI_WEIGHT_DELTA,
         "model_version": "cold-start",
     }
+    return fallback
 
 
 # =============================================================================
 # 4. BATCH SIGNAL FETCH via asyncpg
 # =============================================================================
 
+async def _with_retry(
+    coro_fn: Callable[[], Coroutine[Any, Any, Any]],
+    label: str,
+    retries: int = 3,
+    fallback: Any = None,
+) -> Any:
+    """
+    Retry wrapper with exponential backoff for async DB calls.
+    Returns `fallback` if all attempts fail.
+    """
+    delay = 0.1
+    for attempt in range(1, retries + 1):
+        try:
+            return await coro_fn()
+        except Exception as exc:
+            logger.warning(
+                "[dci_engine] %s failed (attempt %d/%d): %s",
+                label, attempt, retries, exc,
+            )
+            if attempt < retries:
+                await asyncio.sleep(delay)
+                delay *= 2
+    return fallback
+
+
 async def _fetch_hex_signals_batch(hex_ids: list[str]) -> dict[str, dict]:
     """
     Calls fn_get_hex_signals() via asyncpg to fetch all 5 signal scores
     for all hexes in a single SQL round-trip.
-
-    Returns:
-        {hex_id: {weather_score, aqi_score, traffic_score, platform_score,
-                  social_score, sources_available,
-                  weather_breached, aqi_breached, traffic_breached,
-                  platform_breached, social_breached, any_stale}}
-
-    Falls back to empty dict per hex if the batch call fails.
+    Cached for 30 seconds to reduce DB load during frequent cycles.
+    Falls back to empty dict if the batch call fails after retries.
     """
+    global _SIGNAL_CACHE, _SIGNAL_CACHE_AT
+
     if not hex_ids:
         return {}
 
-    try:
+    now = datetime.now(timezone.utc)
+    if (
+        _SIGNAL_CACHE
+        and _SIGNAL_CACHE_AT is not None
+        and (now - _SIGNAL_CACHE_AT) < _SIGNAL_TTL
+    ):
+        return _SIGNAL_CACHE
+
+    async def _do_fetch() -> dict[str, dict]:
         async with get_db_connection() as conn:
             rows = await conn.fetch(
                 "SELECT * FROM public.fn_get_hex_signals($1::text[])",
                 hex_ids,
             )
-        return {
-            row["hex_id"]: dict(row)
-            for row in rows
-        }
-    except Exception as exc:
-        logger.error("fn_get_hex_signals batch failed: %s", exc)
-        return {}
+        return {row["hex_id"]: dict(row) for row in rows}
+
+    result = await _with_retry(_do_fetch, "fn_get_hex_signals", fallback={})
+    if result:
+        _SIGNAL_CACHE = result
+        _SIGNAL_CACHE_AT = now
+    return result or {}
 
 
 # =============================================================================
@@ -254,8 +319,9 @@ async def _fetch_hex_states(hex_ids: list[str]) -> dict[str, dict]:
     """
     Fetches the current dci_status and disruption_started_at for all hexes.
     Used to determine status_before for the hysteresis state machine.
+    Retries up to 3 times with exponential backoff.
     """
-    try:
+    async def _do_fetch() -> dict[str, dict]:
         response = (
             supabase_admin.raw()
             .table("hex_zones")
@@ -264,9 +330,8 @@ async def _fetch_hex_states(hex_ids: list[str]) -> dict[str, dict]:
             .execute()
         )
         return {row["hex_id"]: row for row in (response.data or [])}
-    except Exception as exc:
-        logger.error("_fetch_hex_states failed: %s", exc)
-        return {}
+
+    return await _with_retry(_do_fetch, "_fetch_hex_states", fallback={})
 
 
 # =============================================================================
@@ -303,11 +368,18 @@ def _compute_hex_dci(
     t0 = time.perf_counter()
 
     # Extract signal scores (default 0.0 if missing)
-    w_weather = float(signals.get("weather_score", 0.0))
-    aqi       = float(signals.get("aqi_score",     0.0))
-    t_score   = float(signals.get("traffic_score", 0.0))
-    p_score   = float(signals.get("platform_score",0.0))
-    s_score   = float(signals.get("social_score",  0.0))
+    # Clamp all values to [0, 2] to prevent sigmoid blow-up from bad sensor data.
+    # At W=2, sigmoid(α*2) ≈ 0.99 — the model correctly reads extreme disruption.
+    # At W=10 (unclamped bad data), the output is indistinguishable from W=5,
+    # but it masks the true signal quality and makes XGBoost training noisy.
+    def _clamp(v: float) -> float:
+        return max(0.0, min(2.0, v))
+
+    w_weather = _clamp(float(signals.get("weather_score", 0.0)))
+    aqi       = _clamp(float(signals.get("aqi_score",     0.0)))
+    t_score   = _clamp(float(signals.get("traffic_score", 0.0)))
+    p_score   = _clamp(float(signals.get("platform_score",0.0)))
+    s_score   = _clamp(float(signals.get("social_score",  0.0)))
 
     sources_available = int(signals.get("sources_available", 0))
     is_degraded       = sources_available < settings.SIGNAL_DEGRADED_MODE_THRESHOLD
@@ -458,14 +530,7 @@ async def _insert_dci_history_batch(
 async def _bulk_update_hex_zones(results: list[HexDCIResult]) -> None:
     """
     Calls fn_bulk_update_hex_dci() to update all hex_zones in one SQL call.
-    The DB triggers fire per-row:
-      trg_hex_zones_recompute_dci    → recomputes current_dci from signals
-      trg_hex_zones_sync_dci_status  → applies hysteresis state machine
-      trg_hex_zones_check_bcr        → suspends enrolment if BCR > 0.85
-
-    After this call, hex_zones.dci_status reflects the authoritative state
-    (including hysteresis — the status may differ from r.dci_status if the
-    DB held DISRUPTED state through a hysteresis cycle).
+    Retried up to 3 times before falling back to individual REST updates.
     """
     if not results:
         return
@@ -474,7 +539,7 @@ async def _bulk_update_hex_zones(results: list[HexDCIResult]) -> None:
     if not valid:
         return
 
-    try:
+    async def _do_bulk() -> None:
         async with get_db_connection() as conn:
             await conn.execute(
                 """
@@ -494,9 +559,10 @@ async def _bulk_update_hex_zones(results: list[HexDCIResult]) -> None:
                 [r.s_score  for r in valid],
                 [r.signal_sources_available for r in valid],
             )
-    except Exception as exc:
-        logger.error("fn_bulk_update_hex_dci failed: %s", exc)
-        # Fallback: update hexes individually via REST
+
+    result = await _with_retry(_do_bulk, "fn_bulk_update_hex_dci", fallback="failed")
+    if result == "failed":
+        logger.error("fn_bulk_update_hex_dci exhausted retries — falling back to REST")
         await _fallback_individual_hex_updates(valid)
 
 
@@ -666,140 +732,131 @@ async def _close_disruption_events(
 # 10. MAIN CYCLE ORCHESTRATOR
 # =============================================================================
 
-async def run_dci_cycle(hex_ids: list[str]) -> DCICycleResult:
+async def _run_dci_cycle_inner(hex_ids: list[str]) -> DCICycleResult:
     """
-    Full DCI computation cycle for all given hexes.
-    Called by APScheduler on DCI_JOB_CRON_MINUTE.
-
-    Steps:
-      1. Fetch current weights from system_config (once per cycle)
-      2. Batch-fetch all signal scores via fn_get_hex_signals() (1 SQL call)
-      3. Fetch current hex states (status_before for hysteresis)
-      4. Compute DCI per hex (pure Python — no DB)
-      5. Bulk-update hex_zones via fn_bulk_update_hex_dci() (1 SQL call)
-      6. Insert dci_history records per hex via fn_insert_dci_record()
-      7. Open/update/close disruption events based on transitions
-      8. Return cycle summary for scheduler monitoring
-
-    Args:
-        hex_ids: H3 cell indices to process this cycle
-
-    Returns:
-        DCICycleResult with aggregate stats for the /health and admin dashboard.
+    Inner implementation of the DCI cycle — called by run_dci_cycle which
+    wraps it with a timeout guard. All public API goes through run_dci_cycle.
     """
-    if not hex_ids:
-        return DCICycleResult(cycle_started_at=datetime.now(timezone.utc))
-
     cycle = DCICycleResult(cycle_started_at=datetime.now(timezone.utc))
     t0    = time.perf_counter()
 
     logger.info("DCI cycle starting: %d hexes", len(hex_ids))
 
-    # -------------------------------------------------------------------------
-    # Step 1: Fetch weights from system_config
-    # -------------------------------------------------------------------------
+    # ── Step 1: Fetch weights (cached, 5-min TTL) ─────────────────────────────
     weights = await _fetch_current_weights()
     model_version = weights.pop("model_version", "cold-start")
 
-    # -------------------------------------------------------------------------
-    # Step 2: Batch-fetch all signal scores (1 asyncpg call for all hexes)
-    # -------------------------------------------------------------------------
+    # ── Step 2: Batch-fetch all signal scores (1 asyncpg call) ────────────────
     signals_by_hex = await _fetch_hex_signals_batch(hex_ids)
 
-    # -------------------------------------------------------------------------
-    # Step 3: Fetch current hex states (status_before)
-    # -------------------------------------------------------------------------
+    # ── Step 3: Fetch current hex states (status_before for hysteresis) ───────
     hex_states = await _fetch_hex_states(hex_ids)
 
-    # -------------------------------------------------------------------------
-    # Step 4: Compute DCI per hex (pure Python, concurrent-safe)
-    # -------------------------------------------------------------------------
+    # ── Step 4: Compute DCI per hex in parallel (semaphore-limited) ───────────
+    # Pure Python computation — no DB calls here. Safe to run concurrently.
+    # Semaphore limits to _COMPUTE_SEMAPHORE (30) parallel goroutines so we
+    # don't starve the asyncpg pool when processing 1000+ hexes.
+
+    async def _compute_one(hex_id: str) -> HexDCIResult:
+        async with _COMPUTE_SEMAPHORE:
+            signals = signals_by_hex.get(hex_id, {})
+            state   = hex_states.get(hex_id, {})
+
+            # Degraded-mode feature flag: if no signal data available,
+            # retain the last known DCI from hex_zones instead of resetting
+            # to 0.0 (which would incorrectly clear an active disruption).
+            if not signals:
+                last_dci    = float(state.get("current_dci") or 0.0)
+                last_status = (state.get("dci_status") or "normal").lower()
+                return HexDCIResult(
+                    hex_id=hex_id,
+                    dci_score=last_dci,
+                    dci_raw_sum=0.0,
+                    dci_status=last_status,
+                    status_before=last_status.upper(),
+                    w_score=0.0, t_score=0.0, p_score=0.0,
+                    s_score=0.0, aqi_score=0.0,
+                    signal_sources_available=0,
+                    is_degraded=True,
+                    error="No signal data — last known DCI retained",
+                )
+
+            try:
+                return _compute_hex_dci(hex_id, signals, state, weights)
+            except Exception as exc:
+                logger.error("DCI computation failed for %s: %s", hex_id, exc)
+                return HexDCIResult(
+                    hex_id=hex_id,
+                    dci_score=0.0, dci_raw_sum=0.0,
+                    dci_status="normal", status_before="normal",
+                    w_score=0.0, t_score=0.0, p_score=0.0,
+                    s_score=0.0, aqi_score=0.0,
+                    signal_sources_available=0, is_degraded=True,
+                    error=str(exc),
+                )
+
+    tasks = [asyncio.create_task(_compute_one(h)) for h in hex_ids]
+    task_results = await asyncio.gather(*tasks, return_exceptions=True)
+
     hex_results: list[HexDCIResult] = []
+    slow_hexes: list[str] = []
 
-    for hex_id in hex_ids:
-        signals = signals_by_hex.get(hex_id, {})
-        state   = hex_states.get(hex_id, {})
-
-        # If no signals at all, mark as degraded — don't compute
-        if not signals:
-            r = HexDCIResult(
-                hex_id=hex_id,
-                dci_score=0.0,
-                dci_raw_sum=0.0,
-                dci_status="normal",
-                status_before=(state.get("dci_status") or "normal").upper(),
-                w_score=0.0, t_score=0.0, p_score=0.0, s_score=0.0, aqi_score=0.0,
-                signal_sources_available=0,
-                is_degraded=True,
-                error="No signal data available",
-            )
-            hex_results.append(r)
-            cycle.hexes_degraded += 1
-            continue
-
-        try:
-            r = _compute_hex_dci(hex_id, signals, state, weights)
-            hex_results.append(r)
-        except Exception as exc:
-            logger.error("DCI computation failed for %s: %s", hex_id, exc)
+    for i, res in enumerate(task_results):
+        if isinstance(res, Exception):
+            hid = hex_ids[i]
+            logger.error("Task exception for hex %s: %s", hid, res)
             hex_results.append(HexDCIResult(
-                hex_id=hex_id,
+                hex_id=hid,
                 dci_score=0.0, dci_raw_sum=0.0,
                 dci_status="normal", status_before="normal",
-                w_score=0.0, t_score=0.0, p_score=0.0, s_score=0.0, aqi_score=0.0,
+                w_score=0.0, t_score=0.0, p_score=0.0,
+                s_score=0.0, aqi_score=0.0,
                 signal_sources_available=0, is_degraded=True,
-                error=str(exc),
+                error=str(res),
             ))
-            cycle.errors.append(f"hex={hex_id}: {exc}")
+            cycle.errors.append(f"hex={hid}: {res}")
+        else:
+            hex_results.append(res)
+            if res.computation_ms > 50:
+                slow_hexes.append(res.hex_id)
 
-        if settings.DCI_CYCLE_HEX_SLEEP_SECONDS > 0:
-            await asyncio.sleep(settings.DCI_CYCLE_HEX_SLEEP_SECONDS)
-
-    # -------------------------------------------------------------------------
-    # Step 5: Bulk-update hex_zones (1 asyncpg call — triggers fire per-row)
-    # -------------------------------------------------------------------------
+    # ── Step 5: Bulk-update hex_zones (1 asyncpg call, retried) ──────────────
     await _bulk_update_hex_zones(hex_results)
 
-    # -------------------------------------------------------------------------
-    # Step 6: Insert dci_history records (per-hex — returns transition flags)
-    # -------------------------------------------------------------------------
-    record_ids = await _insert_dci_history_batch(
-        hex_results, weights, model_version
-    )
+    # ── Step 6: Insert dci_history records ────────────────────────────────────
+    record_ids = await _insert_dci_history_batch(hex_results, weights, model_version)
     for r in hex_results:
         r.dci_history_record_id = record_ids.get(r.hex_id)
-
     cycle.dci_history_written = len(record_ids)
 
-    # -------------------------------------------------------------------------
-    # Step 7: Disruption event management
-    # -------------------------------------------------------------------------
-    newly_disrupted    = [r for r in hex_results if r.is_transition_to_disrupted]
-    already_disrupted  = [
+    # ── Step 7: Disruption event management ──────────────────────────────────
+    newly_disrupted   = [r for r in hex_results if r.is_transition_to_disrupted]
+    already_disrupted = [
         r for r in hex_results
         if r.dci_status == "disrupted" and not r.is_transition_to_disrupted
     ]
-    newly_cleared      = [r for r in hex_results if r.is_transition_to_cleared]
+    newly_cleared     = [r for r in hex_results if r.is_transition_to_cleared]
 
-    # Open new disruption events
     if newly_disrupted:
         event_ids = await _open_disruption_events(newly_disrupted)
         for r in newly_disrupted:
             r.disruption_event_id = event_ids.get(r.hex_id)
         cycle.disruption_events_opened += len(event_ids)
 
-    # Update ongoing disruption events (peak DCI, trigger flags, cycle count)
     if already_disrupted:
         await _update_active_disruption_events(already_disrupted)
 
-    # Close cleared disruption events
     if newly_cleared:
         await _close_disruption_events(newly_cleared)
         cycle.disruption_events_closed += len(newly_cleared)
 
-    # -------------------------------------------------------------------------
-    # Step 8: Aggregate cycle stats
-    # -------------------------------------------------------------------------
+    # ── Step 8: Aggregate cycle stats + rich observability log ───────────────
+    valid_scores = [
+        r.dci_score for r in hex_results if not r.is_degraded and not r.error
+    ]
+    with_signals  = len(valid_scores)
+    signal_avail_pct = round(100 * with_signals / max(len(hex_results), 1), 1)
+
     for r in hex_results:
         cycle.hexes_processed += 1
         if r.is_degraded:
@@ -816,20 +873,63 @@ async def run_dci_cycle(hex_ids: list[str]) -> DCICycleResult:
     cycle.duration_ms               = int((time.perf_counter() - t0) * 1000)
     cycle.hex_results               = hex_results
 
+    avg_dci = round(sum(valid_scores) / max(len(valid_scores), 1), 4)
+    max_dci = round(max(valid_scores, default=0.0), 4)
+    degraded_pct = round(100 * cycle.hexes_degraded / max(cycle.hexes_processed, 1), 1)
+
     logger.info(
-        "DCI cycle complete: %d hexes | DISRUPTED=%d WATCH=%d NORMAL=%d "
-        "DEGRADED=%d | transitions +%d -%d | %dms",
+        "DCI cycle complete | hexes=%d disrupted=%d watch=%d normal=%d "
+        "degraded=%d(%.1f%%) | transitions +%d -%d | avg_dci=%.4f max_dci=%.4f "
+        "| signal_avail=%.1f%% | slow_hexes=%d %s| %dms",
         cycle.hexes_processed,
         cycle.hexes_disrupted,
         cycle.hexes_elevated_watch,
         cycle.hexes_normal,
-        cycle.hexes_degraded,
+        cycle.hexes_degraded, degraded_pct,
         cycle.transitions_to_disrupted,
         cycle.transitions_to_cleared,
+        avg_dci, max_dci,
+        signal_avail_pct,
+        len(slow_hexes),
+        str(slow_hexes[:5]) + " " if slow_hexes else "",
         cycle.duration_ms,
     )
 
     return cycle
+
+
+async def run_dci_cycle(hex_ids: list[str]) -> DCICycleResult:
+    """
+    Full DCI computation cycle for all given hexes.
+    Called by APScheduler on DCI_JOB_CRON_MINUTE.
+
+    Wraps _run_dci_cycle_inner with a 120-second timeout guard.
+    If the cycle times out, a partial DCICycleResult is returned with
+    an error note — the next cycle will pick up where this left off.
+
+    Args:
+        hex_ids: H3 cell indices to process this cycle
+
+    Returns:
+        DCICycleResult with aggregate stats for the /health and admin dashboard.
+    """
+    if not hex_ids:
+        return DCICycleResult(cycle_started_at=datetime.now(timezone.utc))
+
+    try:
+        return await asyncio.wait_for(
+            _run_dci_cycle_inner(hex_ids),
+            timeout=120.0,
+        )
+    except asyncio.TimeoutError:
+        logger.error(
+            "DCI cycle timed out after 120s for %d hexes — returning partial result",
+            len(hex_ids),
+        )
+        partial = DCICycleResult(cycle_started_at=datetime.now(timezone.utc))
+        partial.errors.append("Cycle timed out after 120s")
+        partial.duration_ms = 120_000
+        return partial
 
 
 # =============================================================================

@@ -38,7 +38,7 @@ def test_notification_templates(mock_messaging):
     assert msg_args['data']["type"] == "PAYOUT_CREDIT"
 
     # Elevated Watch Template
-    res2 = svc.notify_elevated_watch("device-2", "89283082803ffff", "DISRUPTED")
+    res2 = svc.notify_elevated_watch("device-2", "89283082803ffff", "disrupted")
     assert res2 is True
     
     # Claim Flagged

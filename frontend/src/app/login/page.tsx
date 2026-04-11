@@ -112,7 +112,7 @@ export default function LoginPage() {
         <h1 style={{ fontSize: '32px', fontWeight: '700', letterSpacing: '-0.5px' }}>
           gigHood <span className="text-gradient">Protect</span>
         </h1>
-        <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '15px' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '15px' }}>
           Secure login for verified workers
         </p>
       </div>
@@ -133,7 +133,7 @@ export default function LoginPage() {
               borderRadius: '10px',
               border: authMode === 'signin' ? '1px solid rgba(59, 130, 246, 0.6)' : '1px solid rgba(148, 163, 184, 0.3)',
               background: authMode === 'signin' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(15, 23, 42, 0.35)',
-              color: authMode === 'signin' ? '#93C5FD' : 'var(--text-muted)',
+              color: authMode === 'signin' ? '#93C5FD' : 'var(--text-secondary)',
               fontWeight: 600,
               cursor: isLoading ? 'not-allowed' : 'pointer',
             }}
@@ -155,7 +155,7 @@ export default function LoginPage() {
               borderRadius: '10px',
               border: authMode === 'signup' ? '1px solid rgba(16, 185, 129, 0.6)' : '1px solid rgba(148, 163, 184, 0.3)',
               background: authMode === 'signup' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(15, 23, 42, 0.35)',
-              color: authMode === 'signup' ? '#6EE7B7' : 'var(--text-muted)',
+              color: authMode === 'signup' ? '#6EE7B7' : 'var(--text-secondary)',
               fontWeight: 600,
               cursor: isLoading ? 'not-allowed' : 'pointer',
             }}
@@ -164,7 +164,7 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '18px' }}>
+        <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '18px' }}>
           {authMode === 'signin'
             ? 'Use Sign In if you already created an account.'
             : 'Use Sign Up for first-time onboarding with a new number.'}
@@ -189,7 +189,7 @@ export default function LoginPage() {
                 maxLength={15}
                 required
               />
-              <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                 Demo Phone: <strong style={{ color: 'var(--trust-emerald)' }}>9876543210</strong>
               </p>
             </div>
@@ -216,7 +216,7 @@ export default function LoginPage() {
                 maxLength={6}
                 required
               />
-              <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                 Demo OTP: <strong style={{ color: 'var(--trust-emerald)' }}>123456</strong>
               </p>
             </div>
@@ -230,7 +230,7 @@ export default function LoginPage() {
             <button 
               type="button" 
               onClick={() => { setStep('phone'); setOtp(''); }}
-              style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '16px', background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '16px', background: 'none', border: 'none', cursor: 'pointer' }}
               disabled={isLoading}
             >
               Change number

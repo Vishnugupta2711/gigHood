@@ -63,17 +63,76 @@ from backend.services.dci_engine import DCICycleResult, HexDCIResult
 logger = logging.getLogger(__name__)
 audit_logger = logging.getLogger("trigger_monitor.audit")
 
-# Claim batch size — process this many workers per hex in one asyncio.gather()
-_CLAIM_BATCH_SIZE: int = 50
+# ── Config-driven limits (fallback to safe defaults if settings key absent) ──
+# CLAIM_BATCH_SIZE: workers processed per asyncio.gather() chunk per hex
+_CLAIM_BATCH_SIZE: int = int(getattr(settings, "CLAIM_BATCH_SIZE", 50))
 
-# Concurrency limiter: max simultaneous _process_worker_claim coroutines.
-# At 25 concurrent workers, a 10,000-worker hex processes in ~400 batches
-# without starving the event loop or asyncpg pool.
-_WORKER_SEMAPHORE = asyncio.Semaphore(25)
+# WORKER_CONCURRENCY_LIMIT: max simultaneous _process_worker_claim coroutines
+_WORKER_CONCURRENCY_LIMIT: int = int(getattr(settings, "WORKER_CONCURRENCY_LIMIT", 25))
+_WORKER_SEMAPHORE = asyncio.Semaphore(_WORKER_CONCURRENCY_LIMIT)
 
-# Dead-letter queue: worker claims that failed after all retries.
-# Logged separately so ops can replay them without re-running the full cycle.
+# Dead-letter queue with hard size cap.
+# When the cap is exceeded the oldest entry is popped to prevent unbounded growth.
 _DEAD_LETTER_QUEUE: list[dict] = []
+MAX_DEAD_LETTER_SIZE: int = 1000
+
+# Circuit breaker: track consecutive hex-level failures.
+# After 3 consecutive errors for the same hex the hex is skipped for the cycle.
+_HEX_FAILURE_COUNTS: dict[str, int] = {}
+_CIRCUIT_BREAKER_THRESHOLD: int = 3
+
+# Backpressure: when a hex has >500 workers, sleep between chunks to avoid
+# flooding the event loop and asyncpg connection pool.
+_BACKPRESSURE_WORKER_THRESHOLD: int = 500
+_BACKPRESSURE_CHUNK_SLEEP_S: float  = 0.1
+
+
+# =============================================================================
+# DEAD-LETTER HELPERS
+# =============================================================================
+
+def _push_dead_letter(entry: dict) -> None:
+    """
+    Appends an entry to the dead-letter queue, enforcing MAX_DEAD_LETTER_SIZE.
+    When the cap is hit the oldest item is evicted to prevent unbounded growth.
+    Logs a summary line every 50 entries so growth is visible in log aggregators.
+    """
+    if len(_DEAD_LETTER_QUEUE) >= MAX_DEAD_LETTER_SIZE:
+        evicted = _DEAD_LETTER_QUEUE.pop(0)
+        logger.warning(
+            "[dead-letter] cap=%d reached — evicted oldest entry (worker=%s ts=%s)",
+            MAX_DEAD_LETTER_SIZE,
+            evicted.get("worker_id", "?"),
+            evicted.get("ts", "?"),
+        )
+    _DEAD_LETTER_QUEUE.append(entry)
+    depth = len(_DEAD_LETTER_QUEUE)
+    if depth % 50 == 0:
+        logger.error(
+            "[dead-letter] queue depth milestone: %d entries — ops replay recommended",
+            depth,
+        )
+
+
+# =============================================================================
+# CIRCUIT BREAKER HELPERS
+# =============================================================================
+
+def _record_hex_failure(hex_id: str) -> int:
+    """Increments the consecutive failure count for a hex; returns new count."""
+    _HEX_FAILURE_COUNTS[hex_id] = _HEX_FAILURE_COUNTS.get(hex_id, 0) + 1
+    count = _HEX_FAILURE_COUNTS[hex_id]
+    if count >= _CIRCUIT_BREAKER_THRESHOLD:
+        logger.error(
+            "[circuit-breaker] hex=%s failure count=%d — breaker OPEN", hex_id, count
+        )
+    return count
+
+
+def _record_hex_success(hex_id: str) -> None:
+    """Resets the failure counter for a hex after a successful processing cycle."""
+    if hex_id in _HEX_FAILURE_COUNTS:
+        _HEX_FAILURE_COUNTS[hex_id] = 0
 
 
 # =============================================================================
@@ -490,45 +549,45 @@ async def _process_worker_claim(
                             )
                             outcome.resolution_path = "SOFT_QUEUE"
 
-            # ── Create claim via fn_create_claim() ─────────────────────────
+            # ── Create claim via fn_create_claim() (async, non-blocking) ────
             pings_in_window = pop_result.get("ping_count_in_hex", 0)
             jitter   = pop_result.get("jitter_pattern", "UNKNOWN")
             variance = pop_result.get("coordinate_variance", 0.0)
             velocity = pop_result.get("gate3_velocity_violation", False)
 
-            response = supabase_admin.raw().rpc(
-                "fn_create_claim",
-                {
-                    "p_worker_id":                      worker_id,
-                    "p_policy_id":                      policy_id,
-                    "p_disruption_event_id":            disruption_event_id,
-                    "p_disrupted_hours_raw":             disrupted_hours,
-                    "p_disrupted_hours_verified":        disrupted_hours,
-                    "p_worker_avg_daily_earnings_paise": policy.get("avg_daily_earnings_paise", 0) or 0,
-                    "p_effective_daily_cap_paise":       policy.get("effective_daily_cap_paise", 0) or 0,
-                    "p_pop_validated":                   outcome.pop_validated,
-                    "p_pop_ping_count":                  pings_in_window,
-                    "p_pop_fallback_used":               pings_in_window < settings.POP_MIN_PINGS_IN_HEX,
-                    "p_pop_coordinate_variance":         variance,
-                    "p_pop_jitter_pattern":              jitter,
-                    "p_pop_entry_velocity_kmh":          pop_result.get("entry_velocity_kmh"),
-                    "p_pop_velocity_violation":          velocity,
-                    "p_pop_validation_run_id":           None,
-                    "p_gate2_result":                    g2["result"],
-                    "p_gate2_order_count":               g2.get("order_count", 0),
-                    "p_gate2_last_order_at":             (
-                        g2["last_order_at"].isoformat()
-                        if g2.get("last_order_at") else None
-                    ),
-                    "p_worker_upi_id":                  policy.get("upi_id"),
-                    "p_payout_channel":                  policy.get("payout_channel", "UPI"),
-                }
-            ).execute()
+            rpc_params = {
+                "p_worker_id":                      worker_id,
+                "p_policy_id":                      policy_id,
+                "p_disruption_event_id":            disruption_event_id,
+                "p_disrupted_hours_raw":             disrupted_hours,
+                "p_disrupted_hours_verified":        disrupted_hours,
+                "p_worker_avg_daily_earnings_paise": policy.get("avg_daily_earnings_paise", 0) or 0,
+                "p_effective_daily_cap_paise":       policy.get("effective_daily_cap_paise", 0) or 0,
+                "p_pop_validated":                   outcome.pop_validated,
+                "p_pop_ping_count":                  pings_in_window,
+                "p_pop_fallback_used":               pings_in_window < settings.POP_MIN_PINGS_IN_HEX,
+                "p_pop_coordinate_variance":         variance,
+                "p_pop_jitter_pattern":              jitter,
+                "p_pop_entry_velocity_kmh":          pop_result.get("entry_velocity_kmh"),
+                "p_pop_velocity_violation":          velocity,
+                "p_pop_validation_run_id":           None,
+                "p_gate2_result":                    g2["result"],
+                "p_gate2_order_count":               g2.get("order_count", 0),
+                "p_gate2_last_order_at":             (
+                    g2["last_order_at"].isoformat()
+                    if g2.get("last_order_at") else None
+                ),
+                "p_worker_upi_id":                  policy.get("upi_id"),
+                "p_payout_channel":                  policy.get("payout_channel", "UPI"),
+            }
+            response = await asyncio.to_thread(
+                lambda: supabase_admin.raw().rpc("fn_create_claim", rpc_params).execute()
+            )
 
             claim_data = (response.data or [{}])[0]
             if not claim_data:
                 outcome.error = "fn_create_claim returned empty"
-                _DEAD_LETTER_QUEUE.append({
+                _push_dead_letter({
                     "worker_id": worker_id, "policy_id": policy_id,
                     "event_id": disruption_event_id, "reason": outcome.error,
                     "ts": datetime.now(timezone.utc).isoformat(),
@@ -552,17 +611,17 @@ async def _process_worker_claim(
                     )
                     outcome.resolution_path = "SOFT_QUEUE"
 
-            # ── Assign path via fn_assign_claim_path() ─────────────────────
+            # ── Assign path via fn_assign_claim_path() (async) ─────────────
             if outcome.claim_id:
-                supabase_admin.raw().rpc(
-                    "fn_assign_claim_path",
-                    {
-                        "p_claim_id":     outcome.claim_id,
-                        "p_gate2_result": g2["result"],
-                        "p_fraud_score":  outcome.fraud_score,
-                        "p_trust_score":  policy.get("trust_score", 50),
-                    }
-                ).execute()
+                path_params = {
+                    "p_claim_id":     outcome.claim_id,
+                    "p_gate2_result": g2["result"],
+                    "p_fraud_score":  outcome.fraud_score,
+                    "p_trust_score":  policy.get("trust_score", 50),
+                }
+                await asyncio.to_thread(
+                    lambda: supabase_admin.raw().rpc("fn_assign_claim_path", path_params).execute()
+                )
 
                 # Write fraud flags (non-blocking)
                 await _write_fraud_flags(outcome.claim_id, worker_id, flags)
@@ -589,18 +648,13 @@ async def _process_worker_claim(
                 "Worker claim processing failed: worker=%s event=%s: %s",
                 worker_id, disruption_event_id, exc,
             )
-            # Push to dead-letter queue for ops replay
-            _DEAD_LETTER_QUEUE.append({
+            # Push to dead-letter queue for ops replay (capped, oldest popped on overflow)
+            _push_dead_letter({
                 "worker_id": worker_id, "policy_id": policy_id,
                 "event_id": disruption_event_id,
                 "error": str(exc),
                 "ts": datetime.now(timezone.utc).isoformat(),
             })
-            if len(_DEAD_LETTER_QUEUE) % 10 == 0:
-                # Periodic summary so dead-letter growth is visible in Sentry/logs
-                logger.error(
-                    "[dead-letter] queue depth: %d items", len(_DEAD_LETTER_QUEUE)
-                )
 
         return outcome
 
@@ -621,23 +675,22 @@ async def _write_fraud_flags(
     """
     for flag_type, weight in flags.items():
         try:
-            # Map flag_type to detection_layer
             layer = _flag_type_to_layer(flag_type)
-            supabase_admin.raw().rpc(
-                "fn_raise_fraud_flag",
-                {
-                    "p_claim_id":           claim_id,
-                    "p_worker_id":          worker_id,
-                    "p_flag_type":          flag_type,
-                    "p_detection_layer":    layer,
-                    "p_score_contribution": weight,
-                    "p_trust_score_delta":  -2 if weight >= 20 else -1,
-                    "p_was_deciding_factor": weight >= 30,
-                    "p_cluster_event_id":   None,
-                    "p_fraud_engine_run_id": None,
-                    "p_details":            None,
-                }
-            ).execute()
+            flag_params = {
+                "p_claim_id":            claim_id,
+                "p_worker_id":           worker_id,
+                "p_flag_type":           flag_type,
+                "p_detection_layer":     layer,
+                "p_score_contribution":  weight,
+                "p_trust_score_delta":   -2 if weight >= 20 else -1,
+                "p_was_deciding_factor": weight >= 30,
+                "p_cluster_event_id":    None,
+                "p_fraud_engine_run_id": None,
+                "p_details":             None,
+            }
+            await asyncio.to_thread(
+                lambda p=flag_params: supabase_admin.raw().rpc("fn_raise_fraud_flag", p).execute()
+            )
         except Exception as exc:
             logger.warning(
                 "fn_raise_fraud_flag failed: claim=%s flag=%s: %s",
@@ -792,20 +845,40 @@ async def _process_hex_claims(
     # Build worker → policy map for notification lookup
     policies_by_worker = {p["worker_id"]: p for p in policies}
 
-    # 2. Batch PoP validation for all workers (1 SQL call)
-    disruption_start = datetime.now(timezone.utc)  # approximate onset
+    # 2. Disruption start — read from DB event record (created_at), not datetime.now()
+    # This ensures PoP validation uses the actual onset time, not the processing time.
+    _event_created_at: Optional[str] = hex_result.__dict__.get("event_created_at")
+    if _event_created_at:
+        try:
+            disruption_start = datetime.fromisoformat(
+                str(_event_created_at).replace("Z", "+00:00")
+            )
+        except Exception:
+            disruption_start = datetime.now(timezone.utc)
+    else:
+        disruption_start = datetime.now(timezone.utc)
+
+    # 3. Batch PoP validation for all workers (1 SQL call)
     pop_results = await _batch_pop_validation(
         hex_id=hex_result.hex_id,
         disruption_start=disruption_start,
     )
 
-    # 3. Calculate disrupted hours from the hex result
-    # verified_disrupted_minutes on the disruption event is the source of truth
-    # For newly opened events, use one cycle (5 min) as initial estimate
-    disrupted_hours = max(0.083, 5.0 / 60.0)  # at least 5 minutes
+    # 4. Calculate disrupted hours (minimum one 5-min cycle as initial estimate)
+    disrupted_hours = max(0.083, 5.0 / 60.0)
 
-    # 4. Process workers in batches to avoid memory pressure
+    # 5. Circuit breaker check before processing
+    if _HEX_FAILURE_COUNTS.get(hex_result.hex_id, 0) >= _CIRCUIT_BREAKER_THRESHOLD:
+        logger.error(
+            "[circuit-breaker] hex %s has %d consecutive failures — skipping for this cycle",
+            hex_result.hex_id, _HEX_FAILURE_COUNTS[hex_result.hex_id],
+        )
+        batch_result.errors.append(f"Circuit breaker open for hex {hex_result.hex_id}")
+        return batch_result
+
+    # 6. Process workers in batches with backpressure
     all_outcomes: list[WorkerClaimOutcome] = []
+    use_backpressure = len(policies) > _BACKPRESSURE_WORKER_THRESHOLD
 
     for i in range(0, len(policies), _CLAIM_BATCH_SIZE):
         chunk = policies[i : i + _CLAIM_BATCH_SIZE]
@@ -822,6 +895,10 @@ async def _process_hex_claims(
         ]
         chunk_outcomes = await asyncio.gather(*chunk_tasks, return_exceptions=False)
         all_outcomes.extend(chunk_outcomes)
+
+        # Backpressure: yield to event loop between chunks for large hexes
+        if use_backpressure and i + _CLAIM_BATCH_SIZE < len(policies):
+            await asyncio.sleep(_BACKPRESSURE_CHUNK_SLEEP_S)
 
     # 5. Aggregate outcomes
     for outcome in all_outcomes:
@@ -865,6 +942,7 @@ async def _process_hex_claims(
     )
 
     batch_result.duration_ms = int((time.perf_counter() - t0) * 1000)
+    _record_hex_success(hex_result.hex_id)   # reset circuit breaker on clean exit
     return batch_result
 
 
@@ -884,14 +962,17 @@ async def _notify_elevated_watch_workers(
         from backend.services.notification_service import send_elevated_watch_alert
         for r in elevated_results:
             try:
-                workers_response = (
-                    supabase_admin.raw()
-                    .table("workers")
-                    .select("fcm_device_token")
-                    .eq("registered_hex_id", r.hex_id)
-                    .eq("status", "ACTIVE")
-                    .not_.is_("fcm_device_token", "null")
-                    .execute()
+                # Non-blocking DB fetch for FCM tokens
+                workers_response = await asyncio.to_thread(
+                    lambda hex=r.hex_id: (
+                        supabase_admin.raw()
+                        .table("workers")
+                        .select("fcm_device_token")
+                        .eq("registered_hex_id", hex)
+                        .eq("status", "ACTIVE")
+                        .not_.is_("fcm_device_token", "null")
+                        .execute()
+                    )
                 )
                 tokens = [
                     w["fcm_device_token"]
@@ -973,10 +1054,11 @@ async def _process_dci_cycle_inner(
         ]
         hex_batch_results = await asyncio.gather(*claim_tasks, return_exceptions=True)
 
-        for batch in hex_batch_results:
+        for batch, hex_r in zip(hex_batch_results, [r for r in newly_disrupted if r.disruption_event_id]):
             if isinstance(batch, Exception):
-                logger.error("Hex claim batch failed with exception: %s", batch)
+                logger.error("Hex claim batch failed with exception: hex=%s: %s", hex_r.hex_id, batch)
                 monitor_result.errors.append(str(batch))
+                _record_hex_failure(hex_r.hex_id)
                 continue
             all_hex_batches.append(batch)
             monitor_result.total_claims_initiated += batch.claims_created
@@ -995,17 +1077,35 @@ async def _process_dci_cycle_inner(
     # ── Cycle metrics ─────────────────────────────────────────────────────────
     monitor_result.duration_ms = int((time.perf_counter() - t0) * 1000)
 
-    total_claims = monitor_result.total_claims_initiated
-    fraud_rate     = round(
-        monitor_result.total_denied / max(total_claims, 1) * 100, 1
-    )
-    fast_track_ratio = round(
-        monitor_result.total_fast_track / max(total_claims, 1) * 100, 1
-    )
-    avg_payout_rs = round(
+    total_claims     = monitor_result.total_claims_initiated
+    fraud_rate       = round(monitor_result.total_denied / max(total_claims, 1) * 100, 1)
+    fast_track_ratio = round(monitor_result.total_fast_track / max(total_claims, 1) * 100, 1)
+    avg_payout_rs    = round(
         monitor_result.total_payout_paise / max(monitor_result.total_fast_track, 1) / 100, 2
     )
     dead_letter_depth = len(_DEAD_LETTER_QUEUE)
+
+    # Structured metrics JSON for log aggregators / Sentry / Grafana
+    audit_logger.info(json.dumps({
+        "event":             "cycle_metrics",
+        "cycle_at":          monitor_result.cycle_at.isoformat(),
+        "hexes_disrupted":   monitor_result.hexes_newly_disrupted,
+        "hexes_elevated":    len(elevated_watch),
+        "hexes_cleared":     monitor_result.hexes_cleared,
+        "total_claims":      total_claims,
+        "fast_track":        monitor_result.total_fast_track,
+        "soft_queue":        monitor_result.total_soft_queue,
+        "active_verify":     monitor_result.total_active_verify,
+        "denied":            monitor_result.total_denied,
+        "fraud_rate_pct":    fraud_rate,
+        "fast_track_pct":    fast_track_ratio,
+        "payout_sum_rs":     round(monitor_result.total_payout_paise / 100, 2),
+        "avg_payout_rs":     avg_payout_rs,
+        "notifications":     monitor_result.notifications_sent,
+        "dead_letter_depth": dead_letter_depth,
+        "duration_ms":       monitor_result.duration_ms,
+        "errors":            len(monitor_result.errors),
+    }))
 
     logger.info(
         "Trigger monitor cycle complete | "

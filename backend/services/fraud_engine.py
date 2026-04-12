@@ -83,6 +83,174 @@ def _safe_db_call(fn: Callable[[], Any], retries: int = 3) -> Any:
     raise last_exc  # type: ignore[misc]
 
 
+#
+# Architecture
+# ─────────────
+# 1. Static baseline thresholds baked into code (cold-start safe).
+# 2. A TTL-cached _ThresholdState object holds the in-process learned thresholds.
+# 3. refresh_adaptive_thresholds() re-derives thresholds from fraud_feedback and
+#    resets the cache TTL.  This is called:
+#      a) On first request (lazy init).
+#      b) By the weekly retrain scheduler (run_fraud_threshold_retrain).
+#      c) Immediately after every admin override (closing the feedback loop).
+# 4. The cache is intentionally MODULE-LEVEL so all FastAPI workers within the
+#    same process share one copy.  Multi-process deployments converge within one
+#    cache TTL (1 h default).
+
+_BASELINE_APPROVE_THRESHOLD: float = 45.0   # scores < 45  → APPROVE
+_BASELINE_DENY_THRESHOLD:    float = 75.0   # scores >= 75 → DENY
+_CACHE_TTL_SECONDS: int = 3600              # re-read DB at most once per hour
+
+class _ThresholdState:
+    """
+    In-memory snapshot of learned thresholds with a timestamp for TTL checks.
+    Thread-safety: reads/writes of float are atomic in CPython; the worst-case
+    race is a redundant DB read on concurrent first requests, which is harmless.
+    """
+    def __init__(self) -> None:
+        self.approve: float  = _BASELINE_APPROVE_THRESHOLD
+        self.deny:    float  = _BASELINE_DENY_THRESHOLD
+        self.sample_count: int = 0
+        self.override_rate: float = 0.0   # fraction of rows that were overrides
+        self.last_refreshed_at: float = 0.0   # epoch seconds; 0 = never
+
+    def is_stale(self) -> bool:
+        return (time.time() - self.last_refreshed_at) > _CACHE_TTL_SECONDS
+
+    def mark_stale(self) -> None:
+        """Force the next call to get_fraud_decision to re-read the DB."""
+        self.last_refreshed_at = 0.0
+
+
+_thresholds = _ThresholdState()
+
+
+def refresh_adaptive_thresholds() -> _ThresholdState:
+    """
+    Read the fraud_feedback table and re-derive APPROVE / DENY thresholds.
+
+    Algorithm (Stripe Radar-style weighted averaging):
+      - Collect all admin-confirmed APPROVE scores and DENY scores.
+      - APPROVE threshold = mean(APPROVE scores) + 5-point conservative buffer.
+        (Everything below this is auto-approved.)
+      - DENY threshold    = mean(DENY scores)    - 5-point conservative buffer.
+        (Everything above this is auto-denied.)
+      - Both are clamped to stay within [20, 90] so the system can’t learn
+        itself into degenerate extremes.
+      - Falls back to baseline if < 5 samples exist (cold-start safety).
+
+    Returns the updated _ThresholdState for logging/testing.
+    """
+    global _thresholds
+    try:
+        res = _safe_db_call(
+            lambda: supabase.table("fraud_feedback")
+                .select("fraud_score,ai_decision,admin_decision")
+                .execute()
+        )
+        rows = res.data or []
+
+        approve_scores = [
+            float(r["fraud_score"]) for r in rows
+            if r.get("admin_decision") == "APPROVE" and r.get("fraud_score") is not None
+        ]
+        deny_scores = [
+            float(r["fraud_score"]) for r in rows
+            if r.get("admin_decision") == "DENY" and r.get("fraud_score") is not None
+        ]
+        override_count = sum(
+            1 for r in rows
+            if r.get("ai_decision") and r.get("admin_decision")
+            and r["ai_decision"] != r["admin_decision"]
+        )
+
+        MIN_SAMPLES = 5   # need at least 5 confirmed overrides before adapting
+
+        if len(approve_scores) >= MIN_SAMPLES:
+            raw_approve = sum(approve_scores) / len(approve_scores)
+            _thresholds.approve = max(20.0, min(60.0, raw_approve + 5.0))
+        else:
+            _thresholds.approve = _BASELINE_APPROVE_THRESHOLD
+
+        if len(deny_scores) >= MIN_SAMPLES:
+            raw_deny = sum(deny_scores) / len(deny_scores)
+            _thresholds.deny = max(55.0, min(90.0, raw_deny - 5.0))
+        else:
+            _thresholds.deny = _BASELINE_DENY_THRESHOLD
+
+        _thresholds.sample_count  = len(rows)
+        _thresholds.override_rate = override_count / max(len(rows), 1)
+        _thresholds.last_refreshed_at = time.time()
+
+        logger.info(
+            f"[fraud_engine] Thresholds refreshed | samples={len(rows)} "
+            f"| approve_t={_thresholds.approve:.1f} deny_t={_thresholds.deny:.1f} "
+            f"| override_rate={_thresholds.override_rate:.1%}"
+        )
+
+    except Exception as exc:
+        # Soft failure: keep existing thresholds, log, continue.
+        logger.warning(f"[fraud_engine] Threshold refresh failed (using cached): {exc}")
+        _thresholds.last_refreshed_at = time.time()  # back-off: don’t hammer DB on transient errors
+
+    return _thresholds
+
+
+def get_fraud_decision(fraud_score: float) -> dict:
+    """
+    Converts a fraud score into a structured AI decision using ADAPTIVE thresholds.
+
+    Thresholds start at the static baseline and shift over time as admins
+    confirm or override AI decisions (stored in fraud_feedback).  The cache
+    is transparently refreshed every hour or immediately after any override.
+
+    Returns a dict with:
+        decision:    APPROVE | REVIEW | DENY
+        confidence:  HIGH | MEDIUM
+        reason:      Human-readable explanation including current thresholds
+    """
+    # Lazy / TTL-based cache refresh
+    if _thresholds.is_stale():
+        refresh_adaptive_thresholds()
+
+    approve_t = _thresholds.approve
+    deny_t    = _thresholds.deny
+    adaptive  = _thresholds.sample_count >= 5
+    mode_tag  = f"adaptive [{_thresholds.sample_count} samples]" if adaptive else "baseline"
+
+    if fraud_score >= deny_t:
+        return {
+            "decision":   "DENY",
+            "confidence": "HIGH",
+            "reason":     (
+                f"Score {int(fraud_score)}/100 ≥ DENY threshold ({int(deny_t)}) — {mode_tag}. "
+                "Strong anomaly signals: high claim frequency, zone spoofing risk, "
+                "and/or confirmed network ring membership."
+            ),
+        }
+    if fraud_score >= approve_t:
+        return {
+            "decision":   "REVIEW",
+            "confidence": "MEDIUM",
+            "reason":     (
+                f"Score {int(fraud_score)}/100 between APPROVE ({int(approve_t)}) and "
+                f"DENY ({int(deny_t)}) thresholds — {mode_tag}. "
+                "Suspicious behavioral deviations detected. "
+                "Manual verification required before payout."
+            ),
+        }
+    return {
+        "decision":   "APPROVE",
+        "confidence": "HIGH",
+        "reason":     (
+            f"Score {int(fraud_score)}/100 < APPROVE threshold ({int(approve_t)}) — {mode_tag}. "
+            "Behavior consistent with legitimate gig-worker patterns. "
+            "Auto-approve authorized."
+        ),
+    }
+
+
+
 # ── Haversine distance (unchanged) ──────────────────────────────────────────
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -96,7 +264,81 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return R * c * 1000  # metres
 
 
+
+# ── Explainable AI (XAI) Layer ───────────────────────────────────────────────
+# Maps raw layer scores to named feature buckets for RBI/IRDAI traceability.
+
+FEATURE_LABELS: dict[str, str] = {
+    "location_anomaly":  "GPS / Location Anomaly",
+    "telemetry_quality": "Telemetry Quality",
+    "partner_activity":  "Partner Order Activity (Gate-2)",
+    "gps_accuracy":      "GPS Accuracy Quality",
+    "velocity":          "Velocity Violation",
+    "mock_location":     "Mock Location Flag",
+    "network_behavior":  "Network / Behavioural Clustering",
+}
+
+
+def explain_fraud_score(layer_scores: dict[str, float]) -> dict:
+    """
+    Converts raw per-layer point contributions into a normalised XAI dict.
+
+    Args:
+        layer_scores: {feature_key: raw_points_contributed}
+
+    Returns:
+        {
+            "breakdown":        {feature_key: 0-100 contribution},
+            "top_reason":       "feature_key of highest contributor",
+            "top_reason_label": "Human-readable label",
+        }
+
+    Contributions are normalised to 0-100 so each bar is intuitive in the UI.
+    """
+    MAX_SCORE = 100.0
+    breakdown: dict[str, float] = {}
+    for key in FEATURE_LABELS:
+        pts = float(layer_scores.get(key, 0.0))
+        breakdown[key] = round(min(pts / MAX_SCORE * 100.0, 100.0), 2)
+
+    total = sum(breakdown.values())
+    top_reason = "none" if total == 0 else max(breakdown, key=lambda k: breakdown[k])
+
+    return {
+        "breakdown":        breakdown,
+        "top_reason":       top_reason,
+        "top_reason_label": FEATURE_LABELS.get(top_reason, top_reason),
+    }
+
+
+# ── Audit Log Helper ──────────────────────────────────────────────────────────
+# Soft-fail: audit writes NEVER block or crash the main decision pipeline.
+
+def write_audit_log(
+    entity_type:  str,
+    entity_id:    str,
+    action:       str,
+    performed_by: str,
+    metadata:     dict,
+) -> None:
+    """
+    Inserts one row into audit_logs. Silently swallows any DB failure so
+    a transient error here never affects the claim decision result.
+    """
+    try:
+        supabase.table("audit_logs").insert({
+            "entity_type":  entity_type,
+            "entity_id":    entity_id,
+            "action":       action,
+            "performed_by": performed_by,
+            "metadata":     metadata,
+        }).execute()
+    except Exception as exc:
+        logger.warning(f"[fraud_engine] audit_log write failed (non-fatal): {exc}")
+
+
 # ── FraudEvaluator ──────────────────────────────────────────────────────────
+
 
 class FraudEvaluator:
 
@@ -252,23 +494,29 @@ class FraudEvaluator:
                     except (TypeError, ValueError):
                         pass
 
-            # ── Layer 0: Global no-ping penalty ─────────────────────────────
+            # ── Layer 0: Global no-ping penalty (telemetry quality) ──────────
+            telemetry_pts = 0.0
             if not pings:
                 flags.append("NO_LOCATION_PINGS")
-                score += _W["NO_PINGS"]
+                telemetry_pts += _W["NO_PINGS"]
+                score += telemetry_pts
             else:
                 num_pings = len(pings)
                 if num_pings <= 1:
+                    telemetry_pts += _W["MINIMAL_TELEMETRY"]
                     score += _W["MINIMAL_TELEMETRY"]
                     flags.append("MINIMAL_TELEMETRY")
                 elif num_pings <= 4:
+                    telemetry_pts += _W["SPARSE_TELEMETRY"]
                     score += _W["SPARSE_TELEMETRY"]
                     flags.append("SPARSE_TELEMETRY")
                 elif num_pings <= 7:
+                    telemetry_pts += _W["MODERATE_TELEMETRY"]
                     score += _W["MODERATE_TELEMETRY"]
                     flags.append("MODERATE_TELEMETRY")
 
-            # ── Layer 1: Static GPS variance analysis ────────────────────────
+            # ── Layer 1: Static GPS variance analysis (location anomaly) ──────
+            location_pts = 0.0
             if len(hex_pings) >= 5:
                 try:
                     first_ts = datetime.fromisoformat(
@@ -297,79 +545,156 @@ class FraudEvaluator:
                         and self._std_dev(lngs) < 0.0001
                     ):
                         flags.append("STATIC_DEVICE_FLAG")
+                        location_pts += _W["STATIC_DEVICE"]
                         score += _W["STATIC_DEVICE"]
 
-            # ── Layer 2: Partner API order activity (Gate 2) ─────────────────
-            gate2_result = self._evaluate_gate2_orders(worker_id)
-            if gate2_result == "NONE":
-                flags.append("GATE2_NONE")
-                score += _W["GATE2_NONE"]
-            elif gate2_result == "WEAK":
-                flags.append("GATE2_WEAK")
-                score += _W["GATE2_WEAK"]
-
-            # ── Layer 2b: Presence density in target hex ─────────────────────
+            # Zone presence penalty also lands in location_anomaly bucket
+            zone_pts = 0.0
             if pings:
                 hex_ratio = len(hex_pings) / len(pings)
                 if hex_ratio == 0:
                     flags.append("OUT_OF_ZONE_TELEMETRY")
+                    zone_pts += _W["OUT_OF_ZONE"]
                     score += _W["OUT_OF_ZONE"]
                 elif hex_ratio <= 0.33:
                     flags.append("SPARSE_IN_ZONE_TELEMETRY")
+                    zone_pts += _W["SPARSE_IN_ZONE"]
                     score += _W["SPARSE_IN_ZONE"]
                 elif hex_ratio <= 0.66:
                     flags.append("PARTIAL_COVERAGE")
+                    zone_pts += _W["PARTIAL_COVERAGE"]
                     score += _W["PARTIAL_COVERAGE"]
+            location_pts += zone_pts
 
-            # ── Layer 2c: GPS accuracy quality ───────────────────────────────
+            # ── Layer 2: Partner API order activity (Gate 2) ──────────────────
+            gate2_pts = 0.0
+            gate2_result = self._evaluate_gate2_orders(worker_id)
+            if gate2_result == "NONE":
+                flags.append("GATE2_NONE")
+                gate2_pts += _W["GATE2_NONE"]
+                score += _W["GATE2_NONE"]
+            elif gate2_result == "WEAK":
+                flags.append("GATE2_WEAK")
+                gate2_pts += _W["GATE2_WEAK"]
+                score += _W["GATE2_WEAK"]
+
+            # ── Layer 2c: GPS accuracy quality ────────────────────────────────
+            gps_pts = 0.0
             if acc_values:
                 avg_accuracy = sum(acc_values) / len(acc_values)
                 max_accuracy = max(acc_values)
 
                 if max_accuracy > 120:
                     flags.append("LOW_ACCURACY_GPS")
-                    score += _W["LOW_ACCURACY_GPS"]
+                    gps_pts += _W["LOW_ACCURACY_GPS"]
+                    score  += _W["LOW_ACCURACY_GPS"]
                 elif avg_accuracy > 120:
                     flags.append("POOR_ACCURACY_AVERAGE")
-                    score += _W["POOR_ACCURACY_AVERAGE"]
+                    gps_pts += _W["POOR_ACCURACY_AVERAGE"]
+                    score  += _W["POOR_ACCURACY_AVERAGE"]
                 elif avg_accuracy > 60:
                     flags.append("ELEVATED_GPS_NOISE")
-                    score += _W["ELEVATED_GPS_NOISE"]
+                    gps_pts += _W["ELEVATED_GPS_NOISE"]
+                    score  += _W["ELEVATED_GPS_NOISE"]
                 elif avg_accuracy > 35:
-                    score += _W["ACCURACY_35_60"]
+                    gps_pts += _W["ACCURACY_35_60"]
+                    score  += _W["ACCURACY_35_60"]
                 elif avg_accuracy > 15:
-                    score += _W["ACCURACY_15_35"]
+                    gps_pts += _W["ACCURACY_15_35"]
+                    score  += _W["ACCURACY_15_35"]
 
-            # ── Layer 3: Velocity > 120 km/h ─────────────────────────────────
+            # ── Layer 3: Velocity > 120 km/h ──────────────────────────────────
+            velocity_pts = 0.0
             if self._evaluate_velocity(pings, hex_id):
                 flags.append("VELOCITY_VIOLATION")
-                score += _W["VELOCITY_VIOLATION"]
+                velocity_pts += _W["VELOCITY_VIOLATION"]
+                score        += _W["VELOCITY_VIOLATION"]
 
-            # ── Layer 4: OS mock-location flag ───────────────────────────────
+            # ── Layer 4: OS mock-location flag ────────────────────────────────
+            mock_pts = 0.0
             if any(p.get("mock_location_flag", False) for p in hex_pings):
                 flags.append("MOCK_LOCATION_FLAG")
-                score += _W["MOCK_LOCATION"]
+                mock_pts += _W["MOCK_LOCATION"]
+                score    += _W["MOCK_LOCATION"]
 
-            # ── Layer 5: Network ring / behavioural clustering ───────────────
+            # ── Layer 5: Network ring / behavioural clustering ────────────────
+            network_pts = 0.0
             l5_flags = self._evaluate_network_rings(worker_id, hex_id, start_iso)
             for flag_name, pts in l5_flags.items():
                 flags.append(flag_name)
-                score += pts
+                network_pts += pts
+                score       += pts
 
-            # ── Final score ──────────────────────────────────────────────────
+            # ── Final score ───────────────────────────────────────────────────
             bounded_score = int(round(max(0.0, min(100.0, score))))
             latency = round(time.time() - eval_start, 3)
 
+            # ── AI Decision ───────────────────────────────────────────────────
+            decision_data = get_fraud_decision(bounded_score)
+
+            # ── XAI breakdown ─────────────────────────────────────────────────
+            xai = explain_fraud_score({
+                "location_anomaly":  location_pts,
+                "telemetry_quality": telemetry_pts,
+                "partner_activity":  gate2_pts,
+                "gps_accuracy":      gps_pts,
+                "velocity":          velocity_pts,
+                "mock_location":     mock_pts,
+                "network_behavior":  network_pts,
+            })
+
             logger.info(
                 f"[fraud_engine] Fraud eval | worker={worker_id} | event={event_id} "
-                f"| score={bounded_score} | flags={flags} | gate2={gate2_result} "
+                f"| score={bounded_score} | decision={decision_data['decision']} "
+                f"| top_reason={xai['top_reason']} "
+                f"| flags={flags} | gate2={gate2_result} "
                 f"| time={latency}s"
             )
 
+            # ── Persist XAI to claim (best-effort) + write audit log ──────────
+            # Both are soft-fail: a DB hiccup here must not block the response.
+            try:
+                supabase.table("claims") \
+                    .update({
+                        "fraud_breakdown":  xai["breakdown"],
+                        "fraud_top_reason": xai["top_reason"],
+                    }) \
+                    .eq("event_id", event_id) \
+                    .eq("worker_id", worker_id) \
+                    .execute()
+            except Exception as persist_exc:
+                logger.debug(f"[fraud_engine] XAI persist skipped: {persist_exc}")
+
+            write_audit_log(
+                entity_type  = "claim",
+                entity_id    = event_id,   # best available key at eval time
+                action       = "AUTO_DECISION",
+                performed_by = "AI",
+                metadata     = {
+                    "worker_id":         worker_id,
+                    "fraud_score":        bounded_score,
+                    "decision":           decision_data["decision"],
+                    "confidence":         decision_data["confidence"],
+                    "reason":             decision_data["reason"],
+                    "top_reason":         xai["top_reason"],
+                    "top_reason_label":   xai["top_reason_label"],
+                    "breakdown":          xai["breakdown"],
+                    "flags":              flags,
+                    "gate2_result":       gate2_result,
+                    "eval_latency_s":     latency,
+                },
+            )
+
             return {
-                "fraud_score":   bounded_score,
-                "flags":         flags,
-                "gate2_result":  gate2_result,
+                "fraud_score":         bounded_score,
+                "flags":               flags,
+                "gate2_result":        gate2_result,
+                "decision":            decision_data["decision"],
+                "decision_reason":     decision_data["reason"],
+                "decision_confidence": decision_data["confidence"],
+                "fraud_breakdown":     xai["breakdown"],
+                "fraud_top_reason":    xai["top_reason"],
+                "fraud_top_reason_label": xai["top_reason_label"],
             }
 
         except Exception as e:

@@ -3,6 +3,7 @@ import math
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from backend.db.client import supabase
+from backend.services.fraud_engine import get_fraud_decision, write_audit_log
 
 router = APIRouter()
 
@@ -283,17 +284,29 @@ def get_fraud_queue():
             if dci_score is None:
                 dci_score = 0.0
 
+            # Decision: prefer stored value, fall back to live derivation
+            fraud_score_for_decision = fraud_score
+            decision            = c.get('decision') or get_fraud_decision(fraud_score_for_decision)["decision"]
+            decision_reason     = c.get('decision_reason') or get_fraud_decision(fraud_score_for_decision)["reason"]
+            decision_confidence = c.get('decision_confidence') or get_fraud_decision(fraud_score_for_decision)["confidence"]
+
             result.append({
-                "claim_id": c['id'],
-                "created_at": c['created_at'],
-                "worker_name": c_worker.get('name', 'Unknown Worker'),
-                "city": c_worker.get('city', 'Unknown City'),
-                "status": c.get('status', 'unknown'),
-                "resolution_path": c.get('resolution_path', 'unknown'),
-                "fraud_score": fraud_score,
-                "dci_score": round(float(dci_score), 3),
-                "payout": float(c.get('payout_amount') or 0.0),
-                "flags": flags_dict.get(c['id'], [])
+                "claim_id":            c['id'],
+                "created_at":          c['created_at'],
+                "worker_name":         c_worker.get('name', 'Unknown Worker'),
+                "city":                c_worker.get('city', 'Unknown City'),
+                "status":              c.get('status', 'unknown'),
+                "resolution_path":     c.get('resolution_path', 'unknown'),
+                "fraud_score":         fraud_score,
+                "dci_score":           round(float(dci_score), 3),
+                "payout":              float(c.get('payout_amount') or 0.0),
+                "flags":               flags_dict.get(c['id'], []),
+                "decision":            decision,
+                "decision_reason":     decision_reason,
+                "decision_confidence": decision_confidence,
+                # XAI fields (populated after first fraud evaluation)
+                "fraud_breakdown":     c.get('fraud_breakdown'),
+                "fraud_top_reason":    c.get('fraud_top_reason'),
             })
         return result
     except Exception as e:
@@ -504,6 +517,125 @@ def get_fraud_events():
             ]
         
         return events
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ── Fraud Decision Override + Feedback Loop ─────────────────────────────────────
+# Thin handler: validate → write claim → write feedback → invalidate cache.
+# Business logic (threshold learning) lives in fraud_engine.refresh_adaptive_thresholds.
+
+from pydantic import BaseModel
+from backend.services.fraud_engine import refresh_adaptive_thresholds, _thresholds
+
+class OverrideRequest(BaseModel):
+    action: str  # APPROVE | DENY
+
+@router.post("/claims/{claim_id}/override")
+def override_decision(claim_id: str, body: OverrideRequest):
+    """
+    Admin manual override for a claim decision.
+
+    Closed-loop learning steps:
+      1. Read the existing AI decision + fraud_score (for the feedback row).
+      2. Update the claim with the admin decision (MANUAL_OVERRIDE confidence).
+      3. Insert a fraud_feedback row so the adaptive engine can learn.
+      4. Mark the in-process threshold cache stale so the next request
+         immediately re-derives thresholds from the new feedback data.
+    """
+    if body.action not in ("APPROVE", "DENY"):
+        raise HTTPException(status_code=400, detail="action must be APPROVE or DENY")
+
+    try:
+        # 1. Read existing claim state (ai_decision + fraud_score for feedback)
+        cur = supabase.table("claims").select("fraud_score,decision").eq("id", claim_id).execute()
+        if not cur.data:
+            raise HTTPException(status_code=404, detail=f"Claim {claim_id} not found")
+
+        existing       = cur.data[0]
+        ai_decision    = existing.get("decision") or "REVIEW"   # safe default
+        raw_score      = existing.get("fraud_score")
+        fraud_score    = float(raw_score) if raw_score is not None else 0.0
+
+        # 2. Update claim with admin decision
+        supabase.table("claims").update({
+            "decision":            body.action,
+            "decision_reason":     f"Manual override by admin: {body.action}.",
+            "decision_confidence": "MANUAL_OVERRIDE",
+        }).eq("id", claim_id).execute()
+
+        # 3. Store feedback row (training data for self-learning engine)
+        # Soft-fail: a feedback write failure must never break the override itself.
+        try:
+            supabase.table("fraud_feedback").insert({
+                "claim_id":      claim_id,
+                "fraud_score":   fraud_score,
+                "ai_decision":   ai_decision,
+                "admin_decision": body.action,
+            }).execute()
+        except Exception as fb_exc:
+            import logging as _log
+            _log.getLogger("admin").warning(
+                f"[admin/override] Non-fatal: feedback insert failed for {claim_id}: {fb_exc}"
+            )
+
+        # 4. Invalidate the in-process threshold cache so next decision uses fresh data
+        _thresholds.mark_stale()
+
+        # 5. Write audit log (soft-fail)
+        write_audit_log(
+            entity_type  = "claim",
+            entity_id    = claim_id,
+            action       = "OVERRIDE",
+            performed_by = "admin",
+            metadata     = {
+                "ai_decision":    ai_decision,
+                "new_decision":   body.action,
+                "fraud_score":    fraud_score,
+                "was_correction": ai_decision != body.action,
+            },
+        )
+
+        was_correction = ai_decision != body.action
+        return {
+            "status":          "updated + feedback stored",
+            "claim_id":        claim_id,
+            "decision":        body.action,
+            "was_correction":  was_correction,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Audit Log API ──────────────────────────────────────────────────────────
+
+@router.get("/audit/logs")
+def get_audit_logs(
+    limit: int = 100,
+    entity_type: str | None = None,
+    action:      str | None = None,
+):
+    """
+    Returns the most recent audit log rows for the admin compliance dashboard.
+    Supports optional filters: entity_type (e.g. 'claim') and action (e.g. 'OVERRIDE').
+    """
+    try:
+        query = supabase.table("audit_logs") \
+            .select("id,entity_type,entity_id,action,performed_by,metadata,created_at") \
+            .order("created_at", desc=True) \
+            .limit(max(1, min(limit, 500)))
+
+        if entity_type:
+            query = query.eq("entity_type", entity_type)
+        if action:
+            query = query.eq("action", action)
+
+        res = query.execute()
+        return res.data or []
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

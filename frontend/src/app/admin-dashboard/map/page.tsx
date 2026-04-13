@@ -411,7 +411,7 @@ export default function MapPage() {
               doubleClickZoom: false, touchZoom: true, touchRotate: false,
             }}
             layers={[layer]}
-            onError={error => {
+            onError={(error: unknown) => {
               console.error('DeckGL runtime error:', error)
               setDeckError('Map rendering failed while initializing GPU resources.')
             }}

@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import DeckGL from '@deck.gl/react'
-import { H3HexagonLayer } from '@deck.gl/geo-layers'
-import type { PickingInfo } from '@deck.gl/core'
+import dynamic from 'next/dynamic'
 import { Map } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import type { PickingInfo } from '@deck.gl/core'
+
+// Dynamic import prevents deck.gl from running WebGPU probe during SSR
+// and in environments where navigator.gpu.requestAdapter() returns undefined.
+const DeckGL = dynamic(() => import('@deck.gl/react').then(m => m.default ?? m), { ssr: false })
 
 import {
   fetchLiveZones,
@@ -53,6 +56,9 @@ export default function MapPage() {
   const [timeframe, setTimeframe] = useState('Real-time')
   const [hasMounted, setHasMounted] = useState(false)
   const [webglSupported, setWebglSupported] = useState(true)
+  // H3HexagonLayer lazy-loaded; hook must live here (before any early returns)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [H3HexagonLayer, setH3Layer] = useState<any>(null)
 
   const loadZones = useCallback(async () => {
     try {
@@ -74,14 +80,31 @@ export default function MapPage() {
   useEffect(() => {
     setHasMounted(true)
 
+    // Check WebGL support
     const canvas = document.createElement('canvas')
-    const gl =
-      canvas.getContext('webgl') ||
-      canvas.getContext('experimental-webgl')
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+    if (!gl) { setWebglSupported(false); return }
 
-    setWebglSupported(Boolean(gl))
+    // Also probe WebGPU — deck.gl may try to use it and crash if the adapter
+    // is available but returns undefined (e.g. inside browser extension sandboxes).
+    if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(navigator as any).gpu.requestAdapter().then((adapter: unknown) => {
+        if (!adapter) {
+          // WebGPU is exposed but broken — deck.gl will crash; fall back to WebGL-only mode.
+          // deck.gl gracefully falls back when WebGPU adapter is missing as long as we
+          // don't import at the module level (handled by ssr:false dynamic import above).
+        }
+      }).catch(() => { /* WebGPU probe failed silently */ })
+    }
+
     loadZones()
   }, [loadZones])
+
+  // Lazy-load H3HexagonLayer alongside DeckGL (ssr:false dynamic import)
+  useEffect(() => {
+    import('@deck.gl/geo-layers').then(m => setH3Layer(() => m.H3HexagonLayer))
+  }, [])
 
   const sortedZones = [...zones]
     .filter(z => z.dci_score != null)
@@ -114,25 +137,24 @@ export default function MapPage() {
     )
   }
 
-  const layer = new H3HexagonLayer({
+
+
+  const layer = H3HexagonLayer ? new H3HexagonLayer({
     id: 'h3-layer',
     data: zones.filter(z => z.h3_index),
     pickable: true,
     filled: true,
     extruded: true,
     elevationScale: 8,
-
     getHexagon: (d: HexZone) => d.h3_index,
     getFillColor: (d: HexZone) => dciColor(d.dci_score ?? 0),
     getElevation: (d: HexZone) => ((d.dci_score ?? 0) * 200) + 20,
-
     getLineColor: [255, 255, 255, 30],
     lineWidthMinPixels: 1,
-
     onClick: (info: PickingInfo<HexZone>) => {
       if (info.object) setAlertZone(info.object)
     },
-  })
+  }) : null
 
   return (
     <div className="p-6" style={{ fontFamily: "'Inter', sans-serif" }}>

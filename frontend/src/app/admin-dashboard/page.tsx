@@ -5,6 +5,7 @@ import FinancialKPIs from '@/components/admin/FinancialKPIs';
 import FraudQueue from '@/components/admin/FraudQueue';
 import LiveZoneMonitor from '@/components/admin/LiveZoneMonitor';
 import RiskForecastPanel from '@/components/admin/RiskForecast';
+import ThresholdDriftChart from '@/components/admin/ThresholdDriftChart';
 import { fetchFraudQueue, fetchPayoutTrends, FraudQueueItem, MonthlyTrend } from '@/lib/admin/adminClient';
 
 import {
@@ -76,6 +77,9 @@ export default function AdminOverviewPage() {
           <LiveZoneMonitor />
         </div>
       </div>
+
+      {/* 🔹 THRESHOLD DRIFT */}
+      <ThresholdDriftChart />
 
       {/* 🔹 FRAUD BREAKDOWN */}
       <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">

@@ -180,7 +180,7 @@ def explain_policy_decision(
     tier: Optional[str] = None,
 ) -> dict:
     history, season_flag, claim_freq, city = fetch_worker_risk_metrics(worker_id)
-    avg_dci = round(sum(history) / len(history), 4) if history else 0.0
+    avg_dci = round(sum(history) / max(len(history), 1), 4) if history else 0.0
 
     computed_tier = tier or predict_tier(history, season_flag, city, claim_freq)
 
@@ -325,7 +325,7 @@ def create_policy(worker_id: str) -> dict:
     # ── Step 2: Compute policy parameters ─────────────────────────────────────
     history, season_flag, claim_freq, city = fetch_worker_risk_metrics(worker_id)
     tier      = predict_tier(history, season_flag, city, claim_freq)
-    dci_avg   = sum(history) / len(history) if history else 0.0
+    dci_avg   = sum(history) / max(len(history), 1) if history else 0.0
     curr_date = date.today()
     premium   = calculate_premium(tier, dci_avg, curr_date.month)
     cap       = _get_coverage_cap_for_tier(tier)
@@ -364,7 +364,6 @@ def create_policy(worker_id: str) -> dict:
             "status":             "active",
             "is_waiting_period":  True,
             "created_at":         now_iso,
-            "source":             "auto",
         }).execute()
 
         if not res.data:
@@ -439,7 +438,7 @@ def renew_policy(worker_id: str) -> Optional[dict]:
     # ── Step 2: Compute renewal parameters ────────────────────────────────────
     history, season_flag, claim_freq, city = fetch_worker_risk_metrics(worker_id)
     tier      = predict_tier(history, season_flag, city, claim_freq)
-    dci_avg   = sum(history) / len(history) if history else 0.0
+    dci_avg   = sum(history) / max(len(history), 1) if history else 0.0
     curr_date = date.today()
     premium   = calculate_premium(tier, dci_avg, curr_date.month)
     cap       = _get_coverage_cap_for_tier(tier)
@@ -478,7 +477,6 @@ def renew_policy(worker_id: str) -> Optional[dict]:
             "status":             "active",
             "is_waiting_period":  False,
             "created_at":         now_iso,
-            "source":             "auto",
         }).execute()
 
         if not res.data:

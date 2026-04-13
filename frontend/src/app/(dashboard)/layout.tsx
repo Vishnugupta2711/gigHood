@@ -50,16 +50,16 @@ export default function DashboardLayout({
       icon: MessageSquare,
     },
     {
-      href: "/worker-app/profile",
-      matchPath: "/profile",
-      label: t(language, "nav_profile"),
-      icon: User,
-    },
-    {
       href: "/worker-app/govt",
       matchPath: "/govt",
       label: "Govt",
       icon: Landmark,
+    },
+    {
+      href: "/worker-app/profile",
+      matchPath: "/profile",
+      label: t(language, "nav_profile"),
+      icon: User,
     },
   ];
 

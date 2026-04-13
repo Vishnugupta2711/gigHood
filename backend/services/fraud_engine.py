@@ -57,6 +57,9 @@ _W = {
     "ACCURACY_15_35":        getattr(settings, "FRAUD_WEIGHT_ACCURACY_15_35", 3),
     "VELOCITY_VIOLATION":    getattr(settings, "FRAUD_WEIGHT_VELOCITY_VIOLATION", 15),
     "MOCK_LOCATION":         getattr(settings, "FRAUD_WEIGHT_MOCK_LOCATION", 20),
+    "RECENT_CLAIMS":         getattr(settings, "FRAUD_WEIGHT_RECENT_CLAIMS", 15),
+    "UNUSUAL_HOURS":         getattr(settings, "FRAUD_WEIGHT_UNUSUAL_HOURS", 10),
+    "ZONE_HOPPING":          getattr(settings, "FRAUD_WEIGHT_ZONE_HOPPING", 20),
 }
 
 # ── Supabase retry helper ────────────────────────────────────────────────────
@@ -148,7 +151,7 @@ def refresh_adaptive_thresholds() -> _ThresholdState:
                 .select("fraud_score,ai_decision,admin_decision")
                 .execute()
         )
-        rows = res.data or []
+        rows = res.data if res and hasattr(res, "data") and res.data else []
 
         approve_scores = [
             float(r["fraud_score"]) for r in rows
@@ -167,13 +170,13 @@ def refresh_adaptive_thresholds() -> _ThresholdState:
         MIN_SAMPLES = 5   # need at least 5 confirmed overrides before adapting
 
         if len(approve_scores) >= MIN_SAMPLES:
-            raw_approve = sum(approve_scores) / len(approve_scores)
+            raw_approve = sum(approve_scores) / max(len(approve_scores), 1)
             _thresholds.approve = max(20.0, min(60.0, raw_approve + 5.0))
         else:
             _thresholds.approve = _BASELINE_APPROVE_THRESHOLD
 
         if len(deny_scores) >= MIN_SAMPLES:
-            raw_deny = sum(deny_scores) / len(deny_scores)
+            raw_deny = sum(deny_scores) / max(len(deny_scores), 1)
             _thresholds.deny = max(55.0, min(90.0, raw_deny - 5.0))
         else:
             _thresholds.deny = _BASELINE_DENY_THRESHOLD
@@ -206,8 +209,9 @@ def get_fraud_decision(fraud_score: float) -> dict:
 
     Returns a dict with:
         decision:    APPROVE | REVIEW | DENY
-        confidence:  HIGH | MEDIUM
+        confidence:  HIGH | MEDIUM | LOW
         reason:      Human-readable explanation including current thresholds
+        severity:    LOW | MEDIUM | HIGH
     """
     # Lazy / TTL-based cache refresh
     if _thresholds.is_stale():
@@ -218,20 +222,31 @@ def get_fraud_decision(fraud_score: float) -> dict:
     adaptive  = _thresholds.sample_count >= 5
     mode_tag  = f"adaptive [{_thresholds.sample_count} samples]" if adaptive else "baseline"
 
-    if fraud_score >= deny_t:
+    # Define Severity
+    if fraud_score > 70.0:
+        severity = "HIGH"
+    elif fraud_score > 40.0:
+        severity = "MEDIUM"
+    else:
+        severity = "LOW"
+
+    # Define Actions based on severity and thresholds
+    if fraud_score >= deny_t or fraud_score > 80.0:
         return {
             "decision":   "DENY",
             "confidence": "HIGH",
+            "severity":   severity,
             "reason":     (
                 f"Score {int(fraud_score)}/100 ≥ DENY threshold ({int(deny_t)}) — {mode_tag}. "
                 "Strong anomaly signals: high claim frequency, zone spoofing risk, "
                 "and/or confirmed network ring membership."
             ),
         }
-    if fraud_score >= approve_t:
+    if fraud_score >= approve_t or fraud_score > 50.0:
         return {
             "decision":   "REVIEW",
             "confidence": "MEDIUM",
+            "severity":   severity,
             "reason":     (
                 f"Score {int(fraud_score)}/100 between APPROVE ({int(approve_t)}) and "
                 f"DENY ({int(deny_t)}) thresholds — {mode_tag}. "
@@ -242,6 +257,7 @@ def get_fraud_decision(fraud_score: float) -> dict:
     return {
         "decision":   "APPROVE",
         "confidence": "HIGH",
+        "severity":   severity,
         "reason":     (
             f"Score {int(fraud_score)}/100 < APPROVE threshold ({int(approve_t)}) — {mode_tag}. "
             "Behavior consistent with legitimate gig-worker patterns. "
@@ -276,8 +292,35 @@ FEATURE_LABELS: dict[str, str] = {
     "velocity":          "Velocity Violation",
     "mock_location":     "Mock Location Flag",
     "network_behavior":  "Network / Behavioural Clustering",
+    "recent_claims":     "High Claim Frequency (7d)",
+    "unusual_hours":     "Unusual Activity Hours",
+    "zone_hopping":      "Rapid Zone Hopping",
 }
 
+FLAG_EXPLANATIONS: dict[str, str] = {
+    "NO_LOCATION_PINGS": "No location data found during the disruption.",
+    "MINIMAL_TELEMETRY": "Very few location points available.",
+    "SPARSE_TELEMETRY": "Insufficient location data to confidently verify presence.",
+    "MODERATE_TELEMETRY": "Location data is moderate but less than ideal.",
+    "STATIC_DEVICE_FLAG": "Device remained suspiciously stationary (possible GPS spoofing).",
+    "OUT_OF_ZONE_TELEMETRY": "All location pings were outside the affected zone.",
+    "SPARSE_IN_ZONE_TELEMETRY": "Majority of location pings were outside the zone.",
+    "PARTIAL_COVERAGE": "Some location pings were outside the valid area.",
+    "GATE2_NONE": "No verified partner order activity detected.",
+    "GATE2_WEAK": "Weak or unverified partner order activity.",
+    "LOW_ACCURACY_GPS": "GPS accuracy is extremely poor (over 120m radius).",
+    "POOR_ACCURACY_AVERAGE": "Average GPS accuracy is very weak.",
+    "ELEVATED_GPS_NOISE": "GPS signal is noisy and unreliable.",
+    "VELOCITY_VIOLATION": "Movement speed implies impossible travel (over 120 km/h).",
+    "MOCK_LOCATION_FLAG": "Device OS reported Mock Location was used.",
+    "HIGH_RECENT_CLAIMS": "Worker has an unusually high number of recent claims.",
+    "UNUSUAL_ACTIVITY_HOURS": "Activity occurred during unusual late-night hours.",
+    "RAPID_ZONE_HOPPING": "Worker moved across many different zones abnormally fast.",
+    "REGISTRATION_COHORT": "Part of an anomalous registration cohort.",
+    "ANOMALOUS_PATTERN": "Behavior matches known anomalous network patterns.",
+    "MODEL_CONCENTRATION": "High similarity to concentrated fraudulent models.",
+    "MODERATE_CLUSTERING": "Moderate similarity to known anomalous clusters.",
+}
 
 def explain_fraud_score(layer_scores: dict[str, float]) -> dict:
     """
@@ -348,7 +391,7 @@ class FraudEvaluator:
     def _std_dev(self, data: list) -> float:
         if len(data) < 2:
             return 0.0
-        mean = sum(data) / len(data)
+        mean = sum(data) / max(len(data), 1)
         variance = sum((x - mean) ** 2 for x in data) / (len(data) - 1)
         return math.sqrt(variance)
 
@@ -551,7 +594,7 @@ class FraudEvaluator:
             # Zone presence penalty also lands in location_anomaly bucket
             zone_pts = 0.0
             if pings:
-                hex_ratio = len(hex_pings) / len(pings)
+                hex_ratio = len(hex_pings) / max(len(pings), 1)
                 if hex_ratio == 0:
                     flags.append("OUT_OF_ZONE_TELEMETRY")
                     zone_pts += _W["OUT_OF_ZONE"]
@@ -581,7 +624,7 @@ class FraudEvaluator:
             # ── Layer 2c: GPS accuracy quality ────────────────────────────────
             gps_pts = 0.0
             if acc_values:
-                avg_accuracy = sum(acc_values) / len(acc_values)
+                avg_accuracy = sum(acc_values) / max(len(acc_values), 1)
                 max_accuracy = max(acc_values)
 
                 if max_accuracy > 120:
@@ -625,8 +668,68 @@ class FraudEvaluator:
                 network_pts += pts
                 score       += pts
 
-            # ── Final score ───────────────────────────────────────────────────
-            bounded_score = int(round(max(0.0, min(100.0, score))))
+            # ── Layer 6: Behavioral signal (claims in last 7 days) ────────────
+            behavioral_pts = 0.0
+            seven_days_ago = (disruption_start - timedelta(days=7)).isoformat()
+            try:
+                claims_res = _safe_db_call(
+                    lambda: supabase.table("claims")
+                        .select("id", count="exact")
+                        .eq("worker_id", worker_id)
+                        .gte("created_at", seven_days_ago)
+                        .execute()
+                )
+                recent_claims = getattr(claims_res, 'count', 0) or 0
+            except Exception:
+                recent_claims = 0
+
+            normalized_claims = min(recent_claims / 5.0, 1.0)
+            if normalized_claims > 0:
+                flags.append("HIGH_RECENT_CLAIMS")
+                behavioral_pts += _W["RECENT_CLAIMS"] * normalized_claims
+                score += behavioral_pts
+
+            # ── Layer 7: Temporal signal (unusual hours) ──────────────────────
+            temporal_pts = 0.0
+            is_night = 1.0 if 1 <= disruption_start.hour <= 5 else 0.0
+            if is_night > 0:
+                flags.append("UNUSUAL_ACTIVITY_HOURS")
+                temporal_pts += _W["UNUSUAL_HOURS"] * is_night
+                score += temporal_pts
+
+            # ── Layer 8: Spatial signal (zone hopping) ────────────────────────
+            spatial_pts = 0.0
+            unique_hexes = set(p.get("hex_id") for p in pings if p.get("hex_id"))
+            zone_hops = len(unique_hexes)
+            normalized_hops = min(zone_hops / 5.0, 1.0)
+            if normalized_hops > 0:
+                flags.append("RAPID_ZONE_HOPPING")
+                spatial_pts += _W["ZONE_HOPPING"] * normalized_hops
+                score += spatial_pts
+
+            # ── Final Score (Hybrid Rule + ML) ────────────────────────────────
+            rule_score_val = int(round(max(0.0, min(100.0, score))))
+
+            ml_score_val = None
+            ml_features = {
+                "claim_frequency": normalized_claims,
+                "zone_risk": zone_pts,
+                "location_anomaly": location_pts,
+                "time_of_day": float(disruption_start.hour + disruption_start.minute / 60.0)
+            }
+
+            try:
+                if "predict_fraud_ml" in globals():
+                    ml_score_raw = predict_fraud_ml(ml_features)
+                    ml_score_val = int(round(max(0.0, min(100.0, ml_score_raw))))
+                    final_hybrid_score = (0.6 * ml_score_val) + (0.4 * rule_score_val)
+                    bounded_score = int(round(max(0.0, min(100.0, final_hybrid_score))))
+                else:
+                    bounded_score = rule_score_val
+            except Exception as ml_err:
+                logger.debug(f"[fraud_engine] ML prediction failed: {ml_err}")
+                bounded_score = rule_score_val
+
             latency = round(time.time() - eval_start, 3)
 
             # ── AI Decision ───────────────────────────────────────────────────
@@ -641,6 +744,9 @@ class FraudEvaluator:
                 "velocity":          velocity_pts,
                 "mock_location":     mock_pts,
                 "network_behavior":  network_pts,
+                "recent_claims":     behavioral_pts,
+                "unusual_hours":     temporal_pts,
+                "zone_hopping":      spatial_pts,
             })
 
             logger.info(
@@ -650,6 +756,8 @@ class FraudEvaluator:
                 f"| flags={flags} | gate2={gate2_result} "
                 f"| time={latency}s"
             )
+
+            explanations = [FLAG_EXPLANATIONS.get(f, f) for f in flags]
 
             # ── Persist XAI to claim (best-effort) + write audit log ──────────
             # Both are soft-fail: a DB hiccup here must not block the response.
@@ -675,11 +783,13 @@ class FraudEvaluator:
                     "fraud_score":        bounded_score,
                     "decision":           decision_data["decision"],
                     "confidence":         decision_data["confidence"],
+                    "severity":           decision_data.get("severity", "LOW"),
                     "reason":             decision_data["reason"],
                     "top_reason":         xai["top_reason"],
                     "top_reason_label":   xai["top_reason_label"],
                     "breakdown":          xai["breakdown"],
                     "flags":              flags,
+                    "explanations":       explanations,
                     "gate2_result":       gate2_result,
                     "eval_latency_s":     latency,
                 },
@@ -688,10 +798,12 @@ class FraudEvaluator:
             return {
                 "fraud_score":         bounded_score,
                 "flags":               flags,
+                "explanations":        explanations,
                 "gate2_result":        gate2_result,
                 "decision":            decision_data["decision"],
                 "decision_reason":     decision_data["reason"],
                 "decision_confidence": decision_data["confidence"],
+                "severity":            decision_data.get("severity", "LOW"),
                 "fraud_breakdown":     xai["breakdown"],
                 "fraud_top_reason":    xai["top_reason"],
                 "fraud_top_reason_label": xai["top_reason_label"],

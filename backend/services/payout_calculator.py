@@ -74,21 +74,23 @@ def get_4w_avg_payout(worker_id: str) -> float:
             .eq("worker_id", worker_id)
             .eq("status", "paid")
             .gte("resolved_at", cutoff.isoformat())
+            .limit(100)
             .execute()
         )
-        data = res.data or []
-        if not data:
-            return _COLD_START_AVG
+        if res and hasattr(res, "data") and res.data:
+            data = res.data
+        else:
+            return float(_COLD_START_AVG)
 
         total = sum(float(d.get("payout_amount") or 0.0) for d in data)
-        return round(total / len(data), 2)
+        return round(total / max(len(data), 1), 2)
 
     except Exception as exc:
         logger.error(
             "get_4w_avg_payout(%s) DB query failed: %s — using cold-start default",
             worker_id, exc,
         )
-        return _COLD_START_AVG
+        return float(_COLD_START_AVG)
 
 
 # =============================================================================

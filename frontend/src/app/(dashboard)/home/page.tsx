@@ -1091,732 +1091,247 @@ export default function DashboardPage() {
     <div className="dashboard-page animate-fadeIn">
       {smsToast && <SmsToast message={smsToast} />}
 
+      {/* Processing overlay */}
       {isProcessing && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            background: "rgba(2, 6, 23, 0.78)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "12px",
-            pointerEvents: "all",
-          }}
-        >
-          <div
-            className="spinner"
-            style={{ width: "42px", height: "42px", borderWidth: "3px" }}
-          />
-          <p
-            style={{
-              fontSize: "16px",
-              fontWeight: 700,
-              color: "var(--text-primary)",
-            }}
-          >
-            Running 7-Layer Fraud Engine...
-          </p>
-          <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-            Please wait while your claim is securely evaluated.
-          </p>
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(2,6,23,0.85)", backdropFilter: "blur(6px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
+          <div className="spinner" style={{ width: "44px", height: "44px", borderWidth: "3px" }} />
+          <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-primary)" }}>Running Fraud Engine…</p>
+          <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Securely evaluating your claim</p>
         </div>
       )}
 
-      {/* 1. Worker Greeting + Policy Status Card */}
-      <section className="stagger-1">
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            marginBottom: "16px",
-          }}
-        >
+      {/* STICKY TOP HEADER */}
+      <header style={{ background: "linear-gradient(180deg,rgba(15,23,42,1) 0%,rgba(15,23,42,0) 100%)", padding: "20px 20px 24px", position: "sticky", top: 0, zIndex: 50, backdropFilter: "blur(12px)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
           <div>
-            {/* ─── Upgraded greeting with sub-headline ─── */}
-            <h2
-              className="gradient-text"
-              style={{
-                fontSize: "26px",
-                fontWeight: 800,
-                letterSpacing: "-0.5px",
-                marginBottom: "4px",
-              }}
-            >
-              Welcome back, {firstName} 👋
+            <h2 style={{ fontSize: "22px", fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text-primary)" }}>
+              Hey {firstName} 👋
             </h2>
-            <p
-              style={{
-                fontSize: "13px",
-                color: "var(--text-secondary)",
-                marginBottom: "2px",
-              }}
+            <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "5px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "99px", padding: "4px 12px 4px 8px", width: "fit-content" }}>
+              <span style={{ fontSize: "13px" }}>📍</span>
+              <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>{worker.dark_store_zone}</span>
+              <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>· {worker.city}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <select
+              value={language}
+              onChange={e => setLanguage(e.target.value as (typeof LANGUAGE_OPTIONS)[number]["code"])}
+              style={{ padding: "6px 10px", borderRadius: "10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text-primary)", fontSize: "12px", fontWeight: 600, outline: "none" }}
             >
-              Your earnings are being protected in real-time
-            </p>
-            <p className="label-micro" style={{ fontSize: "12px" }}>
-              {worker.city} • {t(language, "zone")}:{" "}
-              <span style={{ color: "var(--text-primary)" }}>
-                {worker.dark_store_zone}
-              </span>
-            </p>
+              {LANGUAGE_OPTIONS.map(o => (
+                <option key={o.code} value={o.code} style={{ background: "#0f172a" }}>{o.label}</option>
+              ))}
+            </select>
+            <div style={{ width: "38px", height: "38px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Bell size={18} color="var(--text-secondary)" />
+            </div>
           </div>
-          <div
-            style={{
-              padding: "10px",
-              background: "rgba(255,255,255,0.03)",
-              borderRadius: "12px",
-              border: "1px solid var(--border-glass)",
-            }}
-          >
-            <Bell size={20} color="var(--text-secondary)" />
-          </div>
-        </header>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: "6px", padding: "5px 12px", borderRadius: "99px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", fontSize: "12px", fontWeight: 600, color: "#34D399" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", boxShadow: "0 0 8px #22C55E", animation: "pulseGlow 2s infinite", display: "inline-block" }} />
+            Protection Active
+          </span>
+          <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+            {dashboard?.active_policy ? `Tier ${dashboard.active_policy.tier} · ${policyWeek}` : "Policy Pending"}
+          </span>
+        </div>
+      </header>
 
-        <div
-          className="glass-card"
-          style={{
-            padding: "10px 14px",
-            marginBottom: "14px",
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "10px",
-          }}
+      <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: "20px", paddingBottom: "40px" }}>
+
+        {/* DCI HERO CARD */}
+        <motion.section
+          className="stagger-1"
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+          style={{ position: "relative", borderRadius: "24px", overflow: "hidden", background: `linear-gradient(135deg,rgba(15,23,42,0.9) 0%,${statusColor}18 100%)`, border: `1px solid ${statusColor}30`, boxShadow: `0 20px 60px ${statusColor}20` }}
         >
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span
-              style={{
-                fontSize: "12px",
-                color: "var(--text-secondary)",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.8px",
-              }}
-            >
-              {t(language, "select_language")}
-            </span>
-            <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
-              {t(language, "applies_entire_app")}
-            </span>
-          </div>
+          <div style={{ position: "absolute", top: "-40px", left: "50%", transform: "translateX(-50%)", width: "220px", height: "220px", background: `${statusColor}25`, filter: "blur(60px)", borderRadius: "50%", pointerEvents: "none" }} />
+          <div style={{ position: "relative", zIndex: 1, padding: "24px 20px 20px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+              <div>
+                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "var(--text-secondary)", marginBottom: "4px" }}>Zone Risk Index</p>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div className="pulse-dot" style={{ background: statusColor, boxShadow: `0 0 10px ${statusColor}`, flexShrink: 0 }} />
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Live · {lastUpdated}</span>
+                </div>
+              </div>
+              <span className="badge-pill" style={{ background: statusBg, color: statusColor, border: `1px solid ${statusColor}40`, textTransform: "uppercase", letterSpacing: "1px", fontSize: "11px", fontWeight: 700 }}>
+                {statusLabel}
+              </span>
+            </div>
 
-          <select
-            value={language}
-            onChange={(e) =>
-              setLanguage(
-                e.target.value as (typeof LANGUAGE_OPTIONS)[number]["code"],
-              )
-            }
-            style={{
-              minWidth: "170px",
-              padding: "10px 12px",
-              borderRadius: "10px",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid var(--border-glass)",
-              color: "var(--text-primary)",
-              fontSize: "13px",
-              fontWeight: 600,
-              outline: "none",
-            }}
-          >
-            {LANGUAGE_OPTIONS.map((option) => (
-              <option
-                key={option.code}
-                value={option.code}
-                style={{ background: "#0f172a", color: "var(--text-primary)" }}
+            <motion.div className="risk-gauge-wrap" initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, delay: 0.1 }}>
+              <svg className="gauge-svg" width="220" height="90" viewBox="0 0 140 75" style={{ overflow: "visible" }}>
+                <defs>
+                  <filter id="glow-h" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+                <path d="M 10 72 A 60 60 0 0 1 130 72" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} strokeLinecap="round" />
+                <path d="M 10 72 A 60 60 0 0 1 130 72" fill="none" stroke={statusColor} strokeWidth={strokeWidth}
+                  strokeDasharray={`${circumference} ${circumference}`} strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round" filter="url(#glow-h)"
+                  style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.16,1,0.3,1)", transformOrigin: "70px 72px" }}
+                />
+              </svg>
+              <div className="risk-score">
+                <div style={{ fontSize: "48px", fontWeight: 900, lineHeight: 1, letterSpacing: "-2px", textShadow: `0 6px 24px ${statusColor}70` }} className="tabular-nums">
+                  {hasDci ? normalizedDci.toFixed(2) : "--"}
+                </div>
+                <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "5px", letterSpacing: "0.5px" }}>DCI Score / 1.00</div>
+              </div>
+            </motion.div>
+
+            <p className="risk-caption" style={{ textAlign: "center", marginTop: "12px", fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{dciText}</p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", marginTop: "20px", background: "rgba(255,255,255,0.06)", borderRadius: "16px", overflow: "hidden" }}>
+              {[
+                { label: "Premium",  value: dashboard?.active_policy ? `₹${dashboard.active_policy.weekly_premium ?? dashboard.active_policy.premium_amount ?? "—"}` : "—", sub: "per week" },
+                { label: "Coverage", value: dashboard?.active_policy ? `₹${dashboard.active_policy.coverage_cap_daily}` : "—",  sub: "per day cap" },
+                { label: "Paid Out", value: `₹${(dashboard?.weekly_summary.total_paid_out || 0).toLocaleString("en-IN")}`, sub: "this week", color: "#34D399" },
+              ].map((s) => (
+                <div key={s.label} style={{ padding: "12px 8px", textAlign: "center" }}>
+                  <div className="tabular-nums" style={{ fontSize: "15px", fontWeight: 800, color: s.color ?? "var(--text-primary)" }}>{s.value}</div>
+                  <div style={{ fontSize: "9px", color: "var(--text-secondary)", marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* QUICK ACTIONS */}
+        <section className="stagger-2">
+          <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "14px" }}>Quick Actions</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
+            {[
+              { icon: "⚡", label: isSimulating ? "…" : "Simulate",  bg: "rgba(14,165,233,0.1)",  border: "rgba(14,165,233,0.2)",  color: "#38BDF8", onClick: !isDisrupted ? handleSimulateDisruption : undefined, disabled: isSimulating || isDisrupted },
+              { icon: "💸", label: isProcessing ? "…" : "Claim",     bg: "rgba(16,185,129,0.1)",  border: "rgba(16,185,129,0.2)",  color: "#34D399", onClick: isDisrupted ? handleProcessClaim : undefined,       disabled: !isDisrupted || isProcessing },
+              { icon: "🤖", label: "Copilot",     bg: "rgba(139,92,246,0.1)",  border: "rgba(139,92,246,0.2)", color: "#A78BFA", onClick: () => { window.location.href = "/worker-app/chat"; },  disabled: false },
+              { icon: "🗺️", label: "Radar",       bg: "rgba(251,191,36,0.1)",  border: "rgba(251,191,36,0.2)", color: "#FBBF24", onClick: () => { window.location.href = "/worker-app/radar"; }, disabled: false },
+            ].map(a => (
+              <button key={a.label} onClick={a.onClick} disabled={a.disabled}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", padding: "16px 8px", borderRadius: "18px", background: a.bg, border: `1px solid ${a.border}`, cursor: a.onClick ? "pointer" : "not-allowed", opacity: a.disabled ? 0.4 : 1, transition: "all 0.2s", fontFamily: "inherit" }}
               >
-                {option.label} - {option.name}
-              </option>
+                <span style={{ fontSize: "24px" }}>{a.icon}</span>
+                <span style={{ fontSize: "11px", fontWeight: 700, color: a.color, textAlign: "center" }}>{a.label}</span>
+              </button>
             ))}
-          </select>
-        </div>
-
-        <div
-          className="glass-panel status-card"
-          style={{ borderLeftColor: statusColor }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "8px",
-            }}
-          >
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <ShieldCheck size={18} color={statusColor} />
-              <span style={{ fontSize: "15px", fontWeight: 600 }}>
-                {dashboard?.active_policy
-                  ? `Active Tier ${dashboard.active_policy.tier}`
-                  : "Tier Pending Calculation"}
-              </span>
-            </div>
-            <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-              {policyWeek}
-            </span>
           </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "13px",
-            }}
-          >
-            <span style={{ color: "var(--text-secondary)" }}>
-              Weekly Premium:{" "}
-              <strong style={{ color: "var(--text-primary)" }}>
-                {dashboard?.active_policy
-                  ? `₹${dashboard.active_policy.weekly_premium ?? dashboard.active_policy.premium_amount ?? "—"}`
-                  : "—"}
-              </strong>
-            </span>
-            <span style={{ color: "var(--text-secondary)" }}>
-              Cap:{" "}
-              <strong style={{ color: "var(--text-primary)" }}>
-                {dashboard?.active_policy
-                  ? `₹${dashboard.active_policy.coverage_cap_daily}/day`
-                  : "—"}
-              </strong>
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Live Zone Risk Panel */}
-      <section className="stagger-2 glass-panel risk-panel">
-        <div
-          style={{
-            position: "absolute",
-            top: "-50px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "200px",
-            height: "200px",
-            background: `${statusColor}20`,
-            filter: "blur(50px)",
-            borderRadius: "50%",
-            pointerEvents: "none",
-          }}
-        />
-
-        <div className="risk-head">
-          <h3
-            style={{
-              fontSize: "13px",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-              opacity: 0.8,
-            }}
-          >
-            Zone Risk Level
-          </h3>
-          <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
-            Updated: {lastUpdated}
-          </span>
-        </div>
-
-        {/* ─── Live monitoring indicator ─── */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            marginBottom: "10px",
-          }}
-        >
-          <div
-            className="pulse-dot"
-            style={{
-              background: statusColor,
-              boxShadow: `0 0 10px ${statusColor}`,
-              flexShrink: 0,
-            }}
-          />
-          <span
-            style={{
-              fontSize: "13px",
-              color: "var(--text-secondary)",
-              fontWeight: 600,
-            }}
-          >
-            Live Zone Monitoring Active
-          </span>
-        </div>
-
-        {/* DCI Gauge */}
-        <motion.div
-          className="risk-gauge-wrap"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4 }}
-        >
-          <svg
-            className="gauge-svg"
-            width="220"
-            height="90"
-            viewBox="0 0 140 75"
-            style={{ overflow: "visible" }}
-          >
-            <defs>
-              <filter
-                id="glow-panel"
-                x="-30%"
-                y="-30%"
-                width="160%"
-                height="160%"
-              >
-                <feGaussianBlur stdDeviation="4" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
-            <path
-              d="M 10 72 A 60 60 0 0 1 130 72"
-              fill="none"
-              stroke="rgba(255,255,255,0.06)"
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-            />
-            <path
-              d="M 10 72 A 60 60 0 0 1 130 72"
-              fill="none"
-              stroke={statusColor}
-              strokeWidth={strokeWidth}
-              strokeDasharray={`${circumference} ${circumference}`}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              filter="url(#glow-panel)"
-              style={{
-                transition:
-                  "stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1)",
-                transformOrigin: "70px 72px",
-              }}
-            />
-          </svg>
-
-          <div className="risk-score">
-            <div
-              style={{
-                fontSize: "42px",
-                fontWeight: 800,
-                lineHeight: 1,
-                letterSpacing: "-1px",
-                textShadow: `0 4px 20px ${statusColor}60`,
-              }}
-              className="tabular-nums"
-            >
-              {hasDci ? normalizedDci.toFixed(2) : "--"}
-            </div>
-            <div
-              style={{
-                fontSize: "11px",
-                color: "var(--text-secondary)",
-                marginTop: "4px",
-                letterSpacing: "0.5px",
-              }}
-            >
-              DCI Score / 1.00
-            </div>
-            <div
-              className="badge-pill"
-              style={{
-                display: "inline-flex",
-                marginTop: "10px",
-                background: statusBg,
-                color: statusColor,
-                borderColor: `${statusColor}40`,
-                textTransform: "uppercase",
-                letterSpacing: "1px",
-                fontSize: "11px",
-              }}
-            >
-              {statusLabel}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ─── Emotionally resonant caption ─── */}
-        <p className="risk-caption">{dciText}</p>
-      </section>
-
-      {/* 🧠 SAFETY RADAR SECTION */}
-      <section className="stagger-3">
-        <div className="glass-card" style={{ padding: '16px', marginBottom: '16px' }}>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <h3 className="gradient-text" style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>🧠 Safety Radar</h3>
-            <span style={{ fontSize: '11px', color: '#22C55E', fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", animation: "pulse 2s infinite" }} />
-              Live
-            </span>
-          </div>
-
-          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-            Live map showing safe zones and high earning areas
-          </p>
-
-          {/* MAP */}
-          <SafetyRadar compact={true} userCoords={coords} />
-
-          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
-            <Link 
-              href="/worker-app/radar" 
-              className="btn-premium"
-              style={{ 
-                padding: '10px 16px', 
-                fontSize: '13px', 
-                background: 'rgba(99,102,241,0.15)', 
-                border: '1px solid rgba(99,102,241,0.3)', 
-                borderRadius: '10px', 
-                color: '#818CF8', 
-                fontWeight: 600,
-                textDecoration: 'none',
-                display: 'inline-block'
-              }}
-            >
-              View Full Safety Map →
-            </Link>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ─── Protected Today card (new) ─── */}
-      <section className="stagger-3">
-        <div
-          className="glass-card"
-          style={{
-            padding: "16px 20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderLeft: "3px solid #10B981",
-          }}
-        >
-          <div>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "var(--text-secondary)",
-                marginBottom: "4px",
-                textTransform: "uppercase",
-                letterSpacing: "0.6px",
-                fontWeight: 600,
-              }}
-            >
-              Protected Today
-            </p>
-            <p
-              style={{
-                fontSize: "24px",
-                fontWeight: 800,
-                color: "#10B981",
-                lineHeight: 1,
-              }}
-            >
-              ₹
-              {(dashboard?.weekly_summary.total_paid_out || 0).toLocaleString(
-                "en-IN",
-              )}
-            </p>
-          </div>
-          <div
-            style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "12px",
-              background: "rgba(16, 185, 129, 0.12)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <ShieldCheck size={24} color="#10B981" />
-          </div>
-        </div>
-      </section>
-
-      {/* 3. What Is Covered */}
-      <section className="stagger-3" style={{ marginTop: "-4px" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "10px",
-          }}
-        >
-          <p className="label-micro" style={{ fontSize: "11px" }}>
-            What Is Covered
-          </p>
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              type="button"
-              aria-label="Scroll coverage badges left"
-              onClick={() => shiftCoverage("left")}
-              style={{
-                width: "26px",
-                height: "26px",
-                borderRadius: "8px",
-                border: "1px solid var(--border-glass)",
-                background: "rgba(15, 23, 42, 0.45)",
-                color: "var(--text-secondary)",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              type="button"
-              aria-label="Scroll coverage badges right"
-              onClick={() => shiftCoverage("right")}
-              style={{
-                width: "26px",
-                height: "26px",
-                borderRadius: "8px",
-                border: "1px solid var(--border-glass)",
-                background: "rgba(15, 23, 42, 0.45)",
-                color: "var(--text-secondary)",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
-        </div>
-        <div
-          ref={coverageCarouselRef}
-          style={{
-            display: "flex",
-            gap: "8px",
-            overflowX: "auto",
-            paddingBottom: "2px",
-            scrollSnapType: "x mandatory",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
-        >
-          {coverageBadges.map((label) => (
-            <span
-              key={label}
-              style={{
-                whiteSpace: "nowrap",
-                padding: "8px 12px",
-                borderRadius: "999px",
-                background: "rgba(14, 165, 233, 0.08)",
-                border: "1px solid rgba(14, 165, 233, 0.22)",
-                color: "#BAE6FD",
-                fontSize: "12px",
-                fontWeight: 600,
-                scrollSnapAlign: "start",
-              }}
-            >
-              {label === "Heavy Rainfall" && "🌧️ "}
-              {label === "Hazardous AQI" && "🌫️ "}
-              {label === "Traffic Gridlock" && "🚧 "}
-              {label === "Platform Outage" && "📉 "}
-              {label}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      {/* 4. Phase 2: Simulate Disruption Button */}
-      {!isDisrupted && (
-        <section className="stagger-4">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.02 }}
-            onClick={handleSimulateDisruption}
-            disabled={isSimulating}
-            className="primary-btn"
-            style={{
-              background: isSimulating ? "rgba(14, 165, 233, 0.3)" : undefined,
-              transition: "all 0.2s ease",
-            }}
-            onMouseDown={(e) => {
-              if (!isSimulating)
-                e.currentTarget.style.transform = "scale(0.97)";
-            }}
-            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          >
-            {isSimulating ? (
-              <>
-                <div
-                  className="spinner"
-                  style={{ width: "18px", height: "18px", borderWidth: "2px" }}
-                />
-                Simulating Extreme Weather...
-              </>
-            ) : (
-              <>
-                <CloudLightning size={20} />
-                Simulate Extreme Weather
-              </>
-            )}
-          </motion.button>
-          {simulationError && (
-            <div
-              style={{
-                marginTop: "12px",
-                padding: "12px",
-                background: "rgba(239, 68, 68, 0.15)",
-                borderRadius: "8px",
-                border: "1px solid rgba(239, 68, 68, 0.3)",
-                color: "#FCA5A5",
-                fontSize: "14px",
-              }}
-            >
-              {simulationError}
-            </div>
-          )}
+          {simulationError && <div style={{ marginTop: "12px", padding: "12px 14px", background: "rgba(245,158,11,0.08)", borderRadius: "12px", border: "1px solid rgba(245,158,11,0.2)", color: "#FCD34D", fontSize: "13px" }}>{simulationError}</div>}
+          {processingError && <div style={{ marginTop: "12px", padding: "12px 14px", background: "rgba(239,68,68,0.08)", borderRadius: "12px", border: "1px solid rgba(239,68,68,0.2)", color: "#FCA5A5", fontSize: "13px" }}>{processingError}</div>}
         </section>
-      )}
 
-      {/* 5. Phase 3: Process Claim Button */}
-      {isDisrupted && !claimReceipt && (
-        <section className="stagger-4">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.02 }}
-            onClick={handleProcessClaim}
-            disabled={isProcessing}
-            className="action-button success"
-            style={{
-              background: isProcessing ? "rgba(16, 185, 129, 0.3)" : undefined,
-              transition: "all 0.2s ease",
-            }}
-            onMouseDown={(e) => {
-              if (!isProcessing)
-                e.currentTarget.style.transform = "scale(0.97)";
-            }}
-            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          >
-            {isProcessing ? (
-              <>
-                <div
-                  className="spinner"
-                  style={{ width: "18px", height: "18px", borderWidth: "2px" }}
-                />
-                Processing Claim...
-              </>
-            ) : (
-              <>
-                <CheckCircle size={20} />
-                Process Claim
-              </>
-            )}
-          </motion.button>
-          {processingError && (
-            <div
-              style={{
-                marginTop: "12px",
-                padding: "12px",
-                background: "rgba(239, 68, 68, 0.15)",
-                borderRadius: "8px",
-                border: "1px solid rgba(239, 68, 68, 0.3)",
-                color: "#FCA5A5",
-                fontSize: "14px",
-              }}
-            >
-              {processingError}
+        {/* BIG CTA BUTTONS */}
+        {!isDisrupted && (
+          <section className="stagger-3">
+            <motion.button whileTap={{ scale: 0.97 }} whileHover={{ scale: 1.01 }} onClick={handleSimulateDisruption} disabled={isSimulating} className="primary-btn" style={{ background: isSimulating ? "rgba(14,165,233,0.3)" : undefined, transition: "all 0.2s ease" }}>
+              {isSimulating ? <><div className="spinner" style={{ width: "18px", height: "18px", borderWidth: "2px" }} />Simulating…</> : <><CloudLightning size={20} />Simulate Extreme Weather</>}
+            </motion.button>
+          </section>
+        )}
+        {isDisrupted && !claimReceipt && (
+          <section className="stagger-3">
+            <motion.button whileTap={{ scale: 0.97 }} whileHover={{ scale: 1.01 }} onClick={handleProcessClaim} disabled={isProcessing} className="action-button success" style={{ background: isProcessing ? "rgba(16,185,129,0.3)" : undefined, transition: "all 0.2s ease" }}>
+              {isProcessing ? <><div className="spinner" style={{ width: "18px", height: "18px", borderWidth: "2px" }} />Processing Claim…</> : <><CheckCircle size={20} />Process Claim Now</>}
+            </motion.button>
+          </section>
+        )}
+
+        {/* SAFETY RADAR */}
+        <section className="stagger-3">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)" }}>🧠 Safety Radar</p>
+            <span style={{ fontSize: "11px", color: "#22C55E", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", animation: "pulse 2s infinite", display: "inline-block" }} />Live
+            </span>
+          </div>
+          <div className="glass-panel" style={{ padding: "16px" }}>
+            <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginBottom: "12px" }}>Live map · safe zones and high-earning areas</p>
+            <SafetyRadar compact={true} userCoords={coords} />
+            <div style={{ marginTop: "14px", textAlign: "center" }}>
+              <Link href="/worker-app/radar" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "10px 18px", borderRadius: "10px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", color: "#818CF8", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}>
+                View Full Map <ChevronRight size={15} />
+              </Link>
             </div>
-          )}
+          </div>
         </section>
-      )}
 
-      {/* 6. Product Systems Showcase (Replacing old sections for Demo)
-      <section className="stagger-5" style={{ marginTop: '24px' }}>
-        <h3 className="label-micro section-title" style={{ marginBottom: '16px' }}>Your gigHood Benefits</h3>
-        
-        <div className="glass-card interactive-card" style={{ padding: '16px', marginBottom: '14px' }}>
-          <h3 className="gradient-text">Protection Intelligence</h3>
-
-          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div className="feature-item">
-              🧠 Zone Risk Dashboard  
-              <span className="feature-desc">Real-time DCI risk score for your zone</span>
-            </div>
-            <div className="feature-item">
-              📡 Safety Radar  
-              <span className="feature-desc">Live map showing safe & disrupted areas</span>
-            </div>
-            <div className="feature-item">
-              🟢 Live Monitoring  
-              <span className="feature-desc">System actively tracking disruptions</span>
+        {/* WHAT'S COVERED */}
+        <section className="stagger-4">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)" }}>What&apos;s Covered</p>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <button type="button" aria-label="Scroll left" onClick={() => shiftCoverage("left")} style={{ width: "26px", height: "26px", borderRadius: "8px", border: "1px solid var(--border-glass)", background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <ChevronLeft size={14} color="var(--text-secondary)" />
+              </button>
+              <button type="button" aria-label="Scroll right" onClick={() => shiftCoverage("right")} style={{ width: "26px", height: "26px", borderRadius: "8px", border: "1px solid var(--border-glass)", background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <ChevronRight size={14} color="var(--text-secondary)" />
+              </button>
             </div>
           </div>
-        </div>
-
-        <div className="glass-card interactive-card" style={{ padding: '16px', marginBottom: '14px' }}>
-          <h3 className="gradient-text">Financial Protection</h3>
-
-          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div className="feature-item">
-              💳 Policy Activation  
-              <span className="feature-desc">Instant weekly coverage setup</span>
-            </div>
-            <div className="feature-item">
-              💰 Payout History  
-              <span className="feature-desc">Track all automatic payouts</span>
-            </div>
-            <div className="feature-item">
-              ⚡ Instant Payouts  
-              <span className="feature-desc">UPI transfers within 90 seconds</span>
-            </div>
+          <div ref={coverageCarouselRef} style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}>
+            {coverageBadges.map(label => (
+              <div key={label} style={{ flexShrink: 0, scrollSnapAlign: "start", padding: "14px 16px", borderRadius: "16px", background: "rgba(14,165,233,0.06)", border: "1px solid rgba(14,165,233,0.18)", minWidth: "140px" }}>
+                <div style={{ fontSize: "22px", marginBottom: "6px" }}>
+                  {label === "Heavy Rainfall" && "🌧️"}
+                  {label === "Hazardous AQI" && "🌫️"}
+                  {label === "Traffic Gridlock" && "🚧"}
+                  {label === "Platform Outage" && "📉"}
+                </div>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#BAE6FD" }}>{label}</div>
+                <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "3px" }}>Covered ✓</div>
+              </div>
+            ))}
           </div>
-        </div>
+        </section>
 
-        <div className="glass-card interactive-card" style={{ padding: '16px', marginBottom: '14px' }}>
-          <h3 className="gradient-text">AI Assistant</h3>
-
-          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div className="feature-item">
-              🎤 Voice AI  
-              <span className="feature-desc">Talk to gigHood in your language</span>
-            </div>
-            <div className="feature-item">
-              🌐 Multilingual Support  
-              <span className="feature-desc">Hindi · Tamil · Telugu · English</span>
-            </div>
-            <div className="feature-item">
-              🤖 Smart Copilot  
-              <span className="feature-desc">Explains risk, payouts & policy</span>
-            </div>
+        {/* WEEKLY SUMMARY */}
+        <section className="stagger-4">
+          <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "12px" }}>This Week</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+            {[
+              { icon: "💰", label: "Premium Paid",  value: `₹${dashboard?.weekly_summary.premium_paid ?? 0}`,                                                    color: "#60A5FA" },
+              { icon: "⚡", label: "Disruptions",   value: String(dashboard?.weekly_summary.disruptions ?? 0),                                                    color: "#FBBF24" },
+              { icon: "✅", label: "Paid Out",      value: `₹${(dashboard?.weekly_summary.total_paid_out ?? 0).toLocaleString("en-IN")}`,                        color: "#34D399" },
+            ].map(s => (
+              <div key={s.label} className="glass-panel" style={{ padding: "14px 12px", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "18px" }}>
+                <span style={{ fontSize: "20px" }}>{s.icon}</span>
+                <span className="tabular-nums" style={{ fontSize: "18px", fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</span>
+                <span style={{ fontSize: "10px", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>{s.label}</span>
+              </div>
+            ))}
           </div>
-        </div>
+        </section>
 
-        <div className="glass-card interactive-card" style={{ padding: '16px', marginBottom: '14px' }}>
-          <h3 className="gradient-text">Government Support</h3>
-
-          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div className="feature-item">
-              🏛️ Scheme Discovery  
-              <span className="feature-desc">Find benefits for gig workers</span>
-            </div>
-            <div className="feature-item">
-              📄 Eligibility Insights  
-              <span className="feature-desc">Check what you qualify for</span>
-            </div>
-            <div className="feature-item">
-              🔗 Easy Access  
-              <span className="feature-desc">Direct application guidance</span>
-            </div>
+        {/* EXPLORE */}
+        <section className="stagger-5">
+          <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "12px" }}>Explore GigHood</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {[
+              { icon: "💸", label: "Payouts",     sub: "Track all your claim settlements",  href: "/worker-app/payouts", color: "#34D399", bg: "rgba(52,211,153,0.08)" },
+              { icon: "🤖", label: "AI Copilot",  sub: "Ask questions in your language",    href: "/worker-app/chat",    color: "#A78BFA", bg: "rgba(167,139,250,0.08)" },
+              { icon: "🏛️", label: "Govt Schemes", sub: "Benefits you're eligible for",     href: "/worker-app/govt",    color: "#FBBF24", bg: "rgba(251,191,36,0.08)" },
+            ].map(item => (
+              <Link key={item.label} href={item.href} style={{ textDecoration: "none" }}>
+                <div className="glass-panel interactive-card" style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: "14px", borderRadius: "16px" }}>
+                  <div style={{ width: "44px", height: "44px", borderRadius: "14px", background: item.bg, border: `1px solid ${item.color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
+                    {item.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>{item.label}</p>
+                    <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>{item.sub}</p>
+                  </div>
+                  <ChevronRight size={16} color="rgba(148,163,184,0.4)" />
+                </div>
+              </Link>
+            ))}
           </div>
-        </div>
-      </section> */}
+        </section>
+
+      </div>
     </div>
   );
 }

@@ -639,3 +639,38 @@ def get_audit_logs(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/fraud/threshold-drift")
+def get_threshold_drift():
+    try:
+        # Try fetching from actual DB log table
+        res = supabase.table('fraud_threshold_audit').select('*').order('created_at', desc=False).limit(30).execute()
+        data = res.data or []
+        
+        if len(data) >= 2:
+            results = []
+            for row in data:
+                created_ts = datetime.fromisoformat(row['created_at'].replace('Z', '+00:00'))
+                results.append({
+                    "week": created_ts.strftime('%b %d'),
+                    "approve_threshold": round(row.get('approve_threshold', 0.20) * 100, 1),
+                    "deny_threshold": round(row.get('deny_threshold', 0.80) * 100, 1),
+                    "override_rate": round(row.get('override_rate', 0.05) * 100, 1)
+                })
+            return results
+            
+        return []
+    except Exception as e:
+        logger.error(f"[admin] get_threshold_drift failed: {e}")
+        return []
+
+    # Fallback mock data if DB empty
+    return [
+        {"week": "Week 1", "approve_threshold": 20, "deny_threshold": 80, "override_rate": 5},
+        {"week": "Week 2", "approve_threshold": 22, "deny_threshold": 78, "override_rate": 6},
+        {"week": "Week 3", "approve_threshold": 25, "deny_threshold": 76, "override_rate": 8},
+        {"week": "Week 4", "approve_threshold": 28, "deny_threshold": 77, "override_rate": 5},
+        {"week": "Week 5", "approve_threshold": 30, "deny_threshold": 75, "override_rate": 4},
+        {"week": "Week 6", "approve_threshold": 33, "deny_threshold": 74, "override_rate": 3},
+    ]

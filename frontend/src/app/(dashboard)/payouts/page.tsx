@@ -7,8 +7,7 @@ import {
   RefreshCw, Umbrella
 } from 'lucide-react';
 import { workerApi, type Claim } from '@/lib/worker';
-import { useLanguageStore } from '@/store/languageStore';
-import { t } from '@/lib/i18n';
+import { useTranslation } from 'react-i18next';
 
 // ── Helpers ────────────────────────────────────────────────
 
@@ -59,7 +58,7 @@ function formatDate(iso: string): string {
 // ── Component ──────────────────────────────────────────────
 
 export default function PayoutsPage() {
-  const language = useLanguageStore((s) => s.language);
+  const { t } = useTranslation();
   const { data: claims, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['claims'],
     queryFn: workerApi.getClaims,
@@ -85,8 +84,8 @@ export default function PayoutsPage() {
       {/* 1. Header */}
       <header className="stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.5px', marginBottom: '4px' }}>{t(language, 'payouts_title')}</h2>
-          <p className="label-micro">{t(language, 'claim_settlements')}</p>
+          <h2 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.5px', marginBottom: '4px' }}>{t('payouts_title')}</h2>
+          <p className="label-micro">{t('claim_settlements')}</p>
         </div>
         <button
           onClick={() => refetch()}
@@ -112,27 +111,27 @@ export default function PayoutsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0' }}>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '16px', borderRight: '1px solid var(--border-glass)' }}>
-            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: 600 }}>Total</span>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: 600 }}>{t('total')}</span>
             <span className="tabular-nums" style={{ fontSize: '20px', fontWeight: 700, color: '#34D399', lineHeight: 1.1 }}>
               ₹{totalPaidOut.toLocaleString('en-IN')}
             </span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>paid out</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('paid_out_lower')}</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '16px', paddingRight: '16px', borderRight: '1px solid var(--border-glass)' }}>
-            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: 600 }}>This Week</span>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: 600 }}>{t('this_week')}</span>
             <span className="tabular-nums" style={{ fontSize: '20px', fontWeight: 700, color: 'white', lineHeight: 1.1 }}>
               ₹{thisWeek.toLocaleString('en-IN')}
             </span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>settled</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('settled')}</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '16px' }}>
-            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: 600 }}>Claims</span>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: 600 }}>{t('claims')}</span>
             <span className="tabular-nums" style={{ fontSize: '20px', fontWeight: 700, color: 'white', lineHeight: 1.1 }}>
               {totalClaims}
             </span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>all time</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('all_time')}</span>
           </div>
 
         </div>
@@ -140,7 +139,7 @@ export default function PayoutsPage() {
 
       {/* 3. Claims List */}
       <section className="stagger-3">
-        <h3 className="label-micro" style={{ marginBottom: '14px' }}>{t(language, 'recent_claims')}</h3>
+        <h3 className="label-micro" style={{ marginBottom: '14px' }}>{t('recent_claims')}</h3>
 
         {isLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
@@ -155,9 +154,9 @@ export default function PayoutsPage() {
               <Umbrella size={30} color="#60A5FA" strokeWidth={1.5} />
             </div>
             <div>
-              <h4 style={{ fontSize: '17px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>{t(language, 'no_payouts_yet')}</h4>
+              <h4 style={{ fontSize: '17px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>{t('no_payouts_yet')}</h4>
               <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '240px' }}>
-                {t(language, 'no_payouts_desc')}
+                {t('no_payouts_desc')}
               </p>
             </div>
           </div>
@@ -204,7 +203,7 @@ export default function PayoutsPage() {
                         {formatDate(claim.created_at)}
                       </p>
                       <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                        Disruption: <strong style={{ color: 'white' }}>{disruptedHours.toFixed(1)} hrs</strong>
+                        {t('disruption_label')}: <strong style={{ color: 'white' }}>{disruptedHours.toFixed(1)} hrs</strong>
                       </p>
                     </div>
 

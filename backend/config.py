@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     RAZORPAY_KEY_SECRET: str = ""
     
     # Notifications
+    ENABLE_PUSH_NOTIFICATIONS: bool = False
     FIREBASE_CREDENTIALS_PATH: str = ""
+    FIREBASE_CREDENTIALS_JSON: Optional[str] = None
     
     # AI Chat
     OPENROUTER_API_KEY: str = ""
@@ -31,6 +33,12 @@ class Settings(BaseSettings):
     OPENROUTER_MODEL_NAME: str = "google/gemma-3-27b-it"
     OPENROUTER_HTTP_REFERER: str = "https://gighood.app"
     OPENROUTER_APP_TITLE: str = "gigHood Gig Copilot"
+
+    # Neo4j Graph (Fraud Network)
+    NEO4J_URI: str = ""
+    NEO4J_USER: str = ""
+    NEO4J_PASSWORD: str = ""
+    NEO4J_DATABASE: str = ""
 
     # ML (Risk Profiler)
     RISK_PROFILER_MODEL_JSON_PATH: str = "backend/ml/risk_profiler.json"

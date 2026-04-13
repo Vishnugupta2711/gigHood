@@ -37,9 +37,9 @@ if command -v npm >/dev/null 2>&1; then
     echo "📥 Installing frontend dependencies..."
     pushd frontend >/dev/null
     if [ -f "package-lock.json" ]; then
-        npm ci
+        npm ci --legacy-peer-deps
     else
-        npm install
+        npm install --legacy-peer-deps
     fi
 
     # Repair interrupted installs that create malformed @types folders (e.g., "node 2")
@@ -85,6 +85,6 @@ echo
 echo "🎉 Setup complete."
 echo "Local run commands:"
 echo "1) source venv/bin/activate"
-echo "2) uvicorn backend.main:app --reload --host 0.0.0.0 --port 8001"
+echo "2) uvicorn backend.main:app --reload --reload-dir backend --host 0.0.0.0 --port 8001"
 echo "3) (new terminal) cd frontend && npm run dev"
 echo "4) Docker alternative: docker compose up --build"

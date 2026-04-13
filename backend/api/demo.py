@@ -17,6 +17,7 @@ from backend.services.payment_service import initiate_upi_payout
 from backend.services.policy_manager import create_policy
 from backend.services.pop_validator import validate_pop
 from backend.services.payout_calculator import get_4w_avg_payout
+from backend.services.neo4j_graph import ingest_claim_graph
 
 router = APIRouter()
 
@@ -411,6 +412,12 @@ def _run_process_claim(worker: dict[str, Any]) -> dict[str, Any]:
 
     claim_id = claim.get("id")
     disruption_start = _parse_iso_timestamp(event.get("started_at"))
+
+    try:
+        ingest_claim_graph(worker_id=worker_id, event_id=event.get("id"), claim_id=claim_id)
+    except Exception:
+        # Graph write is non-blocking for claims flow.
+        pass
 
     evaluator = FraudEvaluator()
     gate2_preview = evaluator._evaluate_gate2_orders(worker_id)

@@ -13,6 +13,7 @@ import backend.api.demo as demo
 import backend.scheduler.jobs as jobs
 import backend.api.location_pings as location_pings
 from backend.config import settings
+from backend.services.neo4j_graph import close_neo4j_driver
 
 logger = logging.getLogger("startup")
 
@@ -21,6 +22,7 @@ async def lifespan(app: FastAPI):
     jobs.start_scheduler()
     logger.info("Scheduler started. Risk profiler will lazy-load on first request.")
     yield
+    close_neo4j_driver()
     jobs.shutdown_scheduler()
 
 app = FastAPI(title="gigHood API", version="0.1.0", lifespan=lifespan)

@@ -1,7 +1,10 @@
 import os
 import logging
 import json
+from collections import deque
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
+from backend.config import settings
 
 logger = logging.getLogger("api")
 
@@ -17,10 +20,15 @@ except ImportError:
 class NotificationService:
     def __init__(self):
         self.enabled = False
+        self._admin_events = deque(maxlen=200)
+
+        if not settings.ENABLE_PUSH_NOTIFICATIONS:
+            logger.info("Push notifications disabled via ENABLE_PUSH_NOTIFICATIONS=false.")
+            return
         
         if FIREBASE_AVAILABLE:
-            cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "")
-            cred_json = os.getenv("FIREBASE_CREDENTIALS_JSON", "")
+            cred_path = (settings.FIREBASE_CREDENTIALS_PATH or os.getenv("FIREBASE_CREDENTIALS_PATH", "")).strip()
+            cred_json = (settings.FIREBASE_CREDENTIALS_JSON or os.getenv("FIREBASE_CREDENTIALS_JSON", "")).strip()
             if cred_path and os.path.exists(cred_path):
                 try:
                     # Check if already initialized
@@ -41,7 +49,10 @@ class NotificationService:
                 except Exception as e:
                     logger.error(f"Failed to initialize Firebase from FIREBASE_CREDENTIALS_JSON: {e}")
             else:
-                logger.warning(f"Firebase credentials not found at {cred_path}. Notifications disabled.")
+                logger.warning(
+                    "Push notifications enabled but Firebase credentials are missing. "
+                    "Set FIREBASE_CREDENTIALS_PATH or FIREBASE_CREDENTIALS_JSON."
+                )
     
     def send_push(self, device_token: str, title: str, body: str, data: Optional[Dict[str, str]] = None) -> bool:
         """
@@ -103,10 +114,17 @@ class NotificationService:
     def notify_degraded_mode(self, device_token: str) -> bool:
         return self.send_push(
             device_token,
-            title="Sensors Offline \ud83d\udce1",
-            body="Some external network signals are down. Coverage operates on degraded fallback mapping.",
+            title="Degraded Monitoring Mode",
+            body="gigHood is monitoring your zone with reduced signal coverage. Coverage remains active.",
             data={"type": "DEGRADED_MODE"}
         )
+
+    def log_admin_alert(self, message: str) -> None:
+        ts = datetime.now(timezone.utc).isoformat()
+        self._admin_events.appendleft(f"[{ts}] {message}")
+
+    def list_admin_alerts(self, limit: int = 25) -> list[str]:
+        return list(self._admin_events)[:max(1, limit)]
         
     def notify_tier_upgrade(self, device_token: str, old_tier: str, new_tier: str) -> bool:
         return self.send_push(

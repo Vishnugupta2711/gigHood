@@ -11,8 +11,7 @@ import {
 import { deleteToken } from '@/lib/auth';
 import { workerApi } from '@/lib/worker';
 import api from '@/lib/api';
-import { useLanguageStore } from '@/store/languageStore';
-import { t } from '@/lib/i18n';
+import { useTranslation } from 'react-i18next';
 
 // ── Tiny toast ─────────────────────────────────────────────
 
@@ -134,9 +133,9 @@ function SettingsRow({
 // ── Main Component ─────────────────────────────────────────
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const language = useLanguageStore((s) => s.language);
 
   const [toast, setToast] = useState<string | null>(null);
   const [showEarningsSheet, setShowEarningsSheet] = useState(false);
@@ -269,9 +268,9 @@ export default function ProfilePage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Update Earnings</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: 700 }}>{t('update_earnings')}</h3>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Current: ₹{worker?.avg_daily_earnings}/day
+                  {t('current_earnings', { amount: worker?.avg_daily_earnings })}
                 </p>
               </div>
               <button
@@ -284,14 +283,14 @@ export default function ProfilePage() {
 
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '8px' }}>
-                New Avg Daily Earnings (₹)
+                {t('new_avg_earnings')}
               </label>
               <input
                 type="number"
                 inputMode="numeric"
                 value={earningsInput}
                 onChange={e => setEarningsInput(e.target.value)}
-                placeholder={`e.g. ${worker?.avg_daily_earnings ?? 600}`}
+                placeholder={t('eg_earnings', { amount: worker?.avg_daily_earnings ?? 600 })}
                 style={{
                   width: '100%', padding: '14px 16px', borderRadius: '12px',
                   background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-glass)',
@@ -302,7 +301,7 @@ export default function ProfilePage() {
               />
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.4 }}>
                 <AlertCircle size={11} style={{ display: 'inline', marginRight: '4px' }} />
-                This affects your policy premium at next renewal.
+                {t('affects_premium')}
               </p>
             </div>
 
@@ -317,7 +316,7 @@ export default function ProfilePage() {
                 transition: 'opacity 0.2s',
               }}
             >
-              {saving ? 'Saving…' : 'Save Declaration'}
+              {saving ? t('saving') : t('save_declaration')}
             </button>
           </div>
         </div>
@@ -329,8 +328,8 @@ export default function ProfilePage() {
         {/* Header */}
         <header className="stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ fontSize: '24px', fontWeight: 700, letterSpacing: '-0.5px' }}>{t(language, 'profile_title')}</h2>
-            <p className="label-micro">{t(language, 'verified_member')}</p>
+            <h2 style={{ fontSize: '24px', fontWeight: 700, letterSpacing: '-0.5px' }}>{t('profile_title')}</h2>
+            <p className="label-micro">{t('verified_member')}</p>
           </div>
           <button
             onClick={handleLogout}
@@ -380,19 +379,19 @@ export default function ProfilePage() {
             {/* Info grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '10px 12px' }}>
-                <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(255,255,255,0.55)', marginBottom: '3px' }}>Zone</p>
+                <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(255,255,255,0.55)', marginBottom: '3px' }}>{t('zone_label')}</p>
                 <p style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{worker?.dark_store_zone ?? '—'}</p>
                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{worker?.city ?? '—'}</p>
               </div>
               <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '10px 12px' }}>
-                <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(255,255,255,0.55)', marginBottom: '3px' }}>UPI</p>
+                <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(255,255,255,0.55)', marginBottom: '3px' }}>{t('upi_label')}</p>
                 <p style={{ fontSize: '13px', fontWeight: 600, color: 'white', wordBreak: 'break-all' }}>{worker?.upi_id ?? '—'}</p>
               </div>
             </div>
 
             <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
               <div>
-                <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(255,255,255,0.55)', marginBottom: '3px' }}>Partner Profile</p>
+                <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(255,255,255,0.55)', marginBottom: '3px' }}>{t('partner_profile')}</p>
                 <p style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{worker?.platform_affiliation ?? '—'} • {worker?.platform_id ?? '—'}</p>
               </div>
               <span
@@ -407,7 +406,7 @@ export default function ProfilePage() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {worker?.is_platform_verified ? 'Verified Partner' : 'Not Verified'}
+                {worker?.is_platform_verified ? t('verified_partner') : t('not_verified')}
               </span>
             </div>
           </div>
@@ -417,7 +416,7 @@ export default function ProfilePage() {
         <section className="stagger-3 glass-panel" style={{ padding: '18px' }}>
           <div style={{ marginBottom: '14px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'white', marginBottom: '8px' }}>
-              {t(language, 'active_coverage')}
+              {t('active_coverage')}
             </h3>
             <div style={{
               display: 'inline-flex',
@@ -432,25 +431,25 @@ export default function ProfilePage() {
               border: `1px solid ${policy?.status === 'active' ? 'rgba(52,211,153,0.3)' : 'rgba(148,163,184,0.3)'}`,
             }}>
               <ShieldCheck size={13} />
-              {policy?.status === 'active' ? 'Active' : policy?.status ?? 'Pending'}
+              {policy?.status === 'active' ? t('active') : policy?.status ?? t('pending')}
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '14px' }}>
             <div style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border-glass)', background: 'rgba(255,255,255,0.02)' }}>
-              <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '3px' }}>Tier</p>
-              <p style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>{policy ? `Tier ${tier}` : '—'}</p>
+              <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '3px' }}>{t('tier_label')}</p>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>{policy ? `${t('tier_label')} ${tier}` : '—'}</p>
             </div>
 
             <div style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border-glass)', background: 'rgba(255,255,255,0.02)' }}>
-              <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '3px' }}>Premium</p>
+              <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '3px' }}>{t('premium')}</p>
               <p style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>
                 {policy ? `₹${policy?.weekly_premium ?? policy?.premium_amount ?? '—'}/week` : '—'}
               </p>
             </div>
 
             <div style={{ padding: '10px', borderRadius: '12px', border: '1px solid var(--border-glass)', background: 'rgba(255,255,255,0.02)' }}>
-              <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '3px' }}>Coverage</p>
+              <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '3px' }}>{t('coverage_label')}</p>
               <p style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>
                 {policy ? `Up to ₹${policy?.coverage_cap_daily}/day` : '—'}
               </p>
@@ -458,7 +457,7 @@ export default function ProfilePage() {
           </div>
 
           <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '12px' }}>
-            <p style={{ fontSize: '12px', fontWeight: 700, color: '#67E8F9', marginBottom: '5px' }}>{t(language, 'how_it_works')}</p>
+            <p style={{ fontSize: '12px', fontWeight: 700, color: '#67E8F9', marginBottom: '5px' }}>{t('how_it_works')}</p>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
               Payouts are automatic. No claims required. If the Dynamic Coverage Index (DCI) in your zone exceeds 0.85 due to severe weather or traffic, your coverage is triggered.
             </p>
@@ -508,7 +507,7 @@ export default function ProfilePage() {
         {/* 3. Trust Score */}
         <section className="stagger-4 glass-panel" style={{ padding: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-            <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'white' }}>{t(language, 'trust_score')}</h4>
+            <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'white' }}>{t('trust_score')}</h4>
             <span style={{ padding: '4px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, border: '1px solid rgba(245,158,11,0.35)', background: 'rgba(120,53,15,0.35)', color: '#FCD34D' }}>
               Higher review checks may apply
             </span>
@@ -550,7 +549,7 @@ export default function ProfilePage() {
 
         {/* 4. Download Policy */}
         <section className="stagger-4" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <h3 className="label-micro" style={{ marginBottom: '4px', marginLeft: '4px' }}>{t(language, 'documents')}</h3>
+          <h3 className="label-micro" style={{ marginBottom: '4px', marginLeft: '4px' }}>{t('documents')}</h3>
           <button
             onClick={() => {
               if (!policyCertificateUrl) {
@@ -571,7 +570,7 @@ export default function ProfilePage() {
                 <Download size={17} color="#60A5FA" />
               </div>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#E2E8F0' }}>{t(language, 'download_tier_policy')}</div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#E2E8F0' }}>{t('download_tier_policy')}</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px', fontFamily: 'monospace' }}>{policyCertificateFilename}</div>
               </div>
             </div>
@@ -581,19 +580,19 @@ export default function ProfilePage() {
 
         {/* 5. Account Settings */}
         <section className="stagger-5" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <h3 className="label-micro" style={{ marginBottom: '4px', marginLeft: '4px' }}>{t(language, 'account_settings')}</h3>
+          <h3 className="label-micro" style={{ marginBottom: '4px', marginLeft: '4px' }}>{t('account_settings')}</h3>
 
           <SettingsRow
             onClick={() => { setEarningsInput(''); setShowEarningsSheet(true); }}
             icon={<div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(52,211,153,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><TrendingUp size={17} color="#34D399" /></div>}
-            label={t(language, 'update_earnings_declaration')}
+            label={t('update_earnings_declaration')}
             sublabel={`Currently ₹${worker?.avg_daily_earnings ?? '—'}/day`}
           />
 
           <SettingsRow
             onClick={() => showToast('Notification Preferences coming soon')}
             icon={<div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(96,165,250,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Bell size={17} color="#60A5FA" /></div>}
-            label={t(language, 'notification_preferences')}
+            label={t('notification_preferences')}
           />
 
           <button
@@ -609,7 +608,7 @@ export default function ProfilePage() {
               <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <LogOut size={17} color="#EF4444" />
               </div>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#EF4444' }}>{t(language, 'sign_out')}</span>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: '#EF4444' }}>{t('sign_out')}</span>
             </div>
             <ChevronRight size={16} color="rgba(239,68,68,0.5)" />
           </button>

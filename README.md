@@ -8,6 +8,23 @@
 
 ### AI-Powered Parametric Income Insurance for Gig Workers
 
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Data%20Layer-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20DB-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-Frontend-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-UI-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220)
+![TypeScript](https://img.shields.io/badge/TypeScript-App%20Code-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Zustand](https://img.shields.io/badge/Zustand-State-7D4CDB?style=for-the-badge)
+![Docker](https://img.shields.io/badge/Docker-Local%20Infra-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-Frontend%20Hosting-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Render](https://img.shields.io/badge/Render-Backend%20Hosting-46E3B7?style=for-the-badge&logo=render&logoColor=0B1220)
+![APScheduler](https://img.shields.io/badge/APScheduler-Background%20Jobs-0F172A?style=for-the-badge)
+![Razorpay](https://img.shields.io/badge/Razorpay-Payouts-0C2451?style=for-the-badge&logo=razorpay&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Notifications-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+![OpenRouter](https://img.shields.io/badge/OpenRouter-LLM%20Gateway-111827?style=for-the-badge)
+![Groq](https://img.shields.io/badge/Groq-Inference-F55036?style=for-the-badge)
+
 </div>
 
 ## What This Repo Contains
@@ -18,6 +35,7 @@
    - worker app (dark, phone-style shell)
    - admin dashboard (light surface)
 3. Supabase migration-backed schema and data contracts.
+4. Neo4j-backed fraud relationship graph for admin fraud monitor visualizations.
 
 ## Documentation Index
 
@@ -72,6 +90,11 @@ setup.bat
 
 ## Environment Variables
 
+Use example files to bootstrap local setup:
+
+1. `cp backend/.env.example backend/.env`
+2. `cp frontend/.env.example frontend/.env.local`
+
 ### Backend (`backend/.env`)
 
 1. `SUPABASE_URL`
@@ -84,6 +107,10 @@ setup.bat
 8. `GROQ_API_KEY`
 9. `FIREBASE_CREDENTIALS_PATH`
 10. `BACKEND_CORS_ORIGINS` (comma-separated frontend origins)
+11. `NEO4J_URI`
+12. `NEO4J_USER`
+13. `NEO4J_PASSWORD`
+14. `NEO4J_DATABASE` (optional; set for Aura instances with non-default DB name)
 
 ### Frontend (`frontend/.env.local`)
 
@@ -111,7 +138,7 @@ uvicorn backend.main:app --reload --host 0.0.0.0 --port 8001
 
 ```bash
 cd frontend
-npm ci
+npm ci 
 npm run dev
 ```
 
@@ -187,6 +214,98 @@ From `frontend/`:
 npm run lint
 npm run build
 ```
+
+## Fraud Graph (Neo4j)
+
+1. Graph ingestion runs during claim processing and demo claim processing.
+2. Nodes projected: `Worker`, `Device`, `Hex_Zone`.
+3. Relationships projected: `USES_DEVICE`, `CLAIMED_IN`.
+4. Admin graph endpoint: `GET /admin/fraud/network-graph`.
+5. Admin Fraud Monitor tab consumes this endpoint and renders live network links when available.
+6. Manual backfill endpoint: `POST /admin/fraud/network-graph/backfill?limit=1000`.
+7. Graph node fields are live-scored by backend (`fraud_score`, `risk_level`) and drive UI filter buttons.
+
+### Verify in Neo4j Query Page
+
+Paste these Cypher statements in Neo4j Browser / Query page:
+
+1. Check labels and relationship types exist:
+
+```cypher
+CALL db.labels() YIELD label RETURN label ORDER BY label;
+CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType ORDER BY relationshipType;
+```
+
+2. Check projected counts:
+
+```cypher
+MATCH (w:Worker) RETURN count(w) AS workers;
+MATCH (d:Device) RETURN count(d) AS devices;
+MATCH (z:Hex_Zone) RETURN count(z) AS zones;
+MATCH ()-[r:USES_DEVICE]->() RETURN count(r) AS uses_device_edges;
+MATCH ()-[r:CLAIMED_IN]->() RETURN count(r) AS claimed_in_edges;
+```
+
+3. Inspect sample graph triplets:
+
+```cypher
+MATCH (w:Worker)-[:USES_DEVICE]->(d:Device), (w)-[:CLAIMED_IN]->(z:Hex_Zone)
+RETURN w.id AS worker_id, d.fingerprint AS device_fingerprint, z.id AS zone_id
+LIMIT 25;
+```
+
+4. Validate syndicate detection logic directly:
+
+```cypher
+MATCH (d:Device)<-[:USES_DEVICE]-(w:Worker)-[:CLAIMED_IN]->(z:Hex_Zone)
+WITH d,
+     collect(DISTINCT w.id) AS workers,
+     collect(DISTINCT z.id) AS zones
+WHERE size(workers) > 1 AND size(zones) > 1
+RETURN d.fingerprint AS device_fingerprint, workers, zones
+ORDER BY size(workers) DESC, size(zones) DESC;
+```
+
+5. If query page shows no labels/relationships, trigger backfill and retry:
+
+```bash
+curl -X POST "http://127.0.0.1:8001/admin/fraud/network-graph/backfill?limit=1000"
+curl "http://127.0.0.1:8001/admin/fraud/network-graph"
+```
+
+### One-go Neo4j verification script
+
+Paste and run this full block in Neo4j Query page:
+
+```cypher
+CALL db.labels() YIELD label RETURN 'LABEL' AS kind, label AS value ORDER BY value;
+CALL db.relationshipTypes() YIELD relationshipType RETURN 'REL' AS kind, relationshipType AS value ORDER BY value;
+
+MATCH (w:Worker) RETURN count(w) AS workers;
+MATCH (d:Device) RETURN count(d) AS devices;
+MATCH (z:Hex_Zone) RETURN count(z) AS zones;
+MATCH ()-[r:USES_DEVICE]->() RETURN count(r) AS uses_device_edges;
+MATCH ()-[r:CLAIMED_IN]->() RETURN count(r) AS claimed_in_edges;
+
+MATCH (w:Worker)-[:USES_DEVICE]->(d:Device), (w)-[:CLAIMED_IN]->(z:Hex_Zone)
+RETURN w.id AS worker_id, d.fingerprint AS device_fingerprint, z.id AS zone_id
+LIMIT 25;
+
+MATCH (d:Device)<-[:USES_DEVICE]-(w:Worker)-[:CLAIMED_IN]->(z:Hex_Zone)
+WITH d,
+     collect(DISTINCT w.id) AS workers,
+     collect(DISTINCT z.id) AS zones
+WHERE size(workers) > 1 AND size(zones) > 1
+RETURN d.fingerprint AS device_fingerprint, workers, zones,
+       size(workers) AS worker_count, size(zones) AS zone_count
+ORDER BY worker_count DESC, zone_count DESC;
+```
+
+### About the large backend terminal warnings
+
+1. Those warnings happen when the query references labels/relationships before they exist in a fresh Neo4j graph.
+2. The backend now pre-checks schema presence (`Worker`, `Device`, `Hex_Zone`, `USES_DEVICE`, `CLAIMED_IN`) before running the syndicate query.
+3. If projection is not ready yet, the endpoint returns an empty graph payload cleanly instead of flooding terminal warnings.
 
 ## Notes
 

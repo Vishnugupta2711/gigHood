@@ -2,96 +2,204 @@
 
 import { useEffect, useState } from 'react';
 import { fetchFraudQueue, FraudQueueItem } from '@/lib/admin/adminClient';
+import { Zap, Clock, Eye, ChevronRight } from 'lucide-react';
+
+type FilterTab = 'All' | 'Fast Track' | 'Review Paths';
 
 function normalizePathLabel(path: string | null | undefined, flags: string[] | undefined, fraudScore: number | null | undefined): string {
   const normalized = (path || '').toLowerCase();
-  if (normalized === 'fast_track') return 'Fast Track';
-  if (normalized === 'soft_queue') return 'Soft Queue';
+  if (normalized === 'fast_track')    return 'Fast Track';
+  if (normalized === 'soft_queue')    return 'Soft Queue';
   if (normalized === 'active_verify') return 'Active Verify';
-
-  if ((flags?.length ?? 0) === 0) return 'Fast Track';
-  if ((fraudScore ?? 0) > 70) return 'Active Verify';
+  if ((flags?.length ?? 0) === 0)     return 'Fast Track';
+  if ((fraudScore ?? 0) > 70)         return 'Active Verify';
   return 'Soft Queue';
 }
 
 function formatDciScore(value: number | null | undefined): string {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return '--';
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
   return value.toFixed(2);
 }
 
-function formatFraudScore(value: number | null | undefined): string {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return '--';
-  return Math.round(value).toString().padStart(2, '0');
+function formatFraudScore(value: number | null | undefined): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.round(value);
 }
 
+const PATH_STYLE: Record<string, { bg: string; text: string; border: string; icon: React.ReactNode }> = {
+  'Fast Track':    { bg: 'bg-emerald-50',  text: 'text-emerald-700', border: 'border-emerald-200', icon: <Zap size={10} /> },
+  'Soft Queue':    { bg: 'bg-amber-50',    text: 'text-amber-700',   border: 'border-amber-200',   icon: <Clock size={10} /> },
+  'Active Verify': { bg: 'bg-orange-50',   text: 'text-orange-700',  border: 'border-orange-200',  icon: <Eye size={10} /> },
+};
+
+const STATUS_DOT: Record<string, string> = {
+  paid:           'bg-emerald-500',
+  verified:       'bg-emerald-400',
+  pending:        'bg-amber-500',
+  verifying:      'bg-orange-500',
+  under_review:   'bg-orange-400',
+  denied:         'bg-red-500',
+};
+
 export default function FraudQueue() {
-  const [queue, setQueue] = useState<FraudQueueItem[]>([]);
+  const [queue,      setQueue]      = useState<FraudQueueItem[]>([]);
+  const [activeTab,  setActiveTab]  = useState<FilterTab>('All');
 
   useEffect(() => {
     fetchFraudQueue().then(setQueue).catch(console.error);
   }, []);
 
   const demoRows: FraudQueueItem[] = [
-    { claim_id: 'CL-9902', created_at: '2026-04-05T10:12:00Z', worker_name: 'Rajesh Kumar', city: 'MH-E12', status: 'paid', resolution_path: 'fast_track', fraud_score: 4, dci_score: 0.72, payout: 450.00, flags: [] },
-    { claim_id: 'CL-9903', created_at: '2026-04-05T10:18:00Z', worker_name: 'Ananya S.', city: 'KA-B08', status: 'pending', resolution_path: 'soft_queue', fraud_score: 18, dci_score: 0.58, payout: 0.00, flags: ['soft_queue'] },
-    { claim_id: 'CL-9904', created_at: '2026-04-05T10:22:00Z', worker_name: 'Vikram Singh', city: 'DL-S14', status: 'verifying', resolution_path: 'active_verify', fraud_score: 62, dci_score: 0.81, payout: 0.00, flags: ['active_verify'] },
-    { claim_id: 'CL-9905', created_at: '2026-04-05T10:28:00Z', worker_name: 'Priya Dash', city: 'TS-W21', status: 'denied', resolution_path: 'soft_queue', fraud_score: 88, dci_score: 0.92, payout: 0.00, flags: ['soft_queue'] },
-    { claim_id: 'CL-9906', created_at: '2026-04-05T10:30:00Z', worker_name: 'Arjun Mehra', city: 'MH-E12', status: 'paid', resolution_path: 'fast_track', fraud_score: 2, dci_score: 0.34, payout: 320.50, flags: [] },
+    { claim_id: 'CL-9902', created_at: '2026-04-05T10:12:00Z', worker_name: 'Rajesh Kumar',  city: 'MH-E12', status: 'paid',         resolution_path: 'fast_track',    fraud_score: 4,  dci_score: 0.72, payout: 450.00, flags: [] },
+    { claim_id: 'CL-9903', created_at: '2026-04-05T10:18:00Z', worker_name: 'Ananya S.',      city: 'KA-B08', status: 'pending',      resolution_path: 'soft_queue',    fraud_score: 18, dci_score: 0.58, payout: 0.00,   flags: ['soft_queue'] },
+    { claim_id: 'CL-9904', created_at: '2026-04-05T10:22:00Z', worker_name: 'Vikram Singh',   city: 'DL-S14', status: 'verifying',    resolution_path: 'active_verify', fraud_score: 62, dci_score: 0.81, payout: 0.00,   flags: ['active_verify'] },
+    { claim_id: 'CL-9905', created_at: '2026-04-05T10:28:00Z', worker_name: 'Priya Dash',     city: 'TS-W21', status: 'denied',       resolution_path: 'soft_queue',    fraud_score: 88, dci_score: 0.92, payout: 0.00,   flags: ['soft_queue'] },
+    { claim_id: 'CL-9906', created_at: '2026-04-05T10:30:00Z', worker_name: 'Arjun Mehra',    city: 'MH-E12', status: 'paid',         resolution_path: 'fast_track',    fraud_score: 2,  dci_score: 0.34, payout: 320.50, flags: [] },
+    { claim_id: 'CL-9907', created_at: '2026-04-05T10:35:00Z', worker_name: 'Sonal Patel',    city: 'GJ-A01', status: 'under_review', resolution_path: 'active_verify', fraud_score: 74, dci_score: 0.88, payout: 0.00,   flags: ['location_spoofing'] },
   ];
 
-  const rows = queue.length > 0 ? queue.slice(0, 6) : demoRows;
+  const allRows = queue.length > 0 ? queue.slice(0, 6) : demoRows;
+
+  const filtered = allRows.filter(item => {
+    if (activeTab === 'All')         return true;
+    if (activeTab === 'Fast Track')  return normalizePathLabel(item.resolution_path, item.flags, item.fraud_score) === 'Fast Track';
+    if (activeTab === 'Review Paths') return normalizePathLabel(item.resolution_path, item.flags, item.fraud_score) !== 'Fast Track';
+    return true;
+  });
+
+  const tabs: FilterTab[] = ['All', 'Fast Track', 'Review Paths'];
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0_20px_40px_rgba(15,23,42,0.08)] border border-slate-100 overflow-hidden">
-      <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+    <div className="bg-white rounded-2xl overflow-hidden border border-stone-100"
+         style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.05), 0 8px 24px rgba(249,115,22,0.04)' }}>
+
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-[#0F172A]">Claims Pipeline</h2>
-          <p className="text-[11px] text-slate-500">Latest claims queued by route</p>
+          <h2 className="text-[15px] font-bold text-stone-900 tracking-tight">Claims Pipeline</h2>
+          <p className="text-[11px] text-stone-400 mt-0.5">Latest claims queued by decision route</p>
         </div>
-        <div className="flex items-center gap-2 bg-slate-100/70 p-1 rounded-full">
-          <button className="px-3 py-1 text-[11px] font-semibold bg-white text-slate-900 rounded-full shadow-sm">All</button>
-          <button className="px-3 py-1 text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition-all whitespace-nowrap">Path 1</button>
-          <button className="px-3 py-1 text-[11px] font-semibold text-slate-500 hover:text-slate-900 transition-all whitespace-nowrap">Path 2</button>
+
+        {/* Filter tabs */}
+        <div className="flex items-center gap-1 bg-stone-50 border border-stone-200 p-1 rounded-xl">
+          {tabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                activeTab === tab
+                  ? 'bg-orange-500 text-white shadow-sm'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
       </div>
+
+      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left">
           <thead>
-            <tr className="bg-slate-50">
-              <th className="px-5 py-3 text-[9px] font-semibold text-slate-500 uppercase tracking-[0.18em]">Claim ID</th>
-              <th className="px-5 py-3 text-[9px] font-semibold text-slate-500 uppercase tracking-[0.18em]">Worker</th>
-              <th className="px-5 py-3 text-[9px] font-semibold text-slate-500 uppercase tracking-[0.18em]">Zone</th>
-              <th className="px-5 py-3 text-[9px] font-semibold text-slate-500 uppercase tracking-[0.18em] text-center">DCI</th>
-              <th className="px-5 py-3 text-[9px] font-semibold text-slate-500 uppercase tracking-[0.18em] text-center">Fraud</th>
-              <th className="px-5 py-3 text-[9px] font-semibold text-slate-500 uppercase tracking-[0.18em]">Path</th>
-              <th className="px-5 py-3 text-[9px] font-semibold text-slate-500 uppercase tracking-[0.18em]">Payout</th>
+            <tr style={{ background: '#FAFAF8' }}>
+              {['Claim ID', 'Worker', 'Zone', 'DCI Score', 'Fraud Risk', 'Path', 'Payout', ''].map(h => (
+                <th key={h} className="px-5 py-3 text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em] whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.map((item) => {
-              let fraudScoreColor = 'text-emerald-500';
-              if ((item.fraud_score ?? 0) > 70) fraudScoreColor = 'text-rose-500';
-              else if ((item.fraud_score ?? 0) > 30) fraudScoreColor = 'text-amber-500';
-              const pathLabel = normalizePathLabel(item.resolution_path, item.flags, item.fraud_score);
+          <tbody>
+            {filtered.map(item => {
+              const pathLabel  = normalizePathLabel(item.resolution_path, item.flags, item.fraud_score);
+              const pathStyle  = PATH_STYLE[pathLabel] || PATH_STYLE['Soft Queue'];
+              const fraudScore = formatFraudScore(item.fraud_score);
+              const fraudPct   = fraudScore;
+              const dotColor   = STATUS_DOT[item.status] || 'bg-stone-300';
+
+              let fraudBarColor = 'from-emerald-400 to-emerald-500';
+              if (fraudScore > 70)      fraudBarColor = 'from-red-400 to-red-500';
+              else if (fraudScore > 30) fraudBarColor = 'from-amber-400 to-orange-400';
 
               return (
-                <tr key={item.claim_id} className="hover:bg-slate-50 transition-all cursor-pointer">
-                  <td className="px-5 py-3 text-sm font-semibold text-slate-900">{item.claim_id}</td>
-                  <td className="px-5 py-3 text-sm text-slate-700">{item.worker_name}</td>
-                  <td className="px-5 py-3 text-sm text-slate-500">{item.city}</td>
-                  <td className="px-5 py-3 text-sm font-semibold text-slate-900 text-center">
-                    {formatDciScore(item.dci_score)}
+                <tr key={item.claim_id}
+                    className="group border-t border-stone-50 hover:bg-orange-50/40 transition-colors cursor-pointer">
+
+                  {/* Claim ID */}
+                  <td className="px-5 py-3.5">
+                    <span className="text-[13px] font-bold text-stone-900 font-mono">{item.claim_id}</span>
                   </td>
-                  <td className={`px-5 py-3 text-sm font-semibold text-center ${fraudScoreColor}`}>
-                    {formatFraudScore(item.fraud_score)}
+
+                  {/* Worker */}
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+                      <span className="text-[13px] text-stone-700 font-medium">{item.worker_name}</span>
+                    </div>
                   </td>
-                  <td className="px-5 py-3 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">{pathLabel}</td>
-                  <td className="px-5 py-3 text-sm font-semibold">₹{Math.round(item.payout ?? 0).toLocaleString()}</td>
+
+                  {/* Zone */}
+                  <td className="px-5 py-3.5">
+                    <span className="text-[12px] text-stone-400 font-mono">{item.city}</span>
+                  </td>
+
+                  {/* DCI */}
+                  <td className="px-5 py-3.5">
+                    <span className="text-[13px] font-bold text-stone-800 font-mono">{formatDciScore(item.dci_score)}</span>
+                  </td>
+
+                  {/* Fraud risk bar */}
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-2.5 min-w-[80px]">
+                      <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full bg-gradient-to-r ${fraudBarColor} transition-all`}
+                             style={{ width: `${fraudPct}%` }} />
+                      </div>
+                      <span className={`text-[11px] font-bold min-w-[22px] ${
+                        fraudScore > 70 ? 'text-red-500' : fraudScore > 30 ? 'text-amber-500' : 'text-emerald-500'
+                      }`}>
+                        {fraudScore}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Path */}
+                  <td className="px-5 py-3.5">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.08em] border ${pathStyle.bg} ${pathStyle.text} ${pathStyle.border}`}>
+                      {pathStyle.icon}
+                      {pathLabel}
+                    </span>
+                  </td>
+
+                  {/* Payout */}
+                  <td className="px-5 py-3.5">
+                    <span className={`text-[13px] font-bold font-mono ${item.payout > 0 ? 'text-stone-900' : 'text-stone-300'}`}>
+                      {item.payout > 0 ? `₹${Math.round(item.payout).toLocaleString()}` : '—'}
+                    </span>
+                  </td>
+
+                  {/* Arrow */}
+                  <td className="px-4 py-3.5">
+                    <ChevronRight size={14} className="text-stone-300 group-hover:text-orange-400 transition-colors" />
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+
+        {filtered.length === 0 && (
+          <div className="py-12 text-center text-stone-400 text-sm">No claims match this filter.</div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-5 py-3 border-t border-stone-50 flex items-center justify-between">
+        <span className="text-[11px] text-stone-400">Showing {filtered.length} of {allRows.length} claims</span>
+        <button className="text-[11px] font-semibold text-orange-500 hover:text-orange-600 flex items-center gap-1 transition-colors">
+          View all claims <ChevronRight size={12} />
+        </button>
       </div>
     </div>
   );

@@ -1,15 +1,19 @@
-# gigHood Database Schema
+# gigHood Database Contract
 
-This document tracks migration-backed schema in `supabase/migrations/` and runtime contracts used by backend/admin dashboards.
+This document defines the schema and runtime data invariants for `gigHood`.
 
-Migration catalog and ordering policy: `supabase/MIGRATIONS.md`.
+Canonical migration source:
 
-## Platform
+1. `supabase/migrations/`
+2. migration index and policy: `supabase/MIGRATIONS.md`
 
-1. Engine: Supabase Postgres
-2. Spatial extension: PostGIS (`000_init_postgis.sql`)
+## 1) Platform and Extensions
 
-## Enum Types
+1. engine: Supabase Postgres
+2. spatial extension: PostGIS (`000_init_postgis.sql`)
+3. fraud graph store: Neo4j Aura (operational network graph, not relational source-of-truth)
+
+## 2) Enum Domains
 
 1. `worker_status`: `active`, `inactive`, `suspended`
 2. `hex_dci_status`: `normal`, `elevated`, `disrupted`
@@ -17,142 +21,289 @@ Migration catalog and ordering policy: `supabase/MIGRATIONS.md`.
 4. `policy_status`: `active`, `expired`, `cancelled`
 5. `signal_source_type`: `weather`, `aqi`, `traffic`, `platform`, `social`
 6. `claim_resolution_path`: `fast_track`, `soft_queue`, `active_verify`, `denied`
-7. `claim_status`: `pending`, `approved`, `denied`, `appealed`, `paid`
+7. `claim_status`: `pending`, `approved`, `denied`, `appealed`, `paid`, `payment_failed`, `rollback`
 
-## Core Tables
+## 3) Core Entity Map
+
+1. worker (`workers`) owns policy and emits telemetry
+2. zone (`hex_zones`) stores current disruption state
+3. event (`disruption_events`) represents disruption windows
+4. claim (`claims`) links worker + policy + event
+5. fraud signal (`fraud_flags`) attaches to claim
+6. premium payment (`premium_payments`) tracks policy payment lifecycle
+
+## 4) Table Specifications
 
 ### `workers`
 
-Migrations: `001_create_workers.sql`, `012_add_device_token.sql`, `014_add_platform_affiliation_to_workers.sql`, `015_add_platform_id_verification_to_workers.sql`
+Migrations:
 
-Important fields:
+1. `001_create_workers.sql`
+2. `012_add_device_token.sql`
+3. `014_add_platform_affiliation_to_workers.sql`
+4. `015_add_platform_id_verification_to_workers.sql`
 
-1. `id` UUID PK
-2. `phone` unique
-3. profile and identity fields (`name`, `city`, `platform_affiliation`, `platform_id`, `is_platform_verified`)
-4. earnings + payout fields (`avg_daily_earnings`, `upi_id`)
-5. device and trust fields (`device_model`, `sim_*`, `device_token`, `trust_score`, `status`)
-6. zone binding fields may appear as `hex_id` and/or `h3_index` depending on environment history
+Contract highlights:
+
+1. PK: `id` (UUID)
+2. natural key: `phone` (unique)
+3. profile: `name`, `city`, `language_preference`
+4. platform identity: `platform_affiliation`, `platform_id`, `is_platform_verified`
+5. trust and status: `trust_score`, `status`
+6. payout profile: `avg_daily_earnings`, `upi_id`
+7. device profile: `device_model`, `sim_*`, `device_token`
+8. zone ref may be `hex_id` and/or `h3_index` depending on environment history
 
 ### `hex_zones`
 
-Migrations: `002_create_hex_zones.sql`, `011_add_hysteresis_tracking.sql`
+Migrations:
 
-Important fields:
+1. `002_create_hex_zones.sql`
+2. `011_add_hysteresis_tracking.sql`
 
-1. primary zone key is `hex_id` in early migration, with compatibility support for `h3_index` in runtime environments
-2. geospatial fields (`centroid`, `boundary`)
-3. disruption state (`current_dci`, `dci_status`, `last_computed_at`)
-4. hysteresis helper (`consecutive_normal_cycles`)
+Contract highlights:
+
+1. zone identifier compatibility: `hex_id` with runtime support for `h3_index`
+2. geospatial columns: `centroid`, `boundary`
+3. live disruption state: `current_dci`, `dci_status`, `last_computed_at`
+4. hysteresis support: `consecutive_normal_cycles`
 
 ### `policies`
 
-Migration: `003_create_policies.sql`
+Migration:
 
-Important fields:
+1. `003_create_policies.sql`
 
-1. `worker_id` FK
-2. tier and coverage fields
-3. active-window dates (`week_start`, `week_end`)
-4. `status` and waiting-period state
+Contract highlights:
+
+1. FK: `worker_id -> workers.id`
+2. coverage/tier fields drive premium and payout calculations
+3. policy window: `week_start`, `week_end`
+4. status lifecycle: `active|expired|cancelled`
 
 ### `signal_cache`
 
-Migration: `004_create_signal_cache.sql`
+Migration:
 
-Stores normalized external signal snapshots per hex.
+1. `004_create_signal_cache.sql`
+
+Contract highlights:
+
+1. stores normalized signal snapshots by source and zone
+2. serves as DCI input cache for zone recomputation
 
 ### `dci_history`
 
-Migration: `005_create_dci_history.sql`
+Migration:
 
-Stores DCI and component values over time.
+1. `005_create_dci_history.sql`
+
+Contract highlights:
+
+1. time-series record of DCI and component contributions
+2. used for trend charts and historical diagnostics
 
 ### `location_pings`
 
-Migration: `006_create_location_pings.sql`
+Migration:
 
-Proof-of-presence telemetry with geo + device quality metadata.
+1. `006_create_location_pings.sql`
+
+Contract highlights:
+
+1. telemetry payload for proof-of-presence
+2. includes geo/device quality indicators
+3. may include compatibility fields for zone id aliasing
 
 ### `disruption_events`
 
-Migration: `007_create_disruption_events.sql`
+Migration:
 
-Tracks disruption lifecycle windows per hex.
+1. `007_create_disruption_events.sql`
 
-Runtime note:
+Contract highlights:
 
-1. `dci_peak` is used as admin queue DCI snapshot.
-2. If absent, runtime can compute DCI using weighted sigmoid from event `trigger_signals`.
+1. disruption interval and trigger vector by zone
+2. `dci_peak` is primary event-level DCI snapshot for admin queue
+3. `trigger_signals` is fallback compute source when `dci_peak` missing
 
 ### `claims`
 
-Migrations: `008_create_claims.sql`, `016_add_payout_channel_transaction_to_claims.sql`, `018_backfill_claim_scores_and_event_dci_defaults.sql`
+Migrations:
 
-Important fields:
+1. `008_create_claims.sql`
+2. `016_add_payout_channel_transaction_to_claims.sql`
+3. `018_backfill_claim_scores_and_event_dci_defaults.sql`
 
-1. worker/policy/event FKs
-2. fraud and resolution fields (`fraud_score`, `resolution_path`)
-3. payout fields (`payout_amount`, `status`, `payout_channel`, `payout_transaction_id`)
-4. unique key on (`worker_id`, `event_id`)
+Contract highlights:
 
-Post-018 guarantees:
+1. FKs: worker, policy, disruption event
+2. unique constraint: `(worker_id, event_id)`
+3. routing fields: `resolution_path`, `status`
+4. fraud field: `fraud_score`
+5. payout fields: `payout_amount`, `payout_channel`, `payout_transaction_id`
 
-1. `claims.fraud_score` has default `30`.
-2. `claims.fraud_score` is `NOT NULL`.
-3. pending rows with null `resolution_path` are normalized to `soft_queue`.
-4. denied rows with null `resolution_path` are normalized to `denied`.
+Post-018 invariants:
+
+1. `fraud_score` has default `30`
+2. `fraud_score` is `NOT NULL`
+3. pending + null path normalized to `soft_queue`
+4. denied + null path normalized to `denied`
 
 ### `fraud_flags`
 
-Migration: `009_create_fraud_flags.sql`
+Migration:
 
-Per-claim fraud signal contributions and structured details.
+1. `009_create_fraud_flags.sql`
+
+Contract highlights:
+
+1. per-claim flag records for explainable fraud signal decomposition
+2. stores source/weight/value style details used by admin fraud analytics
 
 ### `premium_payments`
 
-Migration: `010_create_premium_payments.sql`
+Migration:
 
-Premium collection records and Razorpay references.
+1. `010_create_premium_payments.sql`
 
-## Row-Level Security
+Contract highlights:
 
-`013_enable_rls.sql` enables RLS on core operational tables, including workers, zones, policies, signals, DCI history, pings, events, claims, and payment/fraud tables.
+1. premium payment transaction tracking
+2. external gateway references for reconciliation
 
-## Performance and Cleanup Migrations
+## 5) Relationship Summary
 
-1. `017_add_performance_indexes.sql` adds operational query indexes.
-2. `019_drop_redundant_pk_indexes.sql` removes duplicate PK-column indexes (`disruption_events.id`, `policies.id`) because PK constraints already provide indexed access.
+1. one worker can have many policies over time
+2. one disruption event can map to many claims
+3. one claim can have many fraud flags
+4. one policy can have many premium payments over lifecycle
 
-Cleanup policy:
+## 6) Row-Level Security
 
-1. historical migrations are immutable,
-2. overlapping or redundant changes are fixed by forward migrations,
-3. avoid squashing/deleting already-applied files to prevent environment drift.
+Migration:
 
-## Compatibility Fields Used by Runtime
+1. `013_enable_rls.sql`
 
-Backend and admin analytics include compatibility fallbacks for environments where column naming differs.
+RLS is enabled across major operational tables to constrain access by role/context.
+
+## 7) Index and Cleanup Policy
+
+Performance migration:
+
+1. `017_add_performance_indexes.sql`
+
+Cleanup migration:
+
+1. `019_drop_redundant_pk_indexes.sql`
+
+Cleanup rationale:
+
+1. redundant single-column indexes duplicating PK coverage were removed
+2. keep query plan clean and write overhead lower
+
+Policy:
+
+1. applied migrations are immutable
+2. fixes happen in new forward migrations
+3. do not delete/squash historical migration files in shared branches
+
+## 8) Compatibility and Drift-Tolerant Reads
+
+Runtime supports schema variance seen across environments.
 
 Known compatibility fields:
 
-1. `hex_zones.h3_index` (fallback to `hex_id`)
-2. `hex_zones.is_disrupted` (environment-dependent)
-3. `location_pings.h3_index`
-4. component aliases in `dci_history`
-5. `disruption_events.h3_index` may coexist with `hex_id` depending on environment
+1. `hex_zones.h3_index` fallback to `hex_id`
+2. `hex_zones.is_disrupted` may or may not exist
+3. `location_pings.h3_index` in some environments
+4. aliased component fields in `dci_history`
+5. `disruption_events.h3_index` coexistence with `hex_id`
 
-## Operational Note for Admin Analytics
+## 9) Admin Analytics Data Dependencies
 
-Admin endpoints rely on:
+Critical join sources:
 
-1. `claims` for payouts, trends, and fraud score aggregation
-2. `fraud_flags` for signal distributions
-3. `workers` for identity/city joins
-4. `hex_zones` and `disruption_events` for zone risk context
+1. `claims` for queue, payout, and route analytics
+2. `workers` for city and identity context
+3. `disruption_events` for event-level DCI and triggers
+4. `fraud_flags` for fraud explainability
+5. `hex_zones` for zone fallback and map context
 
-If admin dashboards appear empty or show repeated `0.00` DCI, validate:
+Queue quality dependencies:
 
-1. `claims.event_id` is populated.
-2. `disruption_events.dci_peak` is populated for recent events.
-3. migration `018_backfill_claim_scores_and_event_dci_defaults.sql` has been applied.
+1. populated `claims.event_id`
+2. available `disruption_events.dci_peak` or usable trigger signals
+3. post-018 default guarantees on path/score
+
+## 9.1 Neo4j Fraud Network Projection
+
+Neo4j is used as a projection layer for graph analytics, while Supabase remains transactional source-of-truth.
+
+Projection entities:
+
+1. `(:Worker {id})`
+2. `(:Device {fingerprint})`
+3. `(:Hex_Zone {id})`
+
+Projection relationships:
+
+1. `(:Worker)-[:USES_DEVICE]->(:Device)`
+2. `(:Worker)-[:CLAIMED_IN {claim_count}]->(:Hex_Zone)`
+
+Projection ingestion source:
+
+1. claim processing pipeline (`backend/services/claim_approver.py`)
+2. demo claim processing pipeline (`backend/api/demo.py`)
+
+Syndicate detection query rule:
+
+1. find `Device` nodes linked to multiple distinct `Worker` nodes
+2. ensure those workers claim across multiple distinct `Hex_Zone` nodes
+3. return graph payload via `GET /admin/fraud/network-graph`
+
+## 10) Diagnostic Queries (Operational)
+
+Use read-only checks before incident escalation.
+
+1. verify claims missing event links:
+
+```sql
+select count(*) as missing_event_refs
+from claims
+where event_id is null;
+```
+
+2. verify missing `dci_peak` on active disruption windows:
+
+```sql
+select count(*) as missing_dci_peak
+from disruption_events
+where dci_peak is null;
+```
+
+3. verify null fraud scores (should be zero rows post-018):
+
+```sql
+select count(*) as null_fraud_score
+from claims
+where fraud_score is null;
+```
+
+## 11) Migration Safety Rules
+
+1. write schema changes as explicit SQL migrations only
+2. include idempotent guards when practical
+3. document every migration in `supabase/MIGRATIONS.md`
+4. update `docs/DATABASE.md` and `docs/CONTEXT.md` in same change set
+
+## 12) Failure Patterns and Prevention
+
+Observed pattern:
+
+1. duplicate index creation on PK columns can silently bloat index set over time
+
+Prevention:
+
+1. before adding index, verify existing PK/unique/index coverage
+2. if duplicates exist, create forward cleanup migration

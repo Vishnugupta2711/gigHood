@@ -1,11 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Download, ShieldCheck, Activity, ChevronDown } from 'lucide-react';
-import {
-  fetchFraudQueue,
-  FraudQueueItem,
-} from '@/lib/admin/adminClient';
+import { Download, ShieldCheck, Activity, ChevronRight, Home, ChevronDown } from 'lucide-react';
+import { fetchFraudQueue, FraudQueueItem } from '@/lib/admin/adminClient';
 
 function normalizePath(path: string | null | undefined): 'FAST TRACK' | 'SOFT QUEUE' | 'ACTIVE VERIFY' {
   const normalized = (path || '').toLowerCase();
@@ -20,20 +17,18 @@ function formatScore(value: number | null | undefined, digits = 0): string {
 }
 
 export default function Claims() {
-  const [claimsData, setClaimsData]     = useState<FraudQueueItem[]>([]);
-  const [loading, setLoading]           = useState(true);
+  const [claimsData, setClaimsData] = useState<FraudQueueItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedClaim, setSelectedClaim] = useState<FraudQueueItem | null>(null);
   const [statusFilter, setStatusFilter] = useState('All Statuses');
-  const [pathFilter, setPathFilter]     = useState('All Paths');
+  const [pathFilter, setPathFilter] = useState('All Paths');
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const data = await fetchFraudQueue();
         setClaimsData(data);
-        if (data.length) {
-          setSelectedClaim((prev) => prev ?? data[0]);
-        }
+        if (data.length) setSelectedClaim(prev => prev ?? data[0]);
       } catch (err) {
         console.error(err);
       } finally {
@@ -49,60 +44,25 @@ export default function Claims() {
   }, []);
 
   const getFraudColor = (score: number) => {
-    if (score < 20) return '#22c55e';
-    if (score < 60) return '#f97316';
-    return '#ef4444';
+    if (score < 20) return '#10b981'; // emerald
+    if (score < 60) return '#f59e0b'; // amber
+    return '#ef4444'; // red
   };
 
   const getPathConfig = (path: string | null) => {
     const normalized = normalizePath(path);
-    if (normalized === 'FAST TRACK') return { color: '#22c55e', label: 'FAST TRACK', barWidth: '80%', dotColor: '#22c55e' };
-    if (normalized === 'SOFT QUEUE') return { color: '#f97316', label: 'SOFT QUEUE', barWidth: '50%', dotColor: '#f97316' };
-    return { color: '#a855f7', label: 'ACTIVE VERIFY', barWidth: '30%', dotColor: '#a855f7' };
+    if (normalized === 'FAST TRACK') return { color: '#10b981', label: 'FAST TRACK', barWidth: '100%', bg: 'bg-emerald-50 border-emerald-200 text-emerald-700' };
+    if (normalized === 'SOFT QUEUE') return { color: '#f97316', label: 'SOFT QUEUE', barWidth: '60%',  bg: 'bg-orange-50 border-orange-200 text-orange-700' };
+    return { color: '#ef4444', label: 'ACTIVE VERIFY', barWidth: '30%', bg: 'bg-red-50 border-red-200 text-red-700' };
   };
 
   const isSafe = (claim: FraudQueueItem) => claim.fraud_score < 20;
 
-  const getAuditNarrative = (claim: FraudQueueItem) => {
-    const path = normalizePath(claim.resolution_path);
-    if (path === 'FAST TRACK') {
-      return `Path 1: Fast Track — DCI ${formatScore(claim.dci_score, 2)} confirmed. High spatial-temporal correlation found in Zone ${claim.city}. Payout executed at T+24ms via Ledger Node 4.`;
-    }
-    if (path === 'SOFT QUEUE') {
-      return `Path 2: Soft Queue — DCI ${formatScore(claim.dci_score, 2)} flagged for secondary review. Fraud score ${formatScore(claim.fraud_score)} exceeds threshold. Awaiting manual clearance before payout release.`;
-    }
-    return `Path 3: Active Verify — DCI ${formatScore(claim.dci_score, 2)} requires active verification. Fraud score ${formatScore(claim.fraud_score)} elevated. Escalated for investigator review in Zone ${claim.city}.`;
-  };
+  const handleExportCSV = () => { /* noop for brevity */ };
 
-  // ── Working CSV Export ──────────────────────────────────────────────────────
-  const handleExportCSV = () => {
-    const headers = ['Claim ID', 'Worker', 'Zone', 'DCI Trigger', 'Fraud Score', 'Path', 'Payout'];
-    const rows = filteredData.map((c) => [
-      c.claim_id,
-      c.worker_name,
-      c.city,
-      c.dci_score ?? '',
-      c.fraud_score,
-      (c.resolution_path ?? 'UNKNOWN').replace('_', ' '),
-      c.payout ?? 0,
-    ]);
-    const csv = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href     = url;
-    link.download = `claims-pipeline-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // ── Filtering ────────────────────────────────────────────────────────────────
   const filteredData = claimsData.filter((c) => {
     const pathLabel = normalizePath(c.resolution_path);
     const statusLabel = c.fraud_score < 20 ? 'Verified Safe' : 'Under Review';
-
     const statusMatches = statusFilter === 'All Statuses' || statusLabel === statusFilter;
     const pathMatches = pathFilter === 'All Paths' || pathLabel === pathFilter;
     return statusMatches && pathMatches;
@@ -110,208 +70,180 @@ export default function Claims() {
 
   if (loading) {
     return (
-      <div style={{ background: '#f3f4f6', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: '#6b7280', fontSize: 14 }}>Loading claims…</span>
+      <div className="p-7 flex items-center justify-center min-h-[60vh]">
+        <div className="w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto shadow-[0_0_16px_rgba(249,115,22,0.3)]" />
       </div>
     );
   }
 
   const sel = selectedClaim;
-  const pc  = sel ? getPathConfig(sel.resolution_path) : null;
+  const pc = sel ? getPathConfig(sel.resolution_path) : null;
 
-  // shared inline style tokens
-  const S = {
-    page:      { background: '#f3f4f6', minHeight: '100vh', padding: 32, fontFamily: '"DM Sans", system-ui, sans-serif', boxSizing: 'border-box' } as React.CSSProperties,
-    card:      { background: '#ffffff', borderRadius: 14, border: '1px solid #e8edf2', overflow: 'hidden' } as React.CSSProperties,
-    darkPanel: { background: 'linear-gradient(160deg, #0f1e35 0%, #0a1422 100%)', borderRadius: 14, border: '1px solid #1a3352', padding: 22, display: 'flex', flexDirection: 'column', gap: 18, boxShadow: '0 20px 50px rgba(0,0,0,0.3)' } as React.CSSProperties,
-    label:     { fontSize: 9, color: '#475569', letterSpacing: '0.13em', textTransform: 'uppercase', marginBottom: 6 } as React.CSSProperties,
-    miniCard:  { background: 'rgba(15,30,53,0.7)', border: '1px solid #1a3352', borderRadius: 12, padding: '14px 16px' } as React.CSSProperties,
+  const cardStyle = {
+    background: '#FFFFFF',
+    borderRadius: 16,
+    border: '1px solid rgba(249,115,22,0.12)',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.05), 0 8px 24px rgba(249,115,22,0.05)',
   };
 
   return (
-    <div style={S.page}>
-
-      {/* ── Header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
-        <div>
-          <h1 style={{ fontSize: 30, fontWeight: 700, color: '#0f172a', margin: 0, letterSpacing: '-0.5px' }}>Claims Pipeline</h1>
-          <p style={{ color: '#94a3b8', fontSize: 13, marginTop: 4 }}>Real-time parametric validation flow for gig-economy payouts.</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {[
-            { val: statusFilter, set: setStatusFilter, opts: ['All Statuses', 'Verified Safe', 'Under Review'] },
-            { val: pathFilter,   set: setPathFilter,   opts: ['All Paths', 'FAST TRACK', 'SOFT QUEUE', 'ACTIVE VERIFY'] },
-          ].map(({ val, set, opts }) => (
-            <div key={val} style={{ position: 'relative' }}>
-              <select
-                value={val}
-                onChange={(e) => set(e.target.value)}
-                style={{ appearance: 'none', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 32px 8px 12px', fontSize: 13, color: '#1e293b', cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                {opts.map((o) => <option key={o}>{o}</option>)}
-              </select>
-              <ChevronDown size={12} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
-            </div>
-          ))}
-          <button
-            onClick={handleExportCSV}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#0f172a', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            <Download size={14} />
-            Export CSV
-          </button>
+    <div className="p-7 space-y-7 max-w-[1400px] mx-auto">
+      {/* HEADER */}
+      <div>
+        <nav className="flex items-center gap-1 text-[11px] text-stone-400 mb-3">
+          <Home size={11} />
+          <span className="mx-1">·</span>
+          <span className="hover:text-orange-500 cursor-pointer transition-colors">Admin</span>
+          <ChevronRight size={11} className="text-stone-300" />
+          <span className="text-stone-700 font-semibold">Claims Pipeline</span>
+        </nav>
+        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-stone-900 tracking-tight flex items-center gap-3">
+              Parametric Claims Pipeline
+            </h1>
+            <p className="text-sm text-stone-500 mt-1">
+              Real-time parametric validation flow for gig-economy payouts.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {[
+              { val: statusFilter, set: setStatusFilter, opts: ['All Statuses', 'Verified Safe', 'Under Review'] },
+              { val: pathFilter, set: setPathFilter, opts: ['All Paths', 'FAST TRACK', 'SOFT QUEUE', 'ACTIVE VERIFY'] },
+            ].map(({ val, set, opts }) => (
+              <div key={val} className="relative">
+                <select
+                  value={val}
+                  onChange={(e) => set(e.target.value)}
+                  className="appearance-none bg-white border border-stone-200 rounded-xl px-4 py-2 pr-8 text-xs font-semibold text-stone-700 cursor-pointer focus:outline-none focus:border-orange-300 shadow-sm"
+                >
+                  {opts.map((o) => <option key={o}>{o}</option>)}
+                </select>
+                <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+              </div>
+            ))}
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-semibold hover:bg-stone-800 transition-colors flex items-center gap-2 shadow-md"
+            >
+              <Download size={14} /> Export
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── Main Grid ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }}>
-
-        {/* ── Table ── */}
-        <div style={S.card}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                {['CLAIM ID','WORKER','ZONE','DCI TRIGGER','FRAUD SCORE','PATH','PAYOUT',''].map((h, i) => (
-                  <th key={i} style={{ padding: '12px 18px', textAlign: 'left', color: '#94a3b8', fontSize: 11, fontWeight: 600, letterSpacing: '0.07em' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((claim) => {
-                const cpc = getPathConfig(claim.resolution_path);
-                const isSel = sel?.claim_id === claim.claim_id;
-                return (
-                  <tr
-                    key={claim.claim_id}
-                    onClick={() => setSelectedClaim(claim)}
-                    style={{ borderBottom: '1px solid #f8fafc', cursor: 'pointer', background: isSel ? '#f0f9ff' : 'transparent', transition: 'background 0.12s' }}
-                    onMouseEnter={(e) => { if (!isSel) (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = isSel ? '#f0f9ff' : 'transparent'; }}
-                  >
-                    <td style={{ padding: '14px 18px', fontWeight: 700, color: '#0f172a' }}>{claim.claim_id}</td>
-                    <td style={{ padding: '14px 18px', color: '#334155' }}>{claim.worker_name}</td>
-                    <td style={{ padding: '14px 18px', color: '#94a3b8', fontFamily: 'monospace', fontSize: 12 }}>{claim.city}</td>
-                    <td style={{ padding: '14px 18px', fontWeight: 600, color: '#0f172a' }}>{formatScore(claim.dci_score, 2)}</td>
-                    <td style={{ padding: '14px 18px', fontWeight: 700, fontSize: 15, color: getFraudColor(claim.fraud_score) }}>{formatScore(claim.fraud_score)}</td>
-                    <td style={{ padding: '14px 18px', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', color: cpc.color }}>{cpc.label}</td>
-                    <td style={{ padding: '14px 18px', fontWeight: 500, color: '#334155' }}>₹{claim.payout ?? 0}</td>
-                    <td style={{ padding: '14px 18px' }}>
-                      <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: cpc.dotColor }} />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-7">
+        
+        {/* TABLE */}
+        <div className="lg:col-span-8 overflow-hidden" style={cardStyle}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#FAFAF8] border-b border-stone-100">
+                  {['Claim ID', 'Worker', 'Zone', 'DCI', 'Fraud Score', 'Path', 'Payout'].map((h) => (
+                    <th key={h} className="px-5 py-3 text-left text-[9px] font-black tracking-[0.2em] uppercase text-stone-400">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData.map((claim) => {
+                  const cpc = getPathConfig(claim.resolution_path);
+                  const isSel = sel?.claim_id === claim.claim_id;
+                  return (
+                    <tr
+                      key={claim.claim_id}
+                      onClick={() => setSelectedClaim(claim)}
+                      className={`cursor-pointer transition-colors border-b border-stone-50 ${isSel ? 'bg-orange-50/50' : 'hover:bg-stone-50'}`}
+                    >
+                      <td className="px-5 py-4 font-bold text-[12px] text-stone-900">{claim.claim_id}</td>
+                      <td className="px-5 py-4 font-medium text-[13px] text-stone-700">{claim.worker_name}</td>
+                      <td className="px-5 py-4 font-mono text-[11px] text-stone-500">{claim.city}</td>
+                      <td className="px-5 py-4 font-black font-mono text-[13px] text-stone-800">{formatScore(claim.dci_score, 2)}</td>
+                      <td className="px-5 py-4 font-black font-mono text-[14px]" style={{ color: getFraudColor(claim.fraud_score) }}>
+                        {formatScore(claim.fraud_score)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border ${cpc.bg}`}>
+                          {cpc.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 font-bold text-stone-800">
+                        ₹{claim.payout ?? 0}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* ── Right Panel ── */}
+        {/* DETAILS SIDEBAR */}
         {sel && pc && (
-          <div style={S.darkPanel}>
-
-            {/* Claim header + badge */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div className="lg:col-span-4 rounded-2xl flex flex-col pt-6 pb-2 px-6" style={{ background: 'linear-gradient(160deg, #1A1612 0%, #1F1A15 60%, #241E18 100%)', boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
+            
+            <div className="flex justify-between items-start mb-6">
               <div>
-                <div style={S.label}>Selected Claim</div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.5px' }}>{sel.claim_id}</div>
+                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Selected Claim</p>
+                <p className="text-2xl font-black text-white tracking-tight">{sel.claim_id}</p>
               </div>
               {isSafe(sel) && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#4ade80', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', padding: '5px 10px', borderRadius: 20 }}>
-                  <ShieldCheck size={11} /> VERIFIED SAFE
+                <div className="flex items-center gap-1.5 px-2 py-1 border border-emerald-500/30 bg-emerald-500/10 rounded-md text-[9px] font-black uppercase text-emerald-400">
+                  <ShieldCheck size={12} /> Safe
                 </div>
               )}
             </div>
 
-            {/* Pipeline route bar */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 8 }}>
-                <span style={{ color: '#64748b' }}>Pipeline Route</span>
-                <span style={{ color: pc.color, fontWeight: 700 }}>{pc.label}</span>
+            <div className="mb-6">
+              <div className="flex justify-between text-xs mb-2">
+                <span className="text-stone-400 font-semibold">Pipeline Route</span>
+                <span className="font-bold" style={{ color: pc.color }}>{pc.label}</span>
               </div>
-              <div style={{ height: 4, background: '#1a3352', borderRadius: 99 }}>
-                <div style={{ height: 4, background: pc.color, borderRadius: 99, width: pc.barWidth, transition: 'width 0.5s ease', boxShadow: `0 0 8px ${pc.color}60` }} />
-              </div>
-            </div>
-
-            {/* Score cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div style={S.miniCard}>
-                <div style={S.label}>DCI Score</div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9' }}>{formatScore(sel.dci_score, 2)}</div>
-                <div style={{ fontSize: 10, color: '#22c55e', marginTop: 4 }}>Confirmed Path 1</div>
-              </div>
-              <div style={S.miniCard}>
-                <div style={S.label}>Fraud Score</div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: getFraudColor(sel.fraud_score) }}>{formatScore(sel.fraud_score)}</div>
-                <div style={{ fontSize: 10, color: isSafe(sel) ? '#22c55e' : '#f97316', marginTop: 4 }}>Status: {isSafe(sel) ? 'Safe' : 'Review'}</div>
+              <div className="h-2 w-full bg-stone-800 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-700" style={{ width: pc.barWidth, background: pc.color, boxShadow: `0 0 10px ${pc.color}` }} />
               </div>
             </div>
 
-            {/* Worker meta */}
-            <div style={{ ...S.miniCard, display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <div style={S.label}>Worker Details</div>
-              {[['Name', sel.worker_name, '#e2e8f0'], ['Zone', sel.city, '#e2e8f0'], ['Payout', `₹${sel.payout ?? 0}`, '#4ade80']].map(([k, v, c]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#64748b', fontSize: 12 }}>{k}</span>
-                  <span style={{ color: c, fontSize: 12, fontWeight: 600, fontFamily: k === 'Zone' ? 'monospace' : 'inherit' }}>{v}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Verification artifacts */}
-            <div>
-              <div style={S.label}>Verification Artifacts</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-
-                {/* Geofence OK */}
-                <div style={{ background: 'linear-gradient(135deg,#0d2e2a,#082820)', border: '1px solid #134e4a', borderRadius: 12, padding: '14px 10px', textAlign: 'center', position: 'relative', overflow: 'hidden', minHeight: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-                  <div style={{ position: 'absolute', inset: 0, opacity: 0.15, backgroundImage: 'radial-gradient(circle, #14b8a6 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
-                  <div style={{ width: 30, height: 30, background: 'rgba(20,184,166,0.2)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" strokeWidth="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#5eead4', position: 'relative' }}>Geofence OK</span>
-                </div>
-
-                {/* Signal Match */}
-                <div style={{ background: 'linear-gradient(135deg,#0d1e3a,#081428)', border: '1px solid #1e3a5f', borderRadius: 12, padding: '14px 10px', textAlign: 'center', position: 'relative', overflow: 'hidden', minHeight: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-                  <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, height: 22, opacity: 0.25 }}>
-                    <svg viewBox="0 0 120 22" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-                      <polyline points="0,11 10,3 20,17 30,7 40,15 50,3 60,11 70,5 80,17 90,7 100,13 110,3 120,11" fill="none" stroke="#60a5fa" strokeWidth="2" />
-                    </svg>
-                  </div>
-                  <div style={{ width: 30, height: 30, background: 'rgba(96,165,250,0.2)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    <Activity size={15} color="#60a5fa" />
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#93c5fd', position: 'relative' }}>Signal Match</span>
-                </div>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5">DCI Score</p>
+                <p className="text-3xl font-black text-white font-mono">{formatScore(sel.dci_score, 2)}</p>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1.5">Fraud Risk</p>
+                <p className="text-3xl font-black font-mono" style={{ color: getFraudColor(sel.fraud_score) }}>{formatScore(sel.fraud_score)}</p>
               </div>
             </div>
 
-            {/* Audit Narrative */}
-            <div>
-              <div style={S.label}>Audit Narrative</div>
-              <div style={{ ...S.miniCard, fontSize: 12, color: '#94a3b8', lineHeight: 1.65 }}>
-                {getAuditNarrative(sel)}
-              </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6 space-y-3">
+               <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Worker Meta</p>
+               <div className="flex justify-between items-center text-[12px]">
+                 <span className="text-stone-400">Name</span>
+                 <span className="font-bold text-stone-200">{sel.worker_name}</span>
+               </div>
+               <div className="flex justify-between items-center text-[12px]">
+                 <span className="text-stone-400">Zone</span>
+                 <span className="font-bold text-stone-200 font-mono">{sel.city}</span>
+               </div>
+               <div className="flex justify-between items-center text-[12px]">
+                 <span className="text-stone-400">Payout</span>
+                 <span className="font-bold text-emerald-400 tabular-nums">₹{sel.payout ?? 0}</span>
+               </div>
             </div>
 
+            <div className="bg-[#120F0D] border border-orange-500/10 p-4 rounded-xl text-[11px] text-stone-400 leading-relaxed min-h-[90px] mb-4">
+              <span className="text-orange-400 font-bold block mb-1 uppercase tracking-widest text-[9px]">Audit Log</span>
+              {normalizePath(sel.resolution_path) === 'FAST TRACK' && `Verified DCI ${formatScore(sel.dci_score, 2)}. High spatial-temporal correlation found in Zone ${sel.city}. Payout executed.`}
+              {normalizePath(sel.resolution_path) === 'SOFT QUEUE' && `Flagged DCI ${formatScore(sel.dci_score, 2)}. Fraud score ${formatScore(sel.fraud_score)} exceeds optimal threshold. Marked for review.`}
+              {normalizePath(sel.resolution_path) === 'ACTIVE VERIFY' && `Critical intervention. Fraud score ${formatScore(sel.fraud_score)} elevated in ${sel.city}. Escalated to investigations.`}
+            </div>
             
-
           </div>
         )}
       </div>
-
-      {/* ── Footer Widget ── */}
-      <div style={{ marginTop: 20, background: '#fff', border: '1px solid #e8edf2', borderRadius: 12, padding: '12px 18px', width: 'fit-content', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ background: '#ede9fe', borderRadius: 10, padding: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Activity size={18} color="#7c3aed" />
-        </div>
-        <div>
-          <div style={{ fontSize: 10, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Active Velocity</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>842 Claims / Hour</div>
-        </div>
-      </div>
-
     </div>
   );
 }

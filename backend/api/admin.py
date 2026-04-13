@@ -2,9 +2,237 @@ import traceback
 import math
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 from backend.db.client import supabase
+from backend.services.dci_engine import run_dci_cycle
+from backend.services.neo4j_graph import (
+    backfill_claim_graph,
+    get_syndicate_graph,
+    is_neo4j_configured,
+)
 
 router = APIRouter()
+
+
+class SandboxSignalOverrideRequest(BaseModel):
+    hex_id: str = Field(..., description="Target H3/hex zone id")
+    rainfall_mm_per_hr: float = Field(..., ge=0, le=300)
+    aqi: float = Field(..., ge=0, le=1000)
+    traffic_congestion_percent: float = Field(..., ge=0, le=100)
+
+
+class SandboxSignalBatchOverrideRequest(BaseModel):
+    rainfall_mm_per_hr: float = Field(..., ge=0, le=300)
+    aqi: float = Field(..., ge=0, le=1000)
+    traffic_congestion_percent: float = Field(..., ge=0, le=100)
+
+
+def _normalize_weather_from_rainfall(rainfall_mm_per_hr: float) -> float:
+    # Aggressive rainfall should visibly push DCI in sandbox simulations.
+    return max(0.0, min(3.2, rainfall_mm_per_hr / 35.0))
+
+
+def _normalize_aqi(aqi: float) -> float:
+    return max(0.0, min(1.6, aqi / 320.0))
+
+
+def _normalize_traffic(traffic_congestion_percent: float) -> float:
+    return max(0.0, min(2.2, traffic_congestion_percent / 40.0))
+
+
+@router.post("/sandbox/override-signals")
+def override_zone_signals(payload: SandboxSignalOverrideRequest):
+    """
+    Admin actuary sandbox:
+    Writes manual signal overrides for a hex zone, then recomputes DCI and
+    lets trigger monitoring open/close disruption events based on thresholds.
+    """
+    try:
+        hex_id = payload.hex_id.strip()
+        if not hex_id:
+            raise HTTPException(status_code=422, detail="hex_id is required")
+
+        weather_score = _normalize_weather_from_rainfall(payload.rainfall_mm_per_hr)
+        aqi_score = _normalize_aqi(payload.aqi)
+        traffic_score = _normalize_traffic(payload.traffic_congestion_percent)
+
+        # Keep platform/social as elevated baselines to simulate broad disruption pressure.
+        platform_score = 1.55
+        social_score = 0.95
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        rows = [
+            {
+                "hex_id": hex_id,
+                "signal_type": "WEATHER",
+                "normalized_score": weather_score,
+                "source_available": True,
+                "raw_data": {
+                    "source": "admin_sandbox",
+                    "rainfall_mm_per_hr": payload.rainfall_mm_per_hr,
+                },
+                "fetched_at": now_iso,
+            },
+            {
+                "hex_id": hex_id,
+                "signal_type": "AQI",
+                "normalized_score": aqi_score,
+                "source_available": True,
+                "raw_data": {
+                    "source": "admin_sandbox",
+                    "aqi": payload.aqi,
+                },
+                "fetched_at": now_iso,
+            },
+            {
+                "hex_id": hex_id,
+                "signal_type": "TRAFFIC",
+                "normalized_score": traffic_score,
+                "source_available": True,
+                "raw_data": {
+                    "source": "admin_sandbox",
+                    "traffic_congestion_percent": payload.traffic_congestion_percent,
+                },
+                "fetched_at": now_iso,
+            },
+            {
+                "hex_id": hex_id,
+                "signal_type": "PLATFORM",
+                "normalized_score": platform_score,
+                "source_available": True,
+                "raw_data": {"source": "admin_sandbox", "default": True},
+                "fetched_at": now_iso,
+            },
+            {
+                "hex_id": hex_id,
+                "signal_type": "SOCIAL",
+                "normalized_score": social_score,
+                "source_available": True,
+                "raw_data": {"source": "admin_sandbox", "default": True},
+                "fetched_at": now_iso,
+            },
+        ]
+
+        # Replace prior sandbox signal rows for deterministic what-if outcomes.
+        for signal_type in ("WEATHER", "AQI", "TRAFFIC", "PLATFORM", "SOCIAL"):
+            try:
+                supabase.table("signal_cache").delete().eq("hex_id", hex_id).eq("signal_type", signal_type).execute()
+            except Exception:
+                pass
+
+        supabase.table("signal_cache").insert(rows).execute()
+
+        dci_res = run_dci_cycle([hex_id]).get(hex_id, {})
+        dci_score = dci_res.get("dci")
+        dci_status = dci_res.get("status")
+
+        open_event_id = None
+        try:
+            event_res = (
+                supabase.table("disruption_events")
+                .select("id")
+                .eq("hex_id", hex_id)
+                .is_("ended_at", "null")
+                .order("started_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if event_res.data:
+                open_event_id = event_res.data[0].get("id")
+        except Exception:
+            open_event_id = None
+
+        return {
+            "hex_id": hex_id,
+            "input": {
+                "rainfall_mm_per_hr": payload.rainfall_mm_per_hr,
+                "aqi": payload.aqi,
+                "traffic_congestion_percent": payload.traffic_congestion_percent,
+            },
+            "normalized": {
+                "W": round(weather_score, 3),
+                "A": round(aqi_score, 3),
+                "T": round(traffic_score, 3),
+                "P": round(platform_score, 3),
+                "S": round(social_score, 3),
+            },
+            "dci": dci_score,
+            "dci_status": dci_status,
+            "triggered": bool(open_event_id),
+            "open_event_id": open_event_id,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sandbox/override-signals/batch")
+def override_all_live_zone_signals(payload: SandboxSignalBatchOverrideRequest):
+    """
+    Batch override for actuary sandbox to simulate city-wide/live-zone disruptions.
+    Applies same manual signal vector to every currently active zone.
+    """
+    try:
+        zones = get_zones()
+        hex_ids = [z.get("h3_index") for z in zones if z.get("h3_index")]
+        if not hex_ids:
+            raise HTTPException(status_code=404, detail="No live zones available for batch override")
+
+        results = []
+        for hex_id in hex_ids:
+            res = override_zone_signals(
+                SandboxSignalOverrideRequest(
+                    hex_id=hex_id,
+                    rainfall_mm_per_hr=payload.rainfall_mm_per_hr,
+                    aqi=payload.aqi,
+                    traffic_congestion_percent=payload.traffic_congestion_percent,
+                )
+            )
+            results.append(res)
+
+        triggered_count = sum(1 for item in results if item.get("triggered"))
+        return {
+            "zones_targeted": len(hex_ids),
+            "zones_triggered": triggered_count,
+            "results": results,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/fraud/network-graph")
+def get_fraud_network_graph(seed_if_empty: bool = True, city: str | None = None):
+    if not is_neo4j_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Neo4j is not configured. Set NEO4J_URI, NEO4J_USER, and NEO4J_PASSWORD.",
+        )
+
+    try:
+        return get_syndicate_graph(seed_if_empty=seed_if_empty, city=city)
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/fraud/network-graph/backfill")
+def backfill_fraud_network_graph(limit: int = 1000):
+    if not is_neo4j_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Neo4j is not configured. Set NEO4J_URI, NEO4J_USER, and NEO4J_PASSWORD.",
+        )
+
+    try:
+        return backfill_claim_graph(limit=max(1, min(limit, 5000)))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 def _clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))
@@ -364,7 +592,7 @@ def get_policy_tiers():
 def get_fraud_metrics():
     try:
         # Calculate fraud metrics from claims and fraud_flags
-        claims_res = supabase.table('claims').select('fraud_score').execute()
+        claims_res = supabase.table('claims').select('worker_id,fraud_score').execute()
         claims = claims_res.data or []
         
         if claims:
@@ -436,16 +664,23 @@ def get_fraud_signals():
 def get_fraud_workers():
     try:
         # Get workers with high fraud scores
-        claims_res = supabase.table('claims').select('worker_id, fraud_score, created_at').gt('fraud_score', 50).order('fraud_score', desc=True).limit(10).execute()
+        claims_res = (
+            supabase.table('claims')
+            .select('worker_id, fraud_score, created_at')
+            .gt('fraud_score', 50)
+            .order('fraud_score', desc=True)
+            .limit(10)
+            .execute()
+        )
         claims = claims_res.data or []
         
         worker_ids = list(set(c.get('worker_id') for c in claims if c.get('worker_id')))
-        workers_dict = {}
+        workers_dict: dict[str, dict] = {}
         
         if worker_ids:
-            workers_res = supabase.table('workers').select('id, name').in_('id', worker_ids).execute()
+            workers_res = supabase.table('workers').select('id, name, city').in_('id', worker_ids).execute()
             for w in (workers_res.data or []):
-                workers_dict[w['id']] = w.get('name', 'Unknown')
+                workers_dict[w['id']] = w
         
         # Mock violations and risk levels based on fraud score
         result = []
@@ -468,8 +703,12 @@ def get_fraud_workers():
             
             result.append({
                 'id': worker_id or 'UNKNOWN',
+                'display_id': (worker_id or 'UNKNOWN')[:8].upper(),
+                'name': workers_dict.get(worker_id, {}).get('name') or 'Unknown Worker',
+                'city': workers_dict.get(worker_id, {}).get('city') or 'Unknown City',
                 'violation': violation,
                 'risk': risk,
+                'fraud_score': float(fraud_score),
                 'lastActive': last_active
             })
         
@@ -481,6 +720,8 @@ def get_fraud_workers():
 @router.get("/fraud/events")
 def get_fraud_events():
     try:
+        from backend.services.notification_service import notification_service
+
         # Get recent fraud flags as events
         flags_res = supabase.table('fraud_flags').select('flag_type').order('id', desc=True).limit(10).execute()
         flags = flags_res.data or []
@@ -502,6 +743,10 @@ def get_fraud_events():
                 'IP_GEO_MISMATCH detected',
                 'CRITICAL_ALERT — Multi-login',
             ]
+
+        admin_events = notification_service.list_admin_alerts(limit=10)
+        if admin_events:
+            events = admin_events + events
         
         return events
     except Exception as e:

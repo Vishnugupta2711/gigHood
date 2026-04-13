@@ -5,8 +5,109 @@ from backend.db.client import supabase
 from backend.services.pop_validator import validate_pop
 from backend.services.payout_calculator import calculate_payout
 from backend.services.payment_service import initiate_upi_payout
+from backend.services.neo4j_graph import ingest_claim_graph
 
 logger = logging.getLogger("api")
+
+
+FLAG_SCORE_HINTS = {
+    "NO_LOCATION_PINGS": 30,
+    "MINIMAL_TELEMETRY": 15,
+    "SPARSE_TELEMETRY": 10,
+    "MODERATE_TELEMETRY": 5,
+    "STATIC_DEVICE_FLAG": 30,
+    "GATE2_NONE": 40,
+    "GATE2_WEAK": 12,
+    "OUT_OF_ZONE_TELEMETRY": 25,
+    "SPARSE_IN_ZONE_TELEMETRY": 12,
+    "PARTIAL_COVERAGE": 5,
+    "LOW_ACCURACY_GPS": 25,
+    "POOR_ACCURACY_AVERAGE": 20,
+    "ELEVATED_GPS_NOISE": 15,
+    "VELOCITY_VIOLATION": 15,
+    "MOCK_LOCATION_FLAG": 20,
+    "REGISTRATION_COHORT": 15,
+    "ANOMALOUS_PATTERN": 10,
+    "MODEL_CONCENTRATION": 12,
+    "MODERATE_CLUSTERING": 5,
+}
+
+
+def _persist_claim_evidence(claim_id: str, flags: list[str], gate2_result: str, reason_code: str | None = None) -> None:
+    """
+    Persist granular fraud evidence for downstream analytics.
+    Uses fraud_flags as the canonical structured sink and performs best-effort
+    claim-level metadata writes when optional columns exist.
+    """
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    # 1) Canonical structured evidence table used by admin analytics.
+    try:
+        supabase.table('fraud_flags').delete().eq('claim_id', claim_id).execute()
+    except Exception:
+        # Keep processing if table cleanup is unavailable in this environment.
+        pass
+
+    rows = []
+    for flag in flags:
+        rows.append({
+            'claim_id': claim_id,
+            'flag_type': flag,
+            'score_contribution': FLAG_SCORE_HINTS.get(flag, 0),
+            'details': {
+                'gate2_result': gate2_result,
+                'reason_code': reason_code,
+                'persisted_at': now_iso,
+            },
+        })
+
+    if gate2_result and f'GATE2_{gate2_result}' not in flags:
+        rows.append({
+            'claim_id': claim_id,
+            'flag_type': f'GATE2_{gate2_result}',
+            'score_contribution': FLAG_SCORE_HINTS.get(f'GATE2_{gate2_result}', 0),
+            'details': {
+                'gate2_result': gate2_result,
+                'reason_code': reason_code,
+                'persisted_at': now_iso,
+            },
+        })
+
+    if reason_code:
+        rows.append({
+            'claim_id': claim_id,
+            'flag_type': reason_code,
+            'score_contribution': 0,
+            'details': {
+                'gate2_result': gate2_result,
+                'reason_code': reason_code,
+                'persisted_at': now_iso,
+            },
+        })
+
+    if rows:
+        try:
+            supabase.table('fraud_flags').insert(rows).execute()
+        except Exception as e:
+            logger.warning("Failed to persist fraud_flags for claim %s: %s", claim_id, e)
+
+    # 2) Best-effort claim-level metadata updates for schemas that already expose these fields.
+    metadata_payload = {
+        'fraud_flags': flags,
+        'gate2_result': gate2_result,
+        'reason_code': reason_code,
+        'persisted_at': now_iso,
+    }
+    for payload in (
+        {'gate2_result': gate2_result, 'fraud_flags': flags, 'fraud_metadata': metadata_payload},
+        {'gate2_result': gate2_result, 'fraud_flags': flags},
+        {'gate2_result': gate2_result},
+    ):
+        try:
+            supabase.table('claims').update(payload).eq('id', claim_id).execute()
+            break
+        except Exception:
+            continue
 
 
 def _normalize_city_token(city: str | None) -> str:
@@ -212,6 +313,32 @@ def execute_fast_track_payout(claim_id: str, worker_id: str):
     """
     # 1. Fetch exactly necessary policy constraints
     # Need avg_earnings, disrupted_hrs, tier, upi_id
+    def _mark_payout_state(new_status: str, failure_reason: str | None = None) -> None:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        payloads = [
+            {
+                'status': new_status,
+                'payout_amount': 0,
+                'resolved_at': now_iso,
+                'payout_failure_reason': failure_reason,
+            },
+            {
+                'status': new_status,
+                'payout_amount': 0,
+                'resolved_at': now_iso,
+            },
+            {
+                'status': new_status,
+                'resolved_at': now_iso,
+            },
+        ]
+        for payload in payloads:
+            try:
+                supabase.table('claims').update(payload).eq('id', claim_id).execute()
+                return
+            except Exception:
+                continue
+
     try:
         # Join-like cascade through application 
         claim_res = supabase.table('claims').select('disrupted_hours, policy_id, event_id').eq('id', claim_id).execute()
@@ -236,7 +363,12 @@ def execute_fast_track_payout(claim_id: str, worker_id: str):
         payout_rupees = calculate_payout(earnings, disrupted_hrs, tier, worker_id)
         
         # 3. Idempotency Mock Payment execution
-        rzp_res = initiate_upi_payout(upi_id=upi, amount_rupees=payout_rupees, reference_id=claim_id)
+        try:
+            rzp_res = initiate_upi_payout(upi_id=upi, amount_rupees=payout_rupees, reference_id=claim_id)
+        except Exception as payout_error:
+            logger.error(f"Payment gateway exception for claim {claim_id}: {payout_error}")
+            _mark_payout_state('payment_failed', str(payout_error))
+            return
         
         if rzp_res.get('status') in {'processing', 'processed'}:
             # Razorpay accepted the idempotent push
@@ -265,9 +397,13 @@ def execute_fast_track_payout(claim_id: str, worker_id: str):
             if device_token:
                 from backend.services.notification_service import notification_service
                 notification_service.notify_payout_credited(device_token, payout_rupees, tier)
+        else:
+            # Gateway responded but payout was not accepted; keep claim financially neutral.
+            _mark_payout_state('rollback', str(rzp_res.get('status') or 'unknown_status'))
                 
     except Exception as e:
         logger.error(f"Failed cleanly executing Fast-Track payout {claim_id}: {e}")
+        _mark_payout_state('payment_failed', str(e))
 
 
 def process_claim(worker_id: str, event_id: str, policy_id: str) -> dict:
@@ -296,6 +432,11 @@ def process_claim(worker_id: str, event_id: str, policy_id: str) -> dict:
          disruption_start = datetime.fromisoformat(event['started_at'].replace("Z", "+00:00"))
          duration_hours = event.get('duration_hours', 4.0)
 
+         try:
+             ingest_claim_graph(worker_id=worker_id, event_id=event_id, claim_id=claim_id)
+         except Exception as graph_error:
+             logger.warning(f"Neo4j graph ingest skipped for claim {claim_id}: {graph_error}")
+
          # Compute fraud context early so denied outcomes still expose meaningful risk values.
          from backend.services.fraud_engine import FraudEvaluator
          evaluator = FraudEvaluator()
@@ -316,6 +457,12 @@ def process_claim(worker_id: str, event_id: str, policy_id: str) -> dict:
                  'pop_validated': False,
                  'resolved_at': datetime.now(timezone.utc).isoformat(),
              }).eq('id', claim_id).execute()
+             _persist_claim_evidence(
+                 claim_id=claim_id,
+                 flags=flags,
+                 gate2_result=gate2_result,
+                 reason_code=reason_code,
+             )
              return {"path": "denied", "reason_code": reason_code}
          
          # Write disruption_hours directly to claim to allow calculation bounds
@@ -332,6 +479,12 @@ def process_claim(worker_id: str, event_id: str, policy_id: str) -> dict:
                   'resolution_path': 'denied',
                   'resolved_at': datetime.now(timezone.utc).isoformat()
               }).eq('id', claim_id).execute()
+              _persist_claim_evidence(
+                  claim_id=claim_id,
+                  flags=flags,
+                  gate2_result=gate2_result,
+                  reason_code='INSUFFICIENT_IN_ZONE_PINGS',
+              )
               return {"path": "denied", "reason_code": "INSUFFICIENT_IN_ZONE_PINGS"}
 
          # 2. Fraud Engine (Phase 11 7-Layer Defense)
@@ -344,6 +497,12 @@ def process_claim(worker_id: str, event_id: str, policy_id: str) -> dict:
              'fraud_score': fraud_score,
              'resolution_path': path
          }).eq('id', claim_id).execute()
+         _persist_claim_evidence(
+             claim_id=claim_id,
+             flags=flags,
+             gate2_result=gate2_result,
+             reason_code=None,
+         )
          
          # 4. Automate Execution bounds
          if path == 'fast_track':

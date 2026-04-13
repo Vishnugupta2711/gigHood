@@ -66,6 +66,32 @@ export interface MonthlyTrend {
 }
 
 type StatusError = Error & { status?: number };
+const FALLBACK_STORAGE_KEY = 'gighood_admin_fallback_events';
+
+function recordFallbackEvent(url: string): void {
+  const msg = `[adminClient] Falling back to preview data for ${url}`;
+  console.warn(msg);
+
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(FALLBACK_STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as Array<{ url: string; at: string }>) : [];
+    parsed.unshift({ url, at: new Date().toISOString() });
+    localStorage.setItem(FALLBACK_STORAGE_KEY, JSON.stringify(parsed.slice(0, 20)));
+  } catch {
+    // Ignore localStorage failures; console warning still provides visibility.
+  }
+}
+
+export function getAdminFallbackEvents(): Array<{ url: string; at: string }> {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(FALLBACK_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Array<{ url: string; at: string }>) : [];
+  } catch {
+    return [];
+  }
+}
 
 function isPreviewRuntime(): boolean {
   const env = process.env.NEXT_PUBLIC_VERCEL_ENV;
@@ -93,7 +119,7 @@ async function getWithFallback<T>(url: string, fallbackFactory: () => T): Promis
     return data;
   } catch (error: unknown) {
     if (shouldUsePreviewFallback(error)) {
-      console.warn(`[adminClient] Falling back to preview data for ${url}`);
+      recordFallbackEvent(url);
       return fallbackFactory();
     }
     throw error;
@@ -298,9 +324,89 @@ export interface FraudSignal {
 
 export interface FraudWorker {
   id: string;
+  display_id?: string;
+  name?: string;
+  city?: string;
+  fraud_score?: number;
   violation: string;
   risk: 'CRITICAL' | 'HIGH' | 'MEDIUM';
   lastActive: string;
+}
+
+export interface FraudGraphNode {
+  id: string;
+  entity_id: string;
+  type: 'Worker' | 'Device' | 'Hex_Zone';
+  label: string;
+  subtitle?: string;
+  details?: Record<string, string | number | boolean | null>;
+  fraud_score?: number;
+  risk_level?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export interface FraudGraphLink {
+  source: string;
+  target: string;
+  type: 'USES_DEVICE' | 'CLAIMED_IN';
+}
+
+export interface FraudNetworkGraphResponse {
+  nodes: FraudGraphNode[];
+  links: FraudGraphLink[];
+  meta: {
+    syndicate_devices: number;
+    node_count: number;
+    link_count: number;
+    workers_in_graph?: number;
+    zones_in_graph?: number;
+    devices_in_graph?: number;
+    reason?: string;
+    source?: 'live' | 'fallback';
+    city_filter?: string;
+  };
+}
+
+function fallbackFraudNetworkGraph(): FraudNetworkGraphResponse {
+  return {
+    nodes: [],
+    links: [],
+    meta: {
+      syndicate_devices: 0,
+      node_count: 0,
+      link_count: 0,
+      reason: 'preview_mock_fallback',
+      source: 'fallback',
+    },
+  };
+}
+
+export interface SandboxSignalOverrideRequest {
+  hex_id: string;
+  rainfall_mm_per_hr: number;
+  aqi: number;
+  traffic_congestion_percent: number;
+}
+
+export interface SandboxSignalOverrideResponse {
+  hex_id: string;
+  input: SandboxSignalOverrideRequest;
+  normalized: {
+    W: number;
+    A: number;
+    T: number;
+    P: number;
+    S: number;
+  };
+  dci: number | null;
+  dci_status: string;
+  triggered: boolean;
+  open_event_id: string | null;
+}
+
+export interface SandboxBatchOverrideResponse {
+  zones_targeted: number;
+  zones_triggered: number;
+  results: SandboxSignalOverrideResponse[];
 }
 
 export async function fetchFraudMetrics(): Promise<FraudMetrics> {
@@ -318,6 +424,28 @@ export async function fetchFraudWorkers(): Promise<FraudWorker[]> {
 export async function fetchFraudEvents(): Promise<string[]> {
   return getWithFallback('/admin/fraud/events', fallbackFraudEvents);
 }
+
+export async function fetchFraudNetworkGraph(city?: string): Promise<FraudNetworkGraphResponse> {
+  const params = new URLSearchParams();
+  if (city && city !== 'ALL') params.set('city', city);
+  const path = params.toString() ? `/admin/fraud/network-graph?${params.toString()}` : '/admin/fraud/network-graph';
+  return getWithFallback(path, fallbackFraudNetworkGraph);
+}
+
+export async function overrideSandboxSignals(
+  payload: SandboxSignalOverrideRequest
+): Promise<SandboxSignalOverrideResponse> {
+  const { data } = await api.post<SandboxSignalOverrideResponse>('/admin/sandbox/override-signals', payload);
+  return data;
+}
+
+export async function overrideSandboxSignalsBatch(
+  payload: Omit<SandboxSignalOverrideRequest, 'hex_id'>
+): Promise<SandboxBatchOverrideResponse> {
+  const { data } = await api.post<SandboxBatchOverrideResponse>('/admin/sandbox/override-signals/batch', payload);
+  return data;
+}
+
 export async function fetchFraudQueue(): Promise<FraudQueueItem[]> {
   return getWithFallback('/admin/dashboard/fraud-queue', fallbackFraudQueue);
 }

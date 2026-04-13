@@ -35,6 +35,7 @@ Important:
 7. `017_add_performance_indexes.sql`
 8. `018_backfill_claim_scores_and_event_dci_defaults.sql`
 9. `019_drop_redundant_pk_indexes.sql`
+10. `020_add_claim_payment_failure_statuses.sql`
 
 ## Why We Do Not Squash Historical Files
 

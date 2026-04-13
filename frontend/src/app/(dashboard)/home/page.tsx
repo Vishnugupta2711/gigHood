@@ -13,7 +13,7 @@ import {
 import { workerApi, simulateDisruption, processClaim } from '@/lib/worker';
 import { useAuthStore } from '@/store/authStore';
 import { LANGUAGE_OPTIONS, useLanguageStore } from '@/store/languageStore';
-import { t } from '@/lib/i18n';
+import { useTranslation } from 'react-i18next';
 import { checkLocationPermission, requestLocationPermission, submitLocationPing } from '@/lib/location';
 
 interface ClaimReceipt {
@@ -95,6 +95,7 @@ function wait(ms: number): Promise<void> {
 }
 
 export default function DashboardPage() {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const router = useRouter();
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
@@ -330,7 +331,7 @@ export default function DashboardPage() {
         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', minHeight: 'calc(100dvh - 84px)', width: '100%' }}
       >
         <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px' }} />
-        <p className="text-muted" style={{ fontWeight: 500 }}>{t(language, 'initializing')}</p>
+        <p className="text-muted" style={{ fontWeight: 500 }}>{t('initializing')}</p>
       </div>
     );
   }
@@ -342,7 +343,7 @@ export default function DashboardPage() {
         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', minHeight: 'calc(100dvh - 84px)', width: '100%' }}
       >
         <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px' }} />
-        <p className="text-muted" style={{ fontWeight: 500 }}>{t(language, 'redirecting_login')}</p>
+        <p className="text-muted" style={{ fontWeight: 500 }}>{t('redirecting_login')}</p>
       </div>
     );
   }
@@ -354,7 +355,7 @@ export default function DashboardPage() {
         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', minHeight: 'calc(100dvh - 84px)', width: '100%' }}
       >
         <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px' }} />
-        <p className="text-muted" style={{ fontWeight: 500 }}>{t(language, 'loading_dashboard')}</p>
+        <p className="text-muted" style={{ fontWeight: 500 }}>{t('loading_dashboard')}</p>
       </div>
     );
   }
@@ -400,10 +401,10 @@ export default function DashboardPage() {
   const statusBg = !hasDci
     ? 'rgba(148, 163, 184, 0.12)'
     : isNormal ? 'var(--dci-normal-bg)' : (isElevated ? 'var(--dci-elevated-bg)' : 'var(--dci-disrupted-bg)');
-  const statusLabel = !hasDci ? 'NO DATA' : isNormal ? 'NORMAL' : (isElevated ? 'ELEVATED' : 'DISRUPTED');
+  const statusLabel = !hasDci ? t('no_data') : isNormal ? t('normal') : (isElevated ? t('elevated') : t('disrupted'));
   const dciText = !hasDci
-    ? 'DCI telemetry is still syncing for your zone. Risk score will appear after enough live signals are ingested.'
-    : isNormal ? 'Zone operates optimally.' : (isElevated ? 'Your zone is at risk. Stay alert.' : 'Disruption detected. Claim processing available.');
+    ? t('dci_syncing')
+    : isNormal ? t('zone_optimal') : (isElevated ? t('zone_at_risk') : t('disruption_detected'));
 
   const lastUpdated = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   const radius = 60;
@@ -601,8 +602,8 @@ export default function DashboardPage() {
           }}
         >
           <div className="spinner" style={{ width: '42px', height: '42px', borderWidth: '3px' }} />
-          <p style={{ fontSize: '16px', fontWeight: 700, color: 'white' }}>Running 7-Layer Fraud Engine...</p>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Please wait while your claim is securely evaluated.</p>
+          <p style={{ fontSize: '16px', fontWeight: 700, color: 'white' }}>{t('running_fraud_engine')}</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('please_wait_claim_eval')}</p>
         </div>
       )}
       
@@ -611,10 +612,10 @@ export default function DashboardPage() {
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
           <div>
             <h2 style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '-0.5px', marginBottom: '4px' }}>
-              Hey {firstName} 👋
+              {t('hey_name', { name: firstName })}
             </h2>
             <p className="label-micro" style={{ fontSize: '13px' }}>
-              {worker.city} • {t(language, 'zone')}: <span style={{ color: 'var(--text-primary)' }}>{worker.dark_store_zone}</span>
+              {worker.city} • {t('zone')}: <span style={{ color: 'var(--text-primary)' }}>{worker.dark_store_zone}</span>
             </p>
           </div>
           <div style={{ padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border-glass)' }}>
@@ -625,14 +626,18 @@ export default function DashboardPage() {
         <div className="glass-panel" style={{ padding: '10px 14px', marginBottom: '14px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-              {t(language, 'select_language')}
+              {t('select_language')}
             </span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t(language, 'applies_entire_app')}</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('applies_entire_app')}</span>
           </div>
 
           <select
             value={language}
-            onChange={(e) => setLanguage(e.target.value as (typeof LANGUAGE_OPTIONS)[number]['code'])}
+            onChange={(e) => {
+              const newLang = e.target.value as (typeof LANGUAGE_OPTIONS)[number]['code'];
+              setLanguage(newLang);
+              i18n.changeLanguage(newLang);
+            }}
             style={{
               minWidth: '170px',
               padding: '10px 12px',
@@ -658,23 +663,53 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <ShieldCheck size={18} color={statusColor} />
               <span style={{ fontSize: '15px', fontWeight: 600 }}>
-                {dashboard?.active_policy ? `Active Tier ${dashboard.active_policy.tier}` : 'Tier Pending Calculation'}
+                {dashboard?.active_policy ? `${t('active_tier')} ${dashboard.active_policy.tier}` : t('tier_pending')}
               </span>
             </div>
             <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{policyWeek}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>
-              Weekly Premium: <strong style={{ color: 'white' }}>
+              {t('weekly_premium_label')}: <strong style={{ color: 'white' }}>
                 {dashboard?.active_policy ? `₹${dashboard.active_policy.weekly_premium ?? dashboard.active_policy.premium_amount ?? '—'}` : '—'}
               </strong>
             </span>
             <span style={{ color: 'var(--text-secondary)' }}>
-              Cap: <strong style={{ color: 'white' }}>
+              {t('cap_label')}: <strong style={{ color: 'white' }}>
                 {dashboard?.active_policy ? `₹${dashboard.active_policy.coverage_cap_daily}/day` : '—'}
               </strong>
             </span>
           </div>
+
+          <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)' }}>
+            <span>
+              {t('active_delivery_days_30d')}: <strong style={{ color: 'white' }}>
+                {dashboard?.active_policy?.tier_explanation?.active_delivery_days_30d ?? 'N/A'}
+              </strong>
+            </span>
+            <span>
+              {t('underwriting_rule')}: <strong style={{ color: dashboard?.active_policy?.tier_explanation?.activity_downgrade_applied ? '#FCA5A5' : '#86EFAC' }}>
+                {dashboard?.active_policy?.tier_explanation?.activity_downgrade_applied ? t('downgraded') : t('no_downgrade')}
+              </strong>
+            </span>
+          </div>
+
+          {dashboard?.active_policy?.tier_explanation?.activity_downgrade_applied && dashboard?.active_policy?.tier_explanation?.downgrade_reason && (
+            <div
+              style={{
+                marginTop: '10px',
+                padding: '10px 12px',
+                borderRadius: '10px',
+                background: 'rgba(248, 113, 113, 0.12)',
+                border: '1px solid rgba(248, 113, 113, 0.35)',
+                color: '#FECACA',
+                fontSize: '12px',
+                lineHeight: 1.45,
+              }}
+            >
+              {dashboard.active_policy.tier_explanation.downgrade_reason}
+            </div>
+          )}
         </div>
       </section>
 
@@ -683,8 +718,8 @@ export default function DashboardPage() {
         <div style={{ position: 'absolute', top: '-50px', left: '50%', transform: 'translateX(-50%)', width: '200px', height: '200px', background: `${statusColor}20`, filter: 'blur(50px)', borderRadius: '50%', pointerEvents: 'none' }} />
         
         <div className="risk-head">
-          <h3 style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Zone Risk Level</h3>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Updated: {lastUpdated}</span>
+          <h3 style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>{t('zone_risk_level')}</h3>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('updated')}: {lastUpdated}</span>
         </div>
         
         {/* DCI Gauge */}
@@ -720,7 +755,7 @@ export default function DashboardPage() {
             <div style={{ fontSize: '42px', fontWeight: 800, lineHeight: 1, letterSpacing: '-1px', textShadow: `0 4px 20px ${statusColor}60` }} className="tabular-nums">
               {hasDci ? normalizedDci.toFixed(2) : '--'}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.5px' }}>DCI Score / 1.00</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.5px' }}>{t('dci_score')}</div>
             <div className="badge-pill" style={{ display: 'inline-flex', marginTop: '10px', background: statusBg, color: statusColor, borderColor: `${statusColor}40`, textTransform: 'uppercase', letterSpacing: '1px', fontSize: '11px' }}>
               {statusLabel}
             </div>
@@ -735,7 +770,7 @@ export default function DashboardPage() {
       {/* 3. What Is Covered */}
       <section className="stagger-3" style={{ marginTop: '-10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <p className="label-micro" style={{ fontSize: '11px' }}>What Is Covered</p>
+          <p className="label-micro" style={{ fontSize: '11px' }}>{t('what_is_covered')}</p>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
               type="button"
@@ -826,12 +861,12 @@ export default function DashboardPage() {
             {isSimulating ? (
               <>
                 <div className="spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} />
-                Simulating Extreme Weather...
+                {t('simulating_extreme_weather')}
               </>
             ) : (
               <>
                 <CloudLightning size={20} />
-                Simulate Extreme Weather
+                {t('simulate_extreme_weather')}
               </>
             )}
           </button>
@@ -855,12 +890,12 @@ export default function DashboardPage() {
             {isProcessing ? (
               <>
                 <div className="spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} />
-                Processing Claim...
+                {t('processing_claim')}
               </>
             ) : (
               <>
                 <CheckCircle size={20} />
-                Process Claim
+                {t('process_claim')}
               </>
             )}
           </button>
@@ -874,14 +909,14 @@ export default function DashboardPage() {
 
       {/* 6. Earnings Snapshot */}
       <section className="stagger-5">
-        <h3 className="label-micro section-title">Earnings Snapshot</h3>
+        <h3 className="label-micro section-title">{t('earnings_snapshot')}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Declared Avg</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('declared_avg')}</span>
             <span style={{ fontSize: '22px', fontWeight: 700, color: 'white' }}>₹{worker.avg_daily_earnings}</span>
           </div>
           <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Coverage Cap</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('coverage_cap')}</span>
             <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--trust-emerald)' }}>
               {dashboard?.active_policy ? `₹${dashboard.active_policy.coverage_cap_daily}` : '—'}
               {dashboard?.active_policy && <span style={{ fontSize: '13px', fontWeight: 400, color: 'var(--text-muted)' }}>/day</span>}
@@ -892,12 +927,12 @@ export default function DashboardPage() {
 
       {/* 7. Weekly Summary */}
       <section className="stagger-5">
-        <h3 className="label-micro section-title">This Week&apos;s Summary</h3>
+        <h3 className="label-micro section-title">{t('this_week_summary')}</h3>
         <div className="summary-grid">
           <div className="glass-panel" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Wallet size={13} color="#94A3B8" />
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Premium</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('premium')}</span>
             </div>
             <span style={{ fontSize: '16px', fontWeight: 700 }}>₹{dashboard?.weekly_summary.premium_paid ?? '—'}</span>
           </div>
@@ -905,7 +940,7 @@ export default function DashboardPage() {
           <div className="glass-panel" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <AlertCircle size={13} color="#F59E0B" />
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Events</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('events')}</span>
             </div>
             <span style={{ fontSize: '16px', fontWeight: 700 }}>{dashboard?.weekly_summary.disruptions ?? '—'}</span>
           </div>
@@ -913,7 +948,7 @@ export default function DashboardPage() {
           <div className="glass-panel" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <CircleDollarSign size={13} color="#10B981" />
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Paid Out</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('paid_out')}</span>
             </div>
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#10B981' }}>₹{dashboard?.weekly_summary.total_paid_out ?? '—'}</span>
           </div>
@@ -922,14 +957,14 @@ export default function DashboardPage() {
 
       {/* 8. Quick Actions */}
       <section className="stagger-5">
-        <h3 className="label-micro section-title">Quick Actions</h3>
+        <h3 className="label-micro section-title">{t('quick_actions')}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
           <Link href="/worker-app/payouts" style={{ textDecoration: 'none' }}>
             <div className="glass-panel hover-glow" style={{ padding: '16px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', textAlign: 'center', height: '100%' }}>
               <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Wallet size={18} color="#8B5CF6" />
               </div>
-              <span style={{ fontSize: '12px', fontWeight: 500, color: '#E2E8F0', lineHeight: 1.2 }}>View<br/>Payouts</span>
+              <span style={{ fontSize: '12px', fontWeight: 500, color: '#E2E8F0', lineHeight: 1.2 }} dangerouslySetInnerHTML={{ __html: t('view_payouts').replace(' ', '<br/>') }} />
             </div>
           </Link>
 
@@ -938,7 +973,7 @@ export default function DashboardPage() {
               <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <MessageSquare size={18} color="#3B82F6" />
               </div>
-              <span style={{ fontSize: '12px', fontWeight: 500, color: '#E2E8F0', lineHeight: 1.2 }}>Gig<br/>Copilot</span>
+              <span style={{ fontSize: '12px', fontWeight: 500, color: '#E2E8F0', lineHeight: 1.2 }} dangerouslySetInnerHTML={{ __html: t('gig_copilot').replace(' ', '<br/>') }} />
             </div>
           </Link>
 
@@ -947,7 +982,7 @@ export default function DashboardPage() {
               <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <FileText size={18} color="#94A3B8" />
               </div>
-              <span style={{ fontSize: '12px', fontWeight: 500, color: '#E2E8F0', lineHeight: 1.2 }}>Update<br/>Earnings</span>
+              <span style={{ fontSize: '12px', fontWeight: 500, color: '#E2E8F0', lineHeight: 1.2 }} dangerouslySetInnerHTML={{ __html: t('update_earnings').replace(' ', '<br/>') }} />
             </div>
           </Link>
         </div>

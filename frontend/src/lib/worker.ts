@@ -46,10 +46,15 @@ export interface PolicyData {
   expiry?: string;
   tier_explanation?: {
     tier: string;
+    tier_before_activity_adjustment?: string;
+    tier_after_activity_adjustment?: string;
     avg_dci_4w: number;
     avg_dci_band?: string;
     claim_frequency_28d: number;
     claim_frequency_band?: string;
+    active_delivery_days_30d?: number | null;
+    activity_downgrade_applied?: boolean;
+    downgrade_reason?: string | null;
     seasonal_flag: boolean;
     seasonal_text?: string;
     city: string;

@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { workerApi, type Claim } from '../../../lib/worker';
 import api from '../../../lib/api';
 import { useLanguageStore, type AppLanguage } from '../../../store/languageStore';
-import { t } from '../../../lib/i18n';
+import { useTranslation } from 'react-i18next';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
@@ -55,6 +55,7 @@ function TypingIndicator() {
 }
 
 export default function ChatPage() {
+  const { t } = useTranslation();
   const language = useLanguageStore((s) => s.language);
   const [messages, setMessages] = useState<Message[]>([{ role: 'assistant', content: WELCOME_MESSAGES.en }]);
   const [input, setInput] = useState('');
@@ -142,7 +143,7 @@ export default function ChatPage() {
           <h2 style={{ fontSize: '22px', fontWeight: 700, letterSpacing: '-0.5px' }}>Gig Copilot</h2>
           <p style={{ fontSize: '12px', color: 'var(--trust-emerald)', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--trust-emerald)', boxShadow: '0 0 8px var(--trust-emerald)', flexShrink: 0, animation: 'pulseGlow 2s infinite' }} />
-            {t(language, 'ai_assistant_online')}
+            {t('ai_assistant_online')}
           </p>
         </div>
       </header>
@@ -190,7 +191,7 @@ export default function ChatPage() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t(language, 'ask_coverage')}
+            placeholder={t('ask_coverage')}
             className="chat-input"
             disabled={isLoading}
           />

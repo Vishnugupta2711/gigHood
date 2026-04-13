@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { initNotifications } from '@/lib/notifications';
 import { startLocationTracking, requestLocationPermission } from '@/lib/location';
 import { useAuthStore } from '@/store/authStore';
+import { useLanguageStore } from '@/store/languageStore';
+import i18n from '@/i18n';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -19,11 +21,19 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   }));
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const language = useLanguageStore((s) => s.language);
   const pathname = usePathname();
 
   const locationTrackingEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCATION_TRACKING !== 'false';
   const isAuthRoute = pathname?.includes('/login') || pathname?.includes('/register');
   const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('gighood_jwt'));
+
+  // Sync i18next with language store
+  useEffect(() => {
+    if (i18n.language !== language) {
+      i18n.changeLanguage(language);
+    }
+  }, [language]);
 
   // Initialize notifications and location tracking when user is authenticated
   useEffect(() => {

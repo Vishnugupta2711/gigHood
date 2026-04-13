@@ -34,6 +34,39 @@ export interface VerifyOtpResponse {
   worker: WorkerProfile;
 }
 
+const DEVICE_ID_KEY = 'gighood_device_id';
+
+export function getOrCreateDeviceId(): string {
+  if (typeof window === 'undefined') return 'server-device';
+  const existing = localStorage.getItem(DEVICE_ID_KEY);
+  if (existing) return existing;
+
+  const generated =
+    (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  localStorage.setItem(DEVICE_ID_KEY, generated);
+  return generated;
+}
+
+export interface VerifyPinResponse {
+  access_token: string;
+  worker: WorkerProfile;
+  device_bound?: boolean;
+}
+
+export async function verifyPin(phone: string, pin: string): Promise<VerifyPinResponse> {
+  const normalizedPhone = normalizePhone(phone);
+  const deviceId = getOrCreateDeviceId();
+  const res = await api.post('/workers/auth/pin/verify', { phone: normalizedPhone, pin, device_id: deviceId });
+  const worker = res.data.worker || (await getMe());
+  return {
+    access_token: res.data.access_token,
+    worker,
+    device_bound: res.data.device_bound,
+  };
+}
+
 export async function verifyOtp(phone: string, otp: string): Promise<VerifyOtpResponse> {
   const normalizedPhone = normalizePhone(phone);
   const res = await api.post('/workers/auth/otp/verify', { phone: normalizedPhone, otp });

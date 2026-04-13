@@ -41,6 +41,12 @@ class OTPVerify(BaseModel):
     phone: str
     otp: str
 
+
+class PinVerifyRequest(BaseModel):
+    phone: str
+    pin: str = Field(..., min_length=4, max_length=8)
+    device_id: str = Field(..., min_length=8, max_length=128)
+
 class DeviceTokenRequest(BaseModel):
     device_token: str
 
@@ -74,6 +80,10 @@ def find_worker_by_phone(phone: str):
         if fallback.data:
             return fallback.data[0]
     return None
+
+
+DEVICE_BINDINGS: dict[str, str] = {}
+DEMO_PIN = "2468"
 
 
 def hash_dark_store_to_coords(dark_store_name: str) -> tuple[float, float]:
@@ -156,6 +166,43 @@ def verify_otp(req: OTPVerify):
         worker_id = worker_row['id']
         token = create_jwt(worker_id)
         return {"access_token": token, "token_type": "bearer", "worker": worker_row}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/auth/pin/verify")
+def verify_pin(req: PinVerifyRequest):
+    """
+    PIN-first authentication flow for demo resilience.
+    Includes mock device binding: first successful login binds device_id in-memory,
+    subsequent logins must come from the same bound device_id.
+    """
+    if req.pin != DEMO_PIN:
+        raise HTTPException(status_code=400, detail="Invalid PIN")
+
+    try:
+        worker_row = find_worker_by_phone(req.phone)
+        if not worker_row:
+            raise HTTPException(status_code=404, detail="Worker not found against this phone number. Please register.")
+
+        worker_id = worker_row['id']
+        bound_device_id = DEVICE_BINDINGS.get(worker_id)
+
+        if bound_device_id and bound_device_id != req.device_id:
+            raise HTTPException(status_code=403, detail="Device mismatch. Please login from your registered device.")
+
+        if not bound_device_id:
+            DEVICE_BINDINGS[worker_id] = req.device_id
+
+        token = create_jwt(worker_id)
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "worker": worker_row,
+            "device_bound": True,
+        }
     except HTTPException:
         raise
     except Exception as e:

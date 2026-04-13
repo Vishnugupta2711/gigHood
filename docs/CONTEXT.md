@@ -1,279 +1,264 @@
-# CONTEXT.md - gigHood System Context
+# CONTEXT.md - gigHood Full System Memory
 
-## 1. What gigHood Is
+This file is the high-fidelity operating context for contributors and coding agents.
 
-gigHood is a parametric insurance platform designed for gig workers (delivery and mobility cohorts).
-Instead of manual claim narratives, the system estimates disruption intensity by zone and time,
-then applies policy and trust checks to route claims toward payout, queue, verification, or denial.
+## 1) Product Purpose
 
-Core intent:
+`gigHood` is an AI-assisted parametric income protection platform for gig workers.
 
-1. protect worker income during disruption windows
-2. settle valid claims quickly
-3. maintain auditable fraud and trust controls
+Design objective:
 
-## 2. High-Level Architecture
+1. detect local earning disruption via DCI
+2. trigger reliable claim routing with fraud guardrails
+3. execute payouts quickly
+4. preserve auditability and operational resilience
+
+## 2) End-to-End System Topology
 
 ### Backend (FastAPI)
 
-1. Entry: `backend/main.py`
-2. Routers:
-   - `workers`
-   - `demo`
-   - `policies`
-   - `claims`
-   - `location_pings`
-   - `notifications`
-   - `chat`
-   - `admin`
-3. Services: disruption, claim, payout, fraud, chat support logic in `backend/services/`
-4. Scheduler: periodic/background operations in `backend/scheduler/jobs.py`
+Code roots:
+
+1. app entry: `backend/main.py`
+2. router layer: `backend/api/*.py`
+3. domain services: `backend/services/*.py`
+4. scheduler jobs: `backend/scheduler/*.py`
+5. data access and retries: `backend/db/*.py`
+6. schemas: `backend/models/schemas.py`
+
+Mounted router prefixes:
+
+1. `/workers`
+2. `/policies`
+3. `/claims`
+4. `/location-pings`
+5. `/notifications`
+6. `/chat`
+7. `/admin`
 
 ### Frontend (Next.js App Router)
 
-The frontend contains three distinct surfaces:
+Code roots:
 
-1. public site
-   - marketing and informational pages
-2. worker app
-   - mobile-first phone shell
-   - dark theme
-   - key routes: login/register/home/chat/payouts/profile
-3. admin dashboard
-   - analytics and operational controls
-   - light theme
+1. app entry/layout: `frontend/src/app/`
+2. shared route wrapper: `frontend/src/components/AppRouteShell.tsx`
+3. API base resolver: `frontend/src/lib/api.ts`
+4. admin data client: `frontend/src/lib/admin/adminClient.ts`
 
-Theme/shell separation is route-scoped using `frontend/src/components/AppRouteShell.tsx`.
-Worker routes are wrapped in `.worker-theme` and `.app-shell`.
-Admin/public routes render outside that shell.
+Surfaces:
 
-### Data Layer (Supabase/Postgres)
+1. public website: `/`
+2. worker app: `/worker-app/*` (dark, phone shell)
+3. admin dashboard: `/admin-dashboard/*` (light, desktop)
 
-1. Migration source of truth: `supabase/migrations/`
-2. Core entities:
-   - workers
-   - hex_zones
-   - policies
-   - disruption_events
-   - claims
-   - fraud_flags
-   - premium_payments
-3. Spatial and zone operations use PostGIS-enabled schema.
+### Database (Supabase + PostGIS)
 
-## 3. Primary Runtime Flows
+Migration roots:
 
-### A. Worker Onboarding and Policy
+1. ordered SQL files: `supabase/migrations/`
+2. migration policy/index: `supabase/MIGRATIONS.md`
 
-1. OTP send/verify
-2. worker registration/profile
-3. policy retrieval/creation
+Core entities:
 
-### B. DCI and Disruption Loop
+1. `workers`
+2. `hex_zones`
+3. `policies`
+4. `signal_cache`
+5. `dci_history`
+6. `location_pings`
+7. `disruption_events`
+8. `claims`
+9. `fraud_flags`
+10. `premium_payments`
 
-1. ingest telemetry/signals
-2. compute zone DCI
-3. update hex status and history
-4. expose worker-facing DCI snapshot
+## 3) Core Runtime Flows
 
-### C. Claims and Payouts
+### A. Worker lifecycle
 
-1. identify disrupted worker-event eligibility
-2. evaluate proof-of-presence and fraud indicators
-3. assign resolution path (`fast_track`, `soft_queue`, `active_verify`, `denied`)
-4. execute payout or queue for further review
-5. reconcile via payout webhook
+1. OTP send -> OTP verify
+2. profile completion + city/platform metadata
+3. policy creation/activation
 
-### D. Worker Support Chat
+### B. DCI lifecycle
 
-1. uses worker context + language preference
-2. supports multiple Indian languages with safe fallback
+1. signal ingestion (`weather`, `aqi`, `traffic`, `platform`, `social`)
+2. zone-level DCI compute
+3. zone status + history update
+4. worker dashboard consumption
 
-### E. Admin Analytics
+### C. Claim lifecycle
 
-Admin routes aggregate from claims, workers, fraud flags, policies, and zones.
-Representative outputs include:
+1. disruption event opens
+2. pending claims created for exposed policyholders
+3. PoP and fraud evaluation
+4. route assignment: `fast_track`, `soft_queue`, `active_verify`, `denied`
+5. payout execution for eligible routes
+6. webhook/reconciliation updates
 
-1. KPI totals (active policies, premium, claims paid)
+### D. Fraud and trust lifecycle
+
+1. fraud score + flags attached to claims
+2. route-specific actions and escalation
+3. trust score updated from outcomes
+4. admin fraud analytics and queue views
+
+### E. Admin analytics lifecycle
+
+1. KPIs from policy/premium/claim aggregates
 2. payout trends and summaries
 3. policy tier distribution
-4. fraud metrics, events, and queue
+4. fraud queue with DCI + path + score context
+5. fraud relationship monitor backed by Neo4j network graph (`/admin/fraud/network-graph`)
 
-## 4. Environment and Deployment Model
+## 4) Environment and Deployment Context
 
-### Production
+### Production topology
 
-1. frontend deployed on Vercel
-2. backend deployed on Render
-3. production frontend points to `NEXT_PUBLIC_API_URL`
+1. frontend: Vercel
+2. backend: Render
+3. production API variable: `NEXT_PUBLIC_API_URL`
 
-### Preview / Branch Validation
+### Preview topology
 
-1. preview frontend builds (Vercel) can use `NEXT_PUBLIC_API_URL_PREVIEW`
-2. `NEXT_PUBLIC_API_URL` remains the production/default API variable
-3. runtime resolver prefers preview variable for preview deployments and falls back safely to production variable
-4. backend Render deploys should run on Python 3.11.9 (root `.python-version`) for dependency compatibility in this repo
+1. preview API variable: `NEXT_PUBLIC_API_URL_PREVIEW`
+2. fallback to `NEXT_PUBLIC_API_URL` when preview variable missing
+3. admin fallback data used only in preview runtime + 404 for missing admin routes
 
-Why `.python-version` exists in this branch:
+### Python runtime pinning
 
-1. Render/Nixpacks can auto-select a newer Python runtime when no explicit version file exists.
-2. This branch hit Python 3.14 build failures while installing `pydantic-core` from source.
-3. Pinning `3.11.9` keeps dependency resolution stable and avoids `maturin/cargo` build failures.
-4. During merge to production branch, include `.python-version` in the merge set to avoid runtime drift.
+Root `.python-version` is authoritative and currently set to `3.11.9`.
 
-Runtime selection is implemented in `frontend/src/lib/api.ts`:
+Reason:
 
-1. localhost -> local backend
-2. preview deployment -> `NEXT_PUBLIC_API_URL_PREVIEW` (fallback to `NEXT_PUBLIC_API_URL`)
-3. production/other -> `NEXT_PUBLIC_API_URL`
-4. fallback default -> `https://gighood-backend-live.onrender.com`
+1. no explicit pin can allow Render/Nixpacks to auto-select newer Python,
+2. Python 3.14 caused `pydantic-core` source-build failures in prior deploys,
+3. 3.11.9 keeps dependency builds stable.
 
-## 4.1 Frontend Environment Matrix
+Operational rule:
 
-Use this matrix before merge:
+1. do not remove `.python-version` unless Render service runtime is explicitly pinned and validated,
+2. keep this file included in merge/release commits.
 
-1. Local development
-   - file: `frontend/.env.local`
-   - key: `NEXT_PUBLIC_API_URL`
-   - typical value: `http://127.0.0.1:8001`
-2. Vercel Preview
-   - environment scope: `Preview`
-   - key: `NEXT_PUBLIC_API_URL_PREVIEW` (recommended)
-   - value: admin/staging backend URL
-   - fallback key: `NEXT_PUBLIC_API_URL`
-3. Vercel Production
-   - environment scope: `Production`
-   - key: `NEXT_PUBLIC_API_URL`
-   - value: production backend URL
+## 5) Recent Reliability Hardening (Merged)
 
-Important:
+### Fraud queue data quality
 
-1. If both variables are set globally without environment scope, production can be routed incorrectly; keep values separated by Vercel env scope.
-2. If preview frontend points at a missing Render URL, users see the network error raised by `frontend/src/lib/api.ts`.
-3. Admin data fallback in `frontend/src/lib/admin/adminClient.ts` is intentionally limited to preview runtime + HTTP 404.
+1. admin queue now derives `dci_score` by priority:
+   - `disruption_events.dci_peak`
+   - weighted sigmoid from event `trigger_signals` (`0.45W + 0.25T + 0.20P + 0.10S`)
+   - zone fallback `hex_zones.current_dci`
+2. queue now derives render-safe non-null fraud score values.
 
-## 5. Known Branch-Specific Context
+### Claim defaults and backfill
 
-This branch includes admin router mounting in backend and preview safety in frontend.
-Historically, admin preview frontends can show 404 if pointed to a backend that does not mount `/admin/*`.
+1. `claims.fraud_score` default set to `30`
+2. `claims.fraud_score` backfilled and `NOT NULL`
+3. pending null paths normalized to `soft_queue`
+4. denied null paths normalized to `denied`
+5. event `dci_peak` backfilled where missing
 
-Recent deployment failure root cause (Render admin backend):
+### Neo4j fraud graph integration
 
-1. build used Python 3.14 (`cp314` wheels)
-2. `pydantic-core==2.27.2` fell back to source build via `maturin/cargo`
-3. metadata generation failed during cargo registry/cache operations
-4. deploy ended with `metadata-generation-failed` and `Build failed`
+1. claims ingestion now writes claim graph triplets to Neo4j:
+   - `(:Worker)-[:USES_DEVICE]->(:Device)`
+   - `(:Worker)-[:CLAIMED_IN]->(:Hex_Zone)`
+2. device fingerprint is derived from worker device attributes (`device_model`, `sim_carrier`, `sim_registration_date`, `platform_id`).
+3. admin endpoint `GET /admin/fraud/network-graph` returns graph JSON (`nodes`, `links`, `meta`).
+4. fraud monitor UI now consumes this endpoint and renders live network links when present.
+5. when no network links exist yet, the UI shows an explicit empty-state message.
+6. graph node risk filters (`CRITICAL/HIGH/MEDIUM/LOW`) are now computed from live backend node fields (`risk_level`, `fraud_score`) rather than frontend type defaults.
 
-Mitigation in this branch:
+Migration references:
 
-1. keep root `.python-version` set to `3.11.9`
-2. retain existing backend dependency set without forcing pydantic-core source compile path
+1. `018_backfill_claim_scores_and_event_dci_defaults.sql`
+2. `019_drop_redundant_pk_indexes.sql`
 
-To keep preview UX usable during missing admin routes,
-`frontend/src/lib/admin/adminClient.ts` includes controlled fallback datasets for:
+### Frontend session routing
 
-1. KPI cards
-2. zone/risk forecast
-3. payout trends/summary/recent
-4. policy stats/tiers
-5. fraud metrics/signals/workers/events/queue
+1. admin sign-out redirects to `/`
+2. worker sign-out redirects to `/`
+3. unauthenticated worker route guard redirects to `/`
 
-Fallback activates only for preview runtime status 404.
+### UX/loading improvements
 
-## 5.2 Queue and Score Guarantees
+1. route-level loading boundaries added for worker and admin app shells
+2. nav prefetching added for smoother tab/page switching
 
-Recent hardening added these guarantees:
+## 6) Theming and Shell Contract
 
-1. `claims.fraud_score` is non-null (default `30`).
-2. New pending claims are created with provisional `resolution_path=soft_queue` and `fraud_score=30`.
-3. Admin queue `dci_score` resolves from event `dci_peak`, then weighted-sigmoid signal compute, then zone fallback.
-4. Claim approver recovery path writes fallback values if processing throws.
+Worker contract:
 
-## 5.1 Release-Candidate Production Notes
-
-Before merge of `admin` into `main`, verify:
-
-1. `/admin/*` endpoints required by the dashboard are available on the target backend.
-2. Preview dashboard fallback data is only a resilience layer, not a substitute for backend readiness.
-3. API URL values in Vercel match intended environment/backend pairs.
-
-## 6. Worker Theme and Layout Contract
-
-Worker UX contract:
-
-1. dark visual language
-2. constrained phone-style viewport (max width shell)
-3. sticky bottom navigation behavior
-4. compatibility for `/worker-app/*` and legacy aliases
+1. dark visual system
+2. phone-shell width/spacing
+3. bottom-nav behavior preserved
 
 Admin/public contract:
 
-1. light visual language
-2. full-width desktop-friendly layout
-3. no worker shell wrapping
+1. light visual system
+2. desktop/full-width layout
+3. no worker shell leakage
 
-This prevents style leakage across surfaces and preserves expected role-based UX.
+## 7) Documentation Sync Contract
 
-## 6.1 UI Regression Focus Areas Before Merge
+When behavior changes, update in the same branch/commit set:
 
-1. worker routes (`/worker-app/*`, and legacy aliases) remain dark and phone-shell constrained.
-2. admin routes remain light and desktop-width.
-3. route transitions do not leak shell or theme classes between surfaces.
-4. sign-out from admin and worker app returns to `/` (main website).
-5. unauthenticated worker dashboard access redirects to `/`.
+1. `README.md`
+2. `docs/API.md`
+3. `docs/DATABASE.md`
+4. `docs/CONTEXT.md`
+5. `docs/SOLUTION.md` (if architecture narrative changes)
 
-## 7. Operational Guardrails for Future Work
+Source-of-truth order:
 
-1. if routes change, update `API.md` in same branch
-2. if schema changes, add migration first and update `DATABASE.md`
-3. if deployment behavior changes, update `README.md` and this file
-4. keep `AGENTS.md` synchronized with workflow rules used by contributors and coding agents
-5. avoid production config changes when task scope is preview/staging-only
+1. running code
+2. applied migrations
+3. docs
 
-## 7.1 Git and Deploy Guardrails for Merge
+## 8) Operational Guardrails
 
-1. merge changes from `admin` to `main` only after successful frontend build and backend tests.
-2. confirm Render backend service for target branch is live before frontend release promotion.
-3. avoid changing both frontend and backend env URLs during incident response unless rollback plan is prepared.
-4. tag or annotate release commits with deployment intent when possible.
+1. migration history is immutable; use forward migrations for fixes/cleanup
+2. never bypass migrations with undocumented DDL
+3. do not hardcode environment URLs
+4. avoid production infrastructure changes without explicit user approval
+5. stop and confirm when unrelated unexpected repo changes are detected
+6. Neo4j connectivity must be configured via env only (`NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, optional `NEO4J_DATABASE`)
 
-## 8. Suggested Quick Verification Matrix
+## 9) Ready-to-Run Checklist (Main Branch)
 
-1. backend health: `GET /`
-2. worker auth: otp send/verify/register
-3. worker home: DCI read and simulation flow
-4. admin dashboard: kpis/zones/risk/payout/fraud endpoints
-5. frontend split:
-   - worker routes render dark phone shell
-   - admin routes remain light/full-width
-6. preview environment:
-   - verify API base selection under preview host
+Backend:
 
-## 8.1 Push-Readiness Checklist (Admin Branch)
+1. `python --version` inside repo venv is 3.11.x
+2. `pip install -r backend/requirements.txt` succeeds
+3. `uvicorn backend.main:app --reload --host 0.0.0.0 --port 8001` starts
 
-1. `git status` clean except intentional docs/code updates.
-2. `frontend/src/lib/api.ts` uses preview-aware dual-key strategy (`NEXT_PUBLIC_API_URL_PREVIEW` + `NEXT_PUBLIC_API_URL`).
-3. docs updated to reflect runtime/env strategy and queue guarantees (`README.md`, `docs/API.md`, `docs/DATABASE.md`, `docs/CONTEXT.md`).
-4. `npm run build` succeeds in `frontend/`.
-5. backend tests succeed (`pytest`).
-6. Render latest admin backend deploy is `live`.
-7. Vercel preview environment has correct `NEXT_PUBLIC_API_URL` value.
-8. root `.python-version` is present and set to `3.11.9`.
+Frontend:
 
-## 8.2 Recommended Cutover Sequence
+1. `cd frontend && npm ci` succeeds
+2. `npm run lint` has no errors
+3. `npm run build` succeeds
+4. `npm run dev` boots at `http://localhost:3000`
 
-1. Freeze non-release changes on `admin`.
-2. Validate checklist in section 8.1.
-3. Merge `admin` -> `main`.
-4. Verify backend health (`GET /`) and key admin/worker endpoints.
-5. Verify production frontend smoke paths:
-   - worker login/home
-   - admin dashboard landing
-6. Keep rollback reference commit/hash ready.
+Integration smoke:
 
-## 9. Source-of-Truth Ordering
+1. root health endpoint responds
+2. worker and admin routes load with correct shells
+3. admin queue renders DCI/fraud/path for recent claims
 
-When documentation conflicts with behavior:
+## 10) Memory Practice
 
-1. running code is authoritative for current branch behavior
-2. migrations are authoritative for schema shape
-3. docs must be corrected immediately to match both
+1. durable project memory belongs in this file and `/memories/repo/`
+2. every incident fix should record:
+   - root cause
+   - corrective change
+   - prevention rule
+
+## 11) Neo4j Troubleshooting Runbook
+
+1. If fraud graph panel is empty, first verify claim ingestion has run for recent claims.
+2. Validate Neo4j schema presence in query page:
+   - `CALL db.labels() YIELD label RETURN label ORDER BY label;`
+   - `CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType ORDER BY relationshipType;`
+3. If labels/relationships are missing, run claim processing once and retry.
+4. If backend logs show unknown label/property warnings, ensure backend is running latest code with pre-check guard in `backend/services/neo4j_graph.py`.
+5. Confirm env settings are loaded correctly:
+   - `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, and optional `NEO4J_DATABASE`.

@@ -5,6 +5,8 @@ from backend.db.client import supabase
 from backend.db.supabase_retry import execute_with_retry
 from backend.config import settings
 
+_DEGRADED_HEX_ACTIVE: set[str] = set()
+
 def sigmoid(x: float) -> float:
     """Standard sigmoid function mapping any real number into the (0, 1) bounds."""
     # Prevent math overflow for extreme negative values
@@ -73,6 +75,35 @@ def run_dci_cycle(hex_ids: list[str]) -> dict:
                 "dci": None,
                 "status": "degraded (insufficient signals)"
             }
+
+            if hex_id not in _DEGRADED_HEX_ACTIVE:
+                _DEGRADED_HEX_ACTIVE.add(hex_id)
+                try:
+                    from backend.services.notification_service import notification_service
+
+                    workers_res = None
+                    try:
+                        workers_res = execute_with_retry(
+                            lambda: supabase.table('workers').select('id,device_token').eq('hex_id', hex_id).eq('status', 'active').execute(),
+                            op_name=f"dci_cycle:degraded_workers_hex_id:{hex_id}",
+                        )
+                    except Exception:
+                        workers_res = execute_with_retry(
+                            lambda: supabase.table('workers').select('id,device_token').eq('home_hex', hex_id).eq('status', 'active').execute(),
+                            op_name=f"dci_cycle:degraded_workers_home_hex:{hex_id}",
+                        )
+
+                    for worker in (workers_res.data or []):
+                        token = worker.get('device_token')
+                        if token:
+                            notification_service.notify_degraded_mode(token)
+
+                    notification_service.log_admin_alert(
+                        f"Zone {hex_id} entered degraded monitoring mode."
+                    )
+                except Exception:
+                    pass
+
             # Set to normal/none in DB, but log degradation safely
             try:
                 execute_with_retry(
@@ -96,6 +127,9 @@ def run_dci_cycle(hex_ids: list[str]) -> dict:
                 except Exception:
                     pass
             continue
+
+        if hex_id in _DEGRADED_HEX_ACTIVE:
+            _DEGRADED_HEX_ACTIVE.discard(hex_id)
             
         # Defaults for missing signals safely mapped to 0 if required (since >=3 exist, max 2 are 0)
         w = hex_sigs.get("WEATHER", 0.0)

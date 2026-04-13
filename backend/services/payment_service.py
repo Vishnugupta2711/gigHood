@@ -1,9 +1,9 @@
 import hmac
 import hashlib
-import razorpay
 import uuid
 import logging
 import os
+import warnings
 
 logger = logging.getLogger("api")
 
@@ -14,6 +14,13 @@ def _get_razorpay_client():
     if not key_id or not key_secret:
         return None
     try:
+        warnings.filterwarnings(
+            "ignore",
+            message=r"pkg_resources is deprecated as an API.*",
+            category=UserWarning,
+        )
+        import razorpay
+
         return razorpay.Client(auth=(key_id, key_secret))
     except Exception as e:
         logger.warning(f"Razorpay client initialization failed: {e}")

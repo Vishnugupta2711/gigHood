@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     RISK_PROFILER_MODEL_PKL_PATH: str = "backend/ml/risk_profiler.pkl"
     RISK_PROFILER_DATASET_PATH: str = "dataset/synthetic_training_data.csv"
     AUTO_TRAIN_RISK_MODEL_ON_STARTUP: bool = True
+    RISK_MODEL_VERSION: str = "v1.0.0"
     
     # Missing App Configurations
     APP_VERSION: str = "1.0.0"
@@ -57,6 +58,7 @@ class Settings(BaseSettings):
     CPCB_BASE_URL: str = "https://api.data.gov.in/resource"
     CPCB_TIMEOUT_SECONDS: int = 5
     GOV_ALERT_FEED_TIMEOUT_SECONDS: int = 5
+    ENABLE_AB_TESTING: bool = False
     GOV_ALERT_FEED_URL: str = ""
     OPENWEATHER_BASE_URL: str = "https://api.openweathermap.org/data/2.5/weather"
     OPENWEATHER_TIMEOUT_SECONDS: int = 5
@@ -64,6 +66,7 @@ class Settings(BaseSettings):
     USE_MOCK_PLATFORM_API: bool = True
     USE_MOCK_SOCIAL_API: bool = True
     USE_MOCK_TRAFFIC_API: bool = True
+    H3_RESOLUTION: int = 9
 
     DCI_THRESHOLD_DISRUPTED: float = 0.7
     DCI_THRESHOLD_ELEVATED_WATCH: float = 0.5

@@ -12,7 +12,7 @@ xgboost==1.7.6
 scikit-learn==1.5.2
 numpy
 pandas
-h3==3.7.7
+h3>=4.0.1
 shapely==2.0.6
 supabase==2.11.0
 asyncpg==0.30.0

@@ -336,7 +336,7 @@ def get_kpis():
 @router.get("/dashboard/zones")
 def get_zones():
     try:
-        res = supabase.table('hex_zones').select('*').gt('current_dci', 0).execute()
+        res = supabase.table('hex_zones').select('*').gte('current_dci', 0).execute()
         zones = []
         for z in res.data:
             zones.append({

@@ -12,11 +12,9 @@ import {
 } from '@/lib/admin/adminClient'
 import { Home, ChevronRight, AlertTriangle, TrendingUp } from 'lucide-react'
 
-const DeckGL = dynamic(() => import('@deck.gl/react').then((m) => m.default), {
-  ssr: false,
-})
+import { Map as MapLibre } from 'react-map-gl/maplibre'
 
-const MapLibre = dynamic(() => import('react-map-gl/maplibre').then((m) => m.Map), {
+const DeckGL = dynamic(() => import('@deck.gl/react').then((m) => m.default), {
   ssr: false,
 })
 
@@ -28,6 +26,7 @@ type MapViewState = {
   zoom: number
   pitch: number
   bearing: number
+  transitionDuration?: number
 }
 
 const INITIAL_VIEW_STATE = {
@@ -37,8 +36,6 @@ const INITIAL_VIEW_STATE = {
   pitch:     40,
   bearing:   0,
 }
-
-const TIMEFRAMES = ['Real-time', '1h', '4h'] as const
 
 /* ── DCI helpers ── */
 function dciColor(dci: number, alpha = 200): [number, number, number, number] {
@@ -87,9 +84,8 @@ const statCard: React.CSSProperties = {
 }
 
 export default function MapPage() {
-  const [selectedCity,   setSelectedCity]   = useState('ALL')
+  const [selectedCity,   setSelectedCity]   = useState('Bengaluru')
   const [alertZone,      setAlertZone]      = useState<HexZone | null>(null)
-  const [timeframe,      setTimeframe]      = useState('Real-time')
   const [hasMounted,     setHasMounted]     = useState(false)
   const [webglSupported, setWebglSupported] = useState(true)
   const [deckReady,      setDeckReady]      = useState(false)
@@ -121,25 +117,18 @@ export default function MapPage() {
       const city = (z.city || '').trim()
       if (city) set.add(city)
     })
-    return ['ALL', ...Array.from(set).sort()]
+    return Array.from(set).sort()
   }, [zones])
 
-  const filteredZones = useMemo(() => {
-    if (selectedCity === 'ALL') return zones
-    return zones.filter((z) => (z.city || '').trim() === selectedCity)
-  }, [zones, selectedCity])
-
   const validZones = useMemo(() => {
-    const valid = filteredZones.filter((z) => Boolean(z.h3_index) && isValidCell(String(z.h3_index)))
-    if (filteredZones.length > 0 && valid.length === 0) {
-      console.error('No valid H3 cells found for current filter.', { selectedCity, sample: filteredZones[0] })
-    }
-    return valid
-  }, [filteredZones, selectedCity])
+    return zones.filter((z) => Boolean(z.h3_index) && isValidCell(String(z.h3_index)))
+  }, [zones])
 
   useEffect(() => {
-    if (validZones.length === 0) return
-    const sample = validZones.slice(0, 300)
+    if (zones.length === 0) return
+    const cityZones = zones.filter((z) => (z.city || '').trim() === selectedCity && Boolean(z.h3_index) && isValidCell(String(z.h3_index)))
+    if (cityZones.length === 0) return
+    const sample = cityZones.slice(0, 300)
     const coords = sample.map((z) => cellToLatLng(String(z.h3_index)))
     if (coords.length === 0) return
 
@@ -150,22 +139,16 @@ export default function MapPage() {
       ...prev,
       latitude: lat,
       longitude: lng,
-      zoom: selectedCity === 'ALL' ? 9.8 : 11.2,
+      zoom: 11.2,
+      transitionDuration: 1500,
     }))
-  }, [validZones, selectedCity])
+  }, [selectedCity, zones.length])
 
   useEffect(() => {
     setHasMounted(true)
     const canvas = document.createElement('canvas')
     setWebglSupported(Boolean(canvas.getContext('webgl2')))
   }, [])
-
-  useEffect(() => {
-    if (validZones.length > 0) {
-      const highest = [...validZones].sort((a, b) => (b.dci_score ?? 0) - (a.dci_score ?? 0))[0]
-      if (highest) setAlertZone(highest)
-    }
-  }, [validZones])
 
   useEffect(() => {
     let cancelled = false
@@ -306,17 +289,14 @@ export default function MapPage() {
         </div>
       )}
 
-      {!zonesError && filteredZones.length > 0 && validZones.length === 0 && (
+      {!zonesError && zones.length > 0 && validZones.length === 0 && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-700">
-          Live zones loaded but none had valid H3 indexes for the selected filter.
+          Live zones loaded but none had valid H3 indexes.
         </div>
       )}
 
       {/* ── Map canvas ── */}
-      <div className="relative rounded-2xl overflow-hidden" style={{ height: 560, boxShadow: '0 4px 40px rgba(0,0,0,0.25)' }}>
-
-        {/* Dark tint overlay */}
-        <div className="absolute inset-0 bg-[#0A0805]/55 mix-blend-multiply z-[150] pointer-events-none" />
+      <div className="relative rounded-2xl overflow-hidden bg-stone-900" style={{ height: 560, boxShadow: '0 4px 40px rgba(0,0,0,0.25)' }}>
 
         {/* ── TOP-LEFT: Map config ── */}
         <div className="absolute top-4 left-4 z-[400] w-52" style={glassCard}>
@@ -328,30 +308,11 @@ export default function MapPage() {
               <p className="text-[10px] text-stone-500 mb-1">Resolution</p>
               <div className="bg-white/10 px-3 py-1.5 rounded-lg text-xs text-stone-300">H3 Resolution 8</div>
             </div>
-            <div>
-              <p className="text-[10px] text-stone-500 mb-1">Timeframe</p>
-              <div className="flex gap-1">
-                {TIMEFRAMES.map(tf => (
-                  <button
-                    key={tf}
-                    onClick={() => setTimeframe(tf)}
-                    className="flex-1 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
-                    style={{
-                      background: timeframe === tf ? '#f97316' : 'rgba(255,255,255,0.07)',
-                      color:      timeframe === tf ? '#fff'    : '#94a3b8',
-                      boxShadow:  timeframe === tf ? '0 0 12px rgba(249,115,22,0.4)' : 'none',
-                    }}
-                  >
-                    {tf}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
 
         {/* ── LEFT-MID: DCI stats ── */}
-        <div className="absolute top-[180px] left-4 z-[400] w-52" style={glassCard}>
+        <div className="absolute top-[110px] left-4 z-[400] w-52" style={glassCard}>
           <div className="px-4 pt-3 pb-1">
             <p className="text-[9px] font-black text-orange-400 uppercase tracking-[0.2em]">DCI Heatmap</p>
           </div>
@@ -384,29 +345,8 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* ── TOP-RIGHT: Disruption forecast ── */}
+        {/* ── TOP-RIGHT: Zone performance ── */}
         <div className="absolute top-4 right-4 z-[400] w-56" style={glassCard}>
-          <div className="px-4 pt-3 pb-1">
-            <p className="text-[9px] font-black text-orange-400 uppercase tracking-[0.2em]">Disruption Forecast</p>
-          </div>
-          <div className="px-4 pb-3 space-y-2">
-            <div
-              className="p-2.5 rounded-xl text-xs text-stone-300"
-              style={{ background: 'rgba(239,68,68,0.12)', borderLeft: '2px solid #ef4444' }}
-            >
-              Indiranagar spike predicted (+14%)
-            </div>
-            <div
-              className="p-2.5 rounded-xl text-xs text-stone-300"
-              style={{ background: 'rgba(34,197,94,0.10)', borderLeft: '2px solid #22c55e' }}
-            >
-              Stability recovery in Koramangala
-            </div>
-          </div>
-        </div>
-
-        {/* ── RIGHT-MID: Zone performance ── */}
-        <div className="absolute top-[200px] right-4 z-[400] w-56" style={glassCard}>
           <div className="px-4 pt-3 pb-1">
             <p className="text-[9px] font-black text-orange-400 uppercase tracking-[0.2em]">Zone Performance</p>
           </div>
@@ -434,11 +374,12 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* ── Center critical alert ── */}
+        {/* ── Critical alert popover ── */}
         {alertZone && (
           <div
-            className="absolute z-[450]"
-            style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+            className="absolute z-[450] cursor-pointer bottom-4 right-4"
+            onClick={() => setAlertZone(null)}
+            title="Click to dismiss"
           >
             <div style={{ ...glassCard, padding: '20px 24px', borderColor: 'rgba(239,68,68,0.4)' }}>
               <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Critical Alert</p>
@@ -470,21 +411,26 @@ export default function MapPage() {
 
         {/* ── Map render ── */}
         {deckReady && layer ? (
-          <DeckGL
-            viewState={viewState}
-            onViewStateChange={(params: { viewState: MapViewState }) => setViewState(params.viewState)}
-            controller={{
-              scrollZoom: false, dragPan: true, dragRotate: false,
-              doubleClickZoom: false, touchZoom: true, touchRotate: false,
-            }}
-            layers={[layer]}
-            onError={(error: unknown) => {
-              console.error('DeckGL runtime error:', error)
-              setDeckError('Map rendering failed while initializing GPU resources.')
-            }}
-          >
-            <MapLibre mapStyle="https://demotiles.maplibre.org/style.json" />
-          </DeckGL>
+          <div className="absolute inset-0 z-0 bg-stone-900">
+            <DeckGL
+              style={{ width: '100%', height: '100%' }}
+              viewState={viewState}
+              onViewStateChange={(params: { viewState: MapViewState }) => setViewState(params.viewState)}
+              controller={{
+                scrollZoom: true, dragPan: true, dragRotate: true,
+                doubleClickZoom: true, touchZoom: true, touchRotate: true,
+              }}
+              layers={[layer]}
+              onError={(error: unknown) => {
+                console.error('DeckGL runtime error:', error)
+                setDeckError('Map rendering failed while initializing GPU resources.')
+              }}
+            >
+              <MapLibre
+                mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+              />
+            </DeckGL>
+          </div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="space-y-3 text-center">
@@ -565,7 +511,7 @@ export default function MapPage() {
                 </tr>
               </thead>
               <tbody>
-                {zoneStats.sortedTop6.map((zone, i) => {
+                {zoneStats.sortedTop6.map((zone) => {
                   const hex = dciHex(zone.dci_score ?? 0)
                   const lbl = dciLabel(zone.dci_score ?? 0)
                   return (

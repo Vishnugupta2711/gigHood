@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import i18n from '@/i18n';
 
 export type AppLanguage = 'en' | 'hi' | 'ta' | 'te' | 'kn' | 'mr' | 'bn' | 'as';
 
@@ -37,17 +38,26 @@ export const useLanguageStore = create<LanguageState>()(
       hasManualChoice: false,
       isHydrated: false,
 
-      setHydrated: (value) => set({ isHydrated: value }),
+      setHydrated: (value) => {
+        set({ isHydrated: value });
+        // Re-sync i18n when hydrating
+        if (get().language) {
+          i18n.changeLanguage(get().language);
+        }
+      },
 
       setLanguage: (language) => {
         set({ language, hasManualChoice: true });
+        i18n.changeLanguage(language);
       },
 
       inferLanguageFromCity: (city) => {
         if (get().hasManualChoice) {
           return;
         }
-        set({ language: mapCityToLanguage(city) });
+        const newLang = mapCityToLanguage(city);
+        set({ language: newLang });
+        i18n.changeLanguage(newLang);
       },
     }),
     {

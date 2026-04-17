@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Map, { Marker, Source, Layer, MapRef } from "react-map-gl/maplibre";
 import type { LayerProps } from "react-map-gl/maplibre";
 import type { FeatureCollection, Polygon } from "geojson";
@@ -64,6 +64,24 @@ export default function SafetyRadar({
   userCoords?: { latitude: number; longitude: number } | null;
 }) {
   const mapRef = useRef<MapRef>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [mapEnabled, setMapEnabled] = useState(true);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const onWindowError = (event: ErrorEvent) => {
+      const message = event?.message || "";
+      if (message.includes("container") && message.includes("String or HTMLElement")) {
+        setMapEnabled(false);
+      }
+    };
+
+    window.addEventListener("error", onWindowError);
+    return () => window.removeEventListener("error", onWindowError);
+  }, []);
 
   // Dynamically fly to the user's location when coords update
   useEffect(() => {
@@ -94,55 +112,72 @@ export default function SafetyRadar({
         background: "#020617",
       }}
     >
-      <Map
-        ref={mapRef}
-        initialViewState={{
-          longitude: effectiveLng,
-          latitude: effectiveLat,
-          zoom: 12,
-        }}
-        mapStyle={MAP_STYLE}
-        style={{ width: "100%", height: "100%" }}
-        interactive={!compact}
-        attributionControl={false}
-      >
-        <Source type="geojson" data={mockZoneGeojson}>
-          <Layer {...zoneLayer} />
-        </Source>
+      {isMounted && mapEnabled ? (
+        <Map
+          ref={mapRef}
+          initialViewState={{
+            longitude: effectiveLng,
+            latitude: effectiveLat,
+            zoom: 12,
+          }}
+          mapStyle={MAP_STYLE}
+          style={{ width: "100%", height: "100%" }}
+          interactive={!compact}
+          attributionControl={false}
+        >
+          <Source type="geojson" data={mockZoneGeojson}>
+            <Layer {...zoneLayer} />
+          </Source>
 
-        <Marker longitude={effectiveLng} latitude={effectiveLat} anchor="center">
-          <div
-            style={{
-              position: "relative",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+          <Marker longitude={effectiveLng} latitude={effectiveLat} anchor="center">
             <div
               style={{
-                position: "absolute",
-                width: "40px",
-                height: "40px",
-                background: "rgba(99, 102, 241, 0.3)",
-                borderRadius: "50%",
-                animation: "pulse 2s infinite",
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
-            />
-            <div
-              style={{
-                width: "16px",
-                height: "16px",
-                background: "#6366F1",
-                border: "2px solid white",
-                borderRadius: "50%",
-                boxShadow: "0 0 10px rgba(99, 102, 241, 0.8)",
-                zIndex: 2,
-              }}
-            />
-          </div>
-        </Marker>
-      </Map>
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  width: "40px",
+                  height: "40px",
+                  background: "rgba(99, 102, 241, 0.3)",
+                  borderRadius: "50%",
+                  animation: "pulse 2s infinite",
+                }}
+              />
+              <div
+                style={{
+                  width: "16px",
+                  height: "16px",
+                  background: "#6366F1",
+                  border: "2px solid white",
+                  borderRadius: "50%",
+                  boxShadow: "0 0 10px rgba(99, 102, 241, 0.8)",
+                  zIndex: 2,
+                }}
+              />
+            </div>
+          </Marker>
+        </Map>
+      ) : (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#94A3B8",
+            fontSize: "12px",
+            background: "radial-gradient(circle at 50% 40%, rgba(99,102,241,0.18), rgba(2,6,23,0.95) 65%)",
+          }}
+        >
+          Live map is initializing...
+        </div>
+      )}
 
       {/* GRADIENT OVERLAY FOR STYLING & GLOW */}
       {compact && (

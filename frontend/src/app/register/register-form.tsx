@@ -8,7 +8,15 @@ import { seedDemo } from '@/lib/worker';
 import { useAuthStore } from '@/store/authStore';
 
 const CITIES = ['Delhi', 'Mumbai', 'Bengaluru', 'Chennai', 'Hyderabad', 'Jaipur', 'Lucknow', 'Kolkata', 'Guwahati'];
-const DELIVERY_PLATFORMS = ['Zepto', 'Blinkit', 'Swiggy', 'Zomato', 'Other'];
+const DELIVERY_PLATFORMS = ['Zepto', 'Blinkit', 'Other'];
+
+function toTenDigitPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return digits.slice(2);
+  }
+  return digits.slice(0, 10);
+}
 
 const CITY_COORDINATES: Record<string, { lat: number; lon: number }> = {
   Delhi: { lat: 28.6139, lon: 77.2090 },
@@ -75,7 +83,7 @@ export default function RegisterFormContent() {
   const searchParams = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
 
-  const phoneFromUrl = searchParams.get('phone') || '';
+  const phoneFromUrl = toTenDigitPhone(searchParams.get('phone') || '');
   const shouldSeedDemo = searchParams.get('demo') === '1';
 
   const [formData, setFormData] = useState({
@@ -325,6 +333,11 @@ export default function RegisterFormContent() {
       return;
     }
 
+    if (!/^\d{10}$/.test(formData.phone)) {
+      setError('Phone number must be exactly 10 digits');
+      return;
+    }
+
     const parsedEarnings = Number(formData.avg_daily_earnings);
     if (!Number.isFinite(parsedEarnings) || parsedEarnings <= 0) {
       setError('Please enter a valid average daily earnings amount');
@@ -520,7 +533,16 @@ export default function RegisterFormContent() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label className="label-micro" style={{ marginBottom: '8px', display: 'block' }}>Mobile Number</label>
-            <input type="tel" value={formData.phone} disabled className="input-glass" style={{ opacity: 0.6 }} />
+            <input
+              type="tel"
+              value={formData.phone}
+              disabled
+              className="input-glass"
+              minLength={10}
+              maxLength={10}
+              pattern="[0-9]{10}"
+              style={{ opacity: 0.6 }}
+            />
           </div>
 
           <div>
@@ -604,7 +626,7 @@ export default function RegisterFormContent() {
 
           <div>
             <label className="label-micro" style={{ marginBottom: '8px', display: 'block' }}>Avg Daily Earnings (₹) *</label>
-            <input type="number" value={formData.avg_daily_earnings} onChange={(e) => setFormData((prev) => ({ ...prev, avg_daily_earnings: e.target.value }))} placeholder="e.g. 500" className="input-glass" min="100" max="5000" step="50" required />
+            <input type="number" value={formData.avg_daily_earnings} onChange={(e) => setFormData((prev) => ({ ...prev, avg_daily_earnings: e.target.value }))} placeholder="e.g. 500" className="input-glass" min="100" max="5000" step="1" required />
           </div>
 
           <div>

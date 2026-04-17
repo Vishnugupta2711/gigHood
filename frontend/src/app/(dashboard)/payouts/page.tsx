@@ -25,12 +25,12 @@ import { motion } from "framer-motion";
 
 // ── Helpers ────────────────────────────────────────────────
 
-function resolutionLabel(path: string): string {
+function resolutionLabel(path: string, language: string): string {
   switch (path) {
-    case "fast_track": return "Fast Track";
-    case "soft_queue": return "Soft Queue";
-    case "active_verify": return "Active Verify";
-    case "denied": return "Denied";
+    case "fast_track": return t(language, "payouts.resolution_fast_track");
+    case "soft_queue": return t(language, "payouts.resolution_soft_queue");
+    case "active_verify": return t(language, "payouts.resolution_active_verify");
+    case "denied": return t(language, "payouts.resolution_denied");
     default: return path;
   }
 }
@@ -161,24 +161,24 @@ export default function PayoutsPage() {
               <div style={{ width: 28, height: 28, borderRadius: "8px", background: "rgba(16, 185, 129, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Wallet size={16} color="#10B981" />
               </div>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.5px", textTransform: "uppercase" }}>Total Earnings Settled</span>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.5px", textTransform: "uppercase" }}>{t(language, "payouts.total_earnings_settled")}</span>
             </div>
             
             <div style={{ fontSize: "42px", fontWeight: 800, color: "white", letterSpacing: "-1px", lineHeight: 1 }}>
               ₹{totalPaidOut.toLocaleString("en-IN")}
             </div>
-            <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
-              <CheckCircle2 size={14} color="#10B981" /> Directly credited to your UPI via Razorpay
+              <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <CheckCircle2 size={14} color="#10B981" /> {t(language, "payouts.direct_credit")}
             </p>
 
             <div style={{ padding: "16px", background: "rgba(0,0,0,0.2)", borderRadius: "16px", marginTop: "24px", display: "flex", justifyContent: "space-between", border: "1px solid rgba(255,255,255,0.03)" }}>
               <div>
-                <p style={{ fontSize: "11px", color: "var(--text-secondary)", fontWeight: 500, marginBottom: "4px" }}>THIS WEEK</p>
+                <p style={{ fontSize: "11px", color: "var(--text-secondary)", fontWeight: 500, marginBottom: "4px" }}>{t(language, "this_week")}</p>
                 <p style={{ fontSize: "18px", fontWeight: 700, color: "white" }}>₹{thisWeek.toLocaleString("en-IN")}</p>
               </div>
               <div style={{ width: "1px", background: "rgba(255,255,255,0.1)" }} />
               <div>
-                <p style={{ fontSize: "11px", color: "var(--text-secondary)", fontWeight: 500, marginBottom: "4px" }}>PENDING</p>
+                <p style={{ fontSize: "11px", color: "var(--text-secondary)", fontWeight: 500, marginBottom: "4px" }}>{t(language, "pending")}</p>
                 <p style={{ fontSize: "18px", fontWeight: 700, color: "#F59E0B" }}>₹{totalPending.toLocaleString("en-IN")}</p>
               </div>
             </div>
@@ -189,10 +189,10 @@ export default function PayoutsPage() {
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <h3 style={{ fontSize: "17px", fontWeight: 700, color: "white", letterSpacing: "-0.3px" }}>
-              Recent Settlements
+              {t(language, "payouts.recent_settlements")}
             </h3>
             <button style={{ fontSize: "12px", color: "#60A5FA", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
-              <Receipt size={14} /> Download Statement
+              <Receipt size={14} /> {t(language, "payouts.download_statement")}
             </button>
           </div>
 
@@ -217,8 +217,8 @@ export default function PayoutsPage() {
               <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(59, 130, 246, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
                 <Umbrella size={28} color="#60A5FA" />
               </div>
-              <h4 style={{ fontSize: "17px", fontWeight: 700, color: "white", marginBottom: "6px" }}>You&apos;re fully protected</h4>
-              <p style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: 1.5, maxWidth: "240px" }}>No disruptions detected yet. Fast-track payouts will appear here automatically.</p>
+              <h4 style={{ fontSize: "17px", fontWeight: 700, color: "white", marginBottom: "6px" }}>{t(language, "payouts.fully_protected")}</h4>
+              <p style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: 1.5, maxWidth: "240px" }}>{t(language, "payouts.no_disruptions_desc")}</p>
             </motion.div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -257,7 +257,7 @@ export default function PayoutsPage() {
                           </div>
                           <div>
                             <p style={{ fontSize: "15px", fontWeight: 700, color: "white", marginBottom: "2px" }}>
-                              {claim.disrupted_hours > 0 ? `${disruptedHours.toFixed(1)}h Disruption` : "Weather Delay"}
+                              {claim.disrupted_hours > 0 ? t(language, "payouts.hours_disruption", { hours: disruptedHours.toFixed(1) }) : t(language, "payouts.weather_delay")}
                             </p>
                             <p style={{ fontSize: "12px", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
                               {formatDate(claim.created_at)} • {formatTime(claim.created_at)}
@@ -267,7 +267,7 @@ export default function PayoutsPage() {
 
                         <div style={{ textAlign: "right" }}>
                           <div style={{ fontSize: "18px", fontWeight: 800, color: isDenied ? "var(--text-secondary)" : "white", letterSpacing: "-0.5px", textDecoration: isDenied ? "line-through" : "none" }}>
-                            {claim.status === "pending" && !hasResolvedAmount ? "TBD" : `₹${payoutAmount.toLocaleString("en-IN")}`}
+                            {claim.status === "pending" && !hasResolvedAmount ? t(language, "payouts.tbd") : `₹${payoutAmount.toLocaleString("en-IN")}`}
                           </div>
                           <span style={{ 
                             display: "inline-block", padding: "4px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: 700, marginTop: "4px",
@@ -287,7 +287,7 @@ export default function PayoutsPage() {
                           border: `1px solid ${resolutionColor(claim.resolution_path)}30`
                         }}>
                           {claim.resolution_path === "fast_track" ? <CloudLightning size={12} /> : <ShieldAlert size={12} />}
-                          {resolutionLabel(claim.resolution_path)}
+                          {resolutionLabel(claim.resolution_path, language)}
                         </span>
 
                         {claim.fraud_score > 0 && (
@@ -307,14 +307,14 @@ export default function PayoutsPage() {
                         {claim.decision_explanation && (
                           <div style={{ marginBottom: claim.razorpay_payment_id ? "12px" : "0" }}>
                             <p style={{ fontSize: "12px", color: "white", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                              <Info size={14} color="#60A5FA" /> AI Decision context
+                              <Info size={14} color="#60A5FA" /> {t(language, "payouts.ai_decision_context")}
                             </p>
                             <p style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5, paddingLeft: "20px" }}>
                               {claim.decision_explanation.message}
                             </p>
                             {claim.decision_explanation.worker_tip && (
                               <p style={{ fontSize: "11px", color: "#93C5FD", marginTop: "6px", paddingLeft: "20px" }}>
-                                💡 Tip: {claim.decision_explanation.worker_tip}
+                                {t(language, "payouts.tip", { tip: claim.decision_explanation.worker_tip })}
                               </p>
                             )}
                           </div>
@@ -323,11 +323,11 @@ export default function PayoutsPage() {
                         {claim.razorpay_payment_id && (
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingLeft: "20px" }}>
                             <p style={{ fontSize: "11px", color: "var(--text-secondary)", fontFamily: "monospace" }}>
-                              Ref: {claim.razorpay_payment_id}
+                              {t(language, "payouts.ref")} {claim.razorpay_payment_id}
                             </p>
                             {claim.status === "paid" && (
                               <p style={{ fontSize: "11px", color: "#10B981", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
-                                <CheckCircle2 size={12} /> Credited
+                                <CheckCircle2 size={12} /> {t(language, "payouts.credited")}
                               </p>
                             )}
                           </div>

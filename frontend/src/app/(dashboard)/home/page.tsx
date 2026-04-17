@@ -16,7 +16,8 @@ import {
 import { workerApi, simulateDisruption, processClaim } from "@/lib/worker";
 import { useAuthStore } from "@/store/authStore";
 import { LANGUAGE_OPTIONS, useLanguageStore } from "@/store/languageStore";
-import { t } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
+import "@/i18n";
 import {
   checkLocationPermission,
   requestLocationPermission,
@@ -214,6 +215,7 @@ function wait(ms: number): Promise<void> {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const { coords } = useGeolocation(true);
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -510,7 +512,7 @@ export default function DashboardPage() {
           style={{ width: "40px", height: "40px", borderWidth: "3px" }}
         />
         <p className="text-muted" style={{ fontWeight: 500 }}>
-          {t(language, "initializing")}
+          {t("home.initializing")}
         </p>
       </div>
     );
@@ -534,7 +536,7 @@ export default function DashboardPage() {
           style={{ width: "40px", height: "40px", borderWidth: "3px" }}
         />
         <p className="text-muted" style={{ fontWeight: 500 }}>
-          {t(language, "redirecting_login")}
+          {t("home.redirecting_login")}
         </p>
       </div>
     );
@@ -562,7 +564,7 @@ export default function DashboardPage() {
           className="text-muted"
           style={{ fontWeight: 500, textAlign: "center" }}
         >
-          Failed to load dashboard
+          {t("home.failed_load")}
         </p>
         <p
           style={{
@@ -586,7 +588,7 @@ export default function DashboardPage() {
             fontWeight: 600,
           }}
         >
-          Retry
+          {t("home.retry")}
         </button>
       </div>
     );
@@ -621,24 +623,24 @@ export default function DashboardPage() {
         : "var(--dci-disrupted-bg)";
   const statusLabel = !hasDci
     ? isDciPending
-      ? "SYNCING"
-      : "NO DATA"
+      ? t("home.status_syncing")
+      : t("home.status_degraded")
     : isNormal
-      ? "NORMAL"
+      ? t("home.status_safe")
       : isElevated
-        ? "ELEVATED"
-        : "DISRUPTED";
+        ? t("home.status_warning")
+        : t("home.status_disrupted");
 
   // ─── Emotionally resonant DCI text ────────────────────────────────────────
   const dciText = !hasDci
     ? isDciPending
-      ? "Syncing live zone signals now. Your risk score will appear in a few seconds."
-      : "We're analyzing live conditions in your area — risk score will appear shortly."
+      ? t("home.dci_desc_syncing")
+      : t("home.dci_desc_degraded")
     : isNormal
-      ? "You're safe. Your zone is operating normally."
+      ? t("home.dci_desc_safe")
       : isElevated
-        ? "Risk is rising. Stay alert — your protection is active."
-        : "Disruption detected. You're covered — payout is ready to process.";
+        ? t("home.dci_desc_warning")
+        : t("home.dci_desc_disrupted");
 
   const lastUpdated = new Date().toLocaleTimeString("en-US", {
     hour: "2-digit",
@@ -667,10 +669,10 @@ export default function DashboardPage() {
       : "—";
 
   const coverageBadges = [
-    "Heavy Rainfall",
-    "Hazardous AQI",
-    "Traffic Gridlock",
-    "Platform Outage",
+    t("home.coverage_heavy_rainfall"),
+    t("home.coverage_hazardous_aqi"),
+    t("home.coverage_traffic_gridlock"),
+    t("home.coverage_platform_outage"),
   ];
 
   const shiftCoverage = (direction: "left" | "right") => {
@@ -686,15 +688,15 @@ export default function DashboardPage() {
   if (claimReceipt) {
     const payoutSuccess = claimReceipt.status === "paid";
     const receiptTitle = payoutSuccess
-      ? "Payout Successful"
+      ? t("home.receipt_success")
       : claimReceipt.status === "denied"
-        ? "Claim Denied"
-        : "Claim In Review";
+        ? t("home.receipt_denied")
+        : t("home.receipt_review");
     const receiptSubtitle = payoutSuccess
-      ? "Your claim has been processed and approved"
+      ? t("home.receipt_success_desc")
       : claimReceipt.status === "denied"
-        ? "Your claim could not be approved for this event"
-        : "Your claim is being validated before payout";
+        ? t("home.receipt_denied_desc")
+        : t("home.receipt_review_desc");
     const receiptAccent = payoutSuccess
       ? "#10B981"
       : claimReceipt.status === "denied"
@@ -796,7 +798,7 @@ export default function DashboardPage() {
                     letterSpacing: "0.5px",
                   }}
                 >
-                  Claim ID
+                  {t("home.claim_id")}
                 </p>
                 <p
                   style={{
@@ -830,7 +832,7 @@ export default function DashboardPage() {
                     letterSpacing: "0.5px",
                   }}
                 >
-                  Payout Amount
+                  {t("home.payout_amount")}
                 </p>
                 <p
                   style={{
@@ -862,7 +864,7 @@ export default function DashboardPage() {
                     letterSpacing: "0.5px",
                   }}
                 >
-                  Fraud Score
+                  {t("home.fraud_score")}
                 </p>
                 <p
                   style={{
@@ -873,7 +875,7 @@ export default function DashboardPage() {
                   }}
                 >
                   {claimReceipt.fraud_score.toFixed(0)}/100{" "}
-                  {claimReceipt.fraud_score === 0 ? "Clean" : "Review"}
+                  {claimReceipt.fraud_score === 0 ? t("home.clean") : t("home.review")}
                 </p>
               </div>
 
@@ -893,7 +895,7 @@ export default function DashboardPage() {
                     letterSpacing: "0.5px",
                   }}
                 >
-                  Processing Track
+                  {t("home.processing_track")}
                 </p>
                 <p
                   style={{
@@ -903,7 +905,7 @@ export default function DashboardPage() {
                     textTransform: "capitalize",
                   }}
                 >
-                  {claimReceipt.resolution_path.replace("_", " ")}
+                  {t(`payouts.resolution_${claimReceipt.resolution_path.replace("_queue", "soft").replace("_track", "fast").replace("_verify", "verify")}`, claimReceipt.resolution_path.replace("_", " "))}
                 </p>
               </div>
 
@@ -924,7 +926,7 @@ export default function DashboardPage() {
                       letterSpacing: "0.5px",
                     }}
                   >
-                    Why this happened
+                    {t("home.why_happened")}
                   </p>
                   <p
                     style={{
@@ -953,7 +955,7 @@ export default function DashboardPage() {
                       marginTop: "6px",
                     }}
                   >
-                    Tip: {claimReceipt.decision_explanation.worker_tip}
+                    {t("home.tip", { tip: claimReceipt.decision_explanation.worker_tip })}
                   </p>
                 </div>
               )}
@@ -974,7 +976,7 @@ export default function DashboardPage() {
                     letterSpacing: "0.5px",
                   }}
                 >
-                  Payment ID
+                  {t("home.payment_id")}
                 </p>
                 <p
                   style={{
@@ -1004,7 +1006,7 @@ export default function DashboardPage() {
                     letterSpacing: "0.5px",
                   }}
                 >
-                  Proof of Presence
+                  {t("home.proof_of_presence")}
                 </p>
                 <p
                   style={{
@@ -1013,7 +1015,7 @@ export default function DashboardPage() {
                     color: claimReceipt.pop_validated ? "#10B981" : "#EF4444",
                   }}
                 >
-                  {claimReceipt.pop_validated ? "Validated" : "Failed"}
+                  {claimReceipt.pop_validated ? t("home.validated") : t("home.failed")}
                 </p>
               </div>
             </div>
@@ -1042,7 +1044,7 @@ export default function DashboardPage() {
                   (e.currentTarget.style.transform = "scale(1)")
                 }
               >
-                Back to Dashboard
+                {t("home.back_dashboard")}
               </button>
               <button
                 onClick={() => router.push("/worker-app/payouts")}
@@ -1065,7 +1067,7 @@ export default function DashboardPage() {
                   (e.currentTarget.style.transform = "scale(1)")
                 }
               >
-                View All Payouts
+                {t("home.view_all_payouts")}
               </button>
             </div>
 
@@ -1076,12 +1078,13 @@ export default function DashboardPage() {
                 marginTop: "20px",
               }}
             >
-              Receipt generated on{" "}
-              {new Date().toLocaleDateString("en-IN", {
-                weekday: "short",
-                year: "numeric",
-                month: "short",
-                day: "numeric",
+              {t("home.receipt_generated", {
+                date: new Date().toLocaleDateString(language === "hi" ? "hi-IN" : "en-IN", {
+                  weekday: "short",
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
               })}
             </p>
           </div>
@@ -1099,8 +1102,8 @@ export default function DashboardPage() {
       {isProcessing && (
         <div style={{ position: "fixed", top: "50%", left: "50%", width: "100vw", height: "100vh", transform: "translate(-50%, -50%)", zIndex: 5000, background: "rgba(2,6,23,0.85)", backdropFilter: "blur(6px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", pointerEvents: "all" }}>
           <div className="spinner" style={{ width: "44px", height: "44px", borderWidth: "3px" }} />
-          <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-primary)" }}>Running Fraud Engine…</p>
-          <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Securely evaluating your claim</p>
+          <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-primary)" }}>{t("home.running_fraud_engine")}</p>
+          <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{t("home.evaluating_claim")}</p>
         </div>
       )}
 
@@ -1111,7 +1114,7 @@ export default function DashboardPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
           <div>
             <h2 style={{ fontSize: "22px", fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text-primary)" }}>
-              Hey {firstName} 👋
+              {t("home.hey", { name: firstName })}
             </h2>
             <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "5px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "99px", padding: "4px 12px 4px 8px", width: "fit-content" }}>
               <span style={{ fontSize: "13px" }}>📍</span>
@@ -1137,10 +1140,10 @@ export default function DashboardPage() {
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ display: "flex", alignItems: "center", gap: "6px", padding: "5px 12px", borderRadius: "99px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", fontSize: "12px", fontWeight: 600, color: "#34D399" }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", boxShadow: "0 0 8px #22C55E", animation: "pulseGlow 2s infinite", display: "inline-block" }} />
-            Protection Active
+            {t("home.active_coverage")}
           </span>
           <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-            {dashboard?.active_policy ? `Tier ${dashboard.active_policy.tier} · ${policyWeek}` : "Policy Pending"}
+            {dashboard?.active_policy ? `Tier ${dashboard.active_policy.tier} · ${policyWeek}` : t("home.policy_pending")}
           </span>
         </div>
       </header>
@@ -1157,10 +1160,10 @@ export default function DashboardPage() {
           <div style={{ position: "relative", zIndex: 1, padding: "24px 20px 20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
               <div>
-                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "var(--text-secondary)", marginBottom: "4px" }}>Zone Risk Index</p>
+                <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "var(--text-secondary)", marginBottom: "4px" }}>{t("home.zone_risk_index")}</p>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <div className="pulse-dot" style={{ background: statusColor, boxShadow: `0 0 10px ${statusColor}`, flexShrink: 0 }} />
-                  <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Live · {lastUpdated}</span>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>{t("home.live_time", { time: lastUpdated })}</span>
                 </div>
               </div>
               <span className="badge-pill" style={{ background: statusBg, color: statusColor, border: `1px solid ${statusColor}40`, textTransform: "uppercase", letterSpacing: "1px", fontSize: "11px", fontWeight: 700 }}>
@@ -1195,9 +1198,9 @@ export default function DashboardPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", marginTop: "20px", background: "rgba(255,255,255,0.06)", borderRadius: "16px", overflow: "hidden" }}>
               {[
-                { label: "Premium",  value: dashboard?.active_policy ? `₹${dashboard.active_policy.weekly_premium ?? dashboard.active_policy.premium_amount ?? "—"}` : "—", sub: "per week" },
-                { label: "Coverage", value: dashboard?.active_policy ? `₹${dashboard.active_policy.coverage_cap_daily}` : "—",  sub: "per day cap" },
-                { label: "Paid Out", value: `₹${(dashboard?.weekly_summary.total_paid_out || 0).toLocaleString("en-IN")}`, sub: "this week", color: "#34D399" },
+                { label: t("premium"),  value: dashboard?.active_policy ? `₹${dashboard.active_policy.weekly_premium ?? dashboard.active_policy.premium_amount ?? "—"}` : "—", sub: t("home.per_week") },
+                { label: t("coverage_label"), value: dashboard?.active_policy ? `₹${dashboard.active_policy.coverage_cap_daily}` : "—",  sub: t("home.per_day_cap") },
+                { label: t("paid_out"), value: `₹${(dashboard?.weekly_summary.total_paid_out || 0).toLocaleString("en-IN")}`, sub: t("home.this_week_short"), color: "#34D399" },
               ].map((s) => (
                 <div key={s.label} style={{ padding: "12px 8px", textAlign: "center" }}>
                   <div className="tabular-nums" style={{ fontSize: "15px", fontWeight: 800, color: s.color ?? "var(--text-primary)" }}>{s.value}</div>
@@ -1210,13 +1213,13 @@ export default function DashboardPage() {
 
         {/* QUICK ACTIONS */}
         <section className="stagger-2">
-          <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "14px" }}>Quick Actions</p>
+          <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "14px" }}>{t("home.quick_actions")}</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
             {[
-              { icon: "⚡", label: isSimulating ? "…" : "Simulate",  bg: "rgba(14,165,233,0.1)",  border: "rgba(14,165,233,0.2)",  color: "#38BDF8", onClick: !isDisrupted ? handleSimulateDisruption : undefined, disabled: isSimulating || isDisrupted },
-              { icon: "💸", label: isProcessing ? "…" : "Claim",     bg: "rgba(16,185,129,0.1)",  border: "rgba(16,185,129,0.2)",  color: "#34D399", onClick: isDisrupted ? handleProcessClaim : undefined,       disabled: !isDisrupted || isProcessing },
-              { icon: "🤖", label: "Copilot",     bg: "rgba(139,92,246,0.1)",  border: "rgba(139,92,246,0.2)", color: "#A78BFA", onClick: () => { window.location.href = "/worker-app/chat"; },  disabled: false },
-              { icon: "🗺️", label: "Radar",       bg: "rgba(251,191,36,0.1)",  border: "rgba(251,191,36,0.2)", color: "#FBBF24", onClick: () => { window.location.href = "/worker-app/radar"; }, disabled: false },
+              { icon: "⚡", label: isSimulating ? "…" : t("home.trigger_simulation"),  bg: "rgba(14,165,233,0.1)",  border: "rgba(14,165,233,0.2)",  color: "#38BDF8", onClick: !isDisrupted ? handleSimulateDisruption : undefined, disabled: isSimulating || isDisrupted },
+              { icon: "💸", label: isProcessing ? "…" : t("home.process_claim"),     bg: "rgba(16,185,129,0.1)",  border: "rgba(16,185,129,0.2)",  color: "#34D399", onClick: isDisrupted ? handleProcessClaim : undefined,       disabled: !isDisrupted || isProcessing },
+              { icon: "🤖", label: t("home.copilot_action"),     bg: "rgba(139,92,246,0.1)",  border: "rgba(139,92,246,0.2)", color: "#A78BFA", onClick: () => { window.location.href = "/worker-app/chat"; },  disabled: false },
+              { icon: "🗺️", label: t("home.radar_action"),       bg: "rgba(251,191,36,0.1)",  border: "rgba(251,191,36,0.2)", color: "#FBBF24", onClick: () => { window.location.href = "/worker-app/radar"; }, disabled: false },
             ].map(a => (
               <button key={a.label} onClick={a.onClick} disabled={a.disabled}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", padding: "16px 8px", borderRadius: "18px", background: a.bg, border: `1px solid ${a.border}`, cursor: a.onClick ? "pointer" : "not-allowed", opacity: a.disabled ? 0.4 : 1, transition: "all 0.2s", fontFamily: "inherit" }}
@@ -1226,24 +1229,24 @@ export default function DashboardPage() {
               </button>
             ))}
           </div>
-          {simulationError && <div style={{ marginTop: "12px", padding: "12px 14px", background: "rgba(245,158,11,0.08)", borderRadius: "12px", border: "1px solid rgba(245,158,11,0.2)", color: "#FCD34D", fontSize: "13px" }}>{simulationError}</div>}
-          {processingError && <div style={{ marginTop: "12px", padding: "12px 14px", background: "rgba(239,68,68,0.08)", borderRadius: "12px", border: "1px solid rgba(239,68,68,0.2)", color: "#FCA5A5", fontSize: "13px" }}>{processingError}</div>}
+          {simulationError && <div style={{ marginTop: "12px", padding: "12px 14px", background: "rgba(245,158,11,0.08)", borderRadius: "12px", border: "1px solid rgba(245,158,11,0.2)", color: "#FCD34D", fontSize: "13px" }}>{t("home.simulation_error")}</div>}
+          {processingError && <div style={{ marginTop: "12px", padding: "12px 14px", background: "rgba(239,68,68,0.08)", borderRadius: "12px", border: "1px solid rgba(239,68,68,0.2)", color: "#FCA5A5", fontSize: "13px" }}>{t("home.claim_error")}</div>}
         </section>
 
         {/* SAFETY RADAR */}
         <section className="stagger-3">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)" }}>🧠 Safety Radar</p>
+            <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)" }}>🧠 {t("home.safety_radar")}</p>
             <span style={{ fontSize: "11px", color: "#22C55E", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", animation: "pulse 2s infinite", display: "inline-block" }} />Live
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", animation: "pulse 2s infinite", display: "inline-block" }} />{t("home.live")}
             </span>
           </div>
           <div className="glass-panel" style={{ padding: "16px" }}>
-            <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginBottom: "12px" }}>Live map · safe zones and high-earning areas</p>
+            <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginBottom: "12px" }}>{t("home.live_map_desc")}</p>
             <SafetyRadar compact={true} userCoords={coords} />
             <div style={{ marginTop: "14px", textAlign: "center" }}>
               <Link href="/worker-app/radar" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "10px 18px", borderRadius: "10px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", color: "#818CF8", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}>
-                View Full Map <ChevronRight size={15} />
+                {t("home.view_full_map")} <ChevronRight size={15} />
               </Link>
             </div>
           </div>
@@ -1252,7 +1255,7 @@ export default function DashboardPage() {
         {/* WHAT'S COVERED */}
         <section className="stagger-4">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)" }}>What&apos;s Covered</p>
+            <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)" }}>{t("what_is_covered")}</p>
             <div style={{ display: "flex", gap: "6px" }}>
               <button type="button" aria-label="Scroll left" onClick={() => shiftCoverage("left")} style={{ width: "26px", height: "26px", borderRadius: "8px", border: "1px solid var(--border-glass)", background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                 <ChevronLeft size={14} color="var(--text-secondary)" />
@@ -1272,7 +1275,7 @@ export default function DashboardPage() {
                   {label === "Platform Outage" && "📉"}
                 </div>
                 <div style={{ fontSize: "13px", fontWeight: 600, color: "#BAE6FD" }}>{label}</div>
-                <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "3px" }}>Covered ✓</div>
+                <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "3px" }}>{t("home.covered_tick")}</div>
               </div>
             ))}
           </div>
@@ -1280,12 +1283,12 @@ export default function DashboardPage() {
 
         {/* WEEKLY SUMMARY */}
         <section className="stagger-4">
-          <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "12px" }}>This Week</p>
+          <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "12px" }}>{t("home.this_week_title")}</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
             {[
-              { icon: "💰", label: "Premium Paid",  value: `₹${dashboard?.weekly_summary.premium_paid ?? 0}`,                                                    color: "#60A5FA" },
-              { icon: "⚡", label: "Disruptions",   value: String(dashboard?.weekly_summary.disruptions ?? 0),                                                    color: "#FBBF24" },
-              { icon: "✅", label: "Paid Out",      value: `₹${(dashboard?.weekly_summary.total_paid_out ?? 0).toLocaleString("en-IN")}`,                        color: "#34D399" },
+              { icon: "💰", label: t("home.premium_paid"),  value: `₹${dashboard?.weekly_summary.premium_paid ?? 0}`,                                                    color: "#60A5FA" },
+              { icon: "⚡", label: t("home.disruptions"),   value: String(dashboard?.weekly_summary.disruptions ?? 0),                                                    color: "#FBBF24" },
+              { icon: "✅", label: t("paid_out"),      value: `₹${(dashboard?.weekly_summary.total_paid_out ?? 0).toLocaleString("en-IN")}`,                        color: "#34D399" },
             ].map(s => (
               <div key={s.label} className="glass-panel" style={{ padding: "14px 12px", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "18px" }}>
                 <span style={{ fontSize: "20px" }}>{s.icon}</span>
@@ -1298,12 +1301,12 @@ export default function DashboardPage() {
 
         {/* EXPLORE */}
         <section className="stagger-5">
-          <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "12px" }}>Explore GigHood</p>
+          <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "12px" }}>{t("home.explore_title")}</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {[
-              { icon: "💸", label: "Payouts",     sub: "Track all your claim settlements",  href: "/worker-app/payouts", color: "#34D399", bg: "rgba(52,211,153,0.08)" },
-              { icon: "🤖", label: "AI Copilot",  sub: "Ask questions in your language",    href: "/worker-app/chat",    color: "#A78BFA", bg: "rgba(167,139,250,0.08)" },
-              { icon: "🏛️", label: "Govt Schemes", sub: "Benefits you're eligible for",     href: "/worker-app/govt",    color: "#FBBF24", bg: "rgba(251,191,36,0.08)" },
+              { icon: "💸", label: t("payouts_title"),     sub: t("home.explore_payouts_sub"),  href: "/worker-app/payouts", color: "#34D399", bg: "rgba(52,211,153,0.08)" },
+              { icon: "🤖", label: t("nav_copilot"),  sub: t("home.explore_copilot_sub"),    href: "/worker-app/chat",    color: "#A78BFA", bg: "rgba(167,139,250,0.08)" },
+              { icon: "🏛️", label: t("govt.title"), sub: t("home.explore_govt_sub"),     href: "/worker-app/govt",    color: "#FBBF24", bg: "rgba(251,191,36,0.08)" },
             ].map(item => (
               <Link key={item.label} href={item.href} style={{ textDecoration: "none" }}>
                 <div className="glass-panel interactive-card" style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: "14px", borderRadius: "16px" }}>

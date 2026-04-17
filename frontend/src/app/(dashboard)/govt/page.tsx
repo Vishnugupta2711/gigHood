@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, ExternalLink, Search, ChevronRight } from 'lucide-react';
+import { useLanguageStore } from '@/store/languageStore';
+import { t } from '@/lib/i18n';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Scheme = {
@@ -53,6 +55,7 @@ function SchemeSkeleton() {
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function GovtSchemesPage() {
+  const language = useLanguageStore((s) => s.language);
   const [schemes,    setSchemes]    = useState<Scheme[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [fetching,   setFetching]   = useState(false);
@@ -108,9 +111,9 @@ export default function GovtSchemesPage() {
       <header className="stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h2 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.5px', marginBottom: '4px' }}>
-            🏛 Govt Schemes
+            {t(language, 'govt.title')}
           </h2>
-          <p className="label-micro">Benefits designed for gig workers</p>
+          <p className="label-micro">{t(language, 'govt.subtitle')}</p>
         </div>
         <button
           onClick={() => { navigator.vibrate?.(10); loadSchemes(true); }}
@@ -134,10 +137,10 @@ export default function GovtSchemesPage() {
       <section className="stagger-2 glass-panel" style={{ padding: '18px 20px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 0 }}>
           {[
-            { label: 'Schemes',   value: stats.total,     color: '#E2E8F0' },
-            { label: 'Insurance', value: stats.insurance,  color: '#34D399' },
-            { label: 'Health',    value: stats.health,     color: '#F87171' },
-            { label: 'Free',      value: stats.free,       color: '#FBBF24' },
+            { label: t(language, 'govt.stats_schemes'), value: stats.total, color: '#E2E8F0' },
+            { label: t(language, 'govt.stats_insurance'), value: stats.insurance, color: '#34D399' },
+            { label: t(language, 'govt.stats_health'), value: stats.health, color: '#F87171' },
+            { label: t(language, 'govt.stats_free'), value: stats.free, color: '#FBBF24' },
           ].map((stat, i, arr) => (
             <div
               key={stat.label}
@@ -168,7 +171,7 @@ export default function GovtSchemesPage() {
           fontSize: '12px', color: '#FDE68A', lineHeight: 1.5, marginTop: '-14px',
         }}
       >
-        💡 Official government schemes — apply directly without paying any agent.
+        {t(language, 'govt.info_banner')}
       </div>
 
       {/* ── Search ────────────────────────────────────────────────────────── */}
@@ -183,7 +186,7 @@ export default function GovtSchemesPage() {
         <Search size={15} color="var(--text-secondary)" />
         <input
           type="text"
-          placeholder="Search schemes, tags…"
+          placeholder={t(language, 'govt.search_placeholder')}
           value={searchQ}
           onChange={e => setSearchQ(e.target.value)}
           style={{
@@ -229,7 +232,7 @@ export default function GovtSchemesPage() {
       {/* ── Content ───────────────────────────────────────────────────────── */}
       <section className="stagger-3" style={{ marginTop: '-8px' }}>
         <h3 className="label-micro" style={{ marginBottom: '14px' }}>
-          {filtered.length} scheme{filtered.length !== 1 ? 's' : ''} available
+          {t(language, 'govt.available_count', { count: filtered.length })}
         </h3>
 
         {loading ? (
@@ -240,8 +243,8 @@ export default function GovtSchemesPage() {
             style={{ padding: '40px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
           >
             <div style={{ fontSize: '40px' }}>🔍</div>
-            <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '16px' }}>No schemes found</p>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Try a different category or search term</p>
+            <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '16px' }}>{t(language, 'govt.empty_title')}</p>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t(language, 'govt.empty_desc')}</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -346,7 +349,7 @@ export default function GovtSchemesPage() {
                                   transition: 'all 0.2s',
                                 }}
                               >
-                                Apply on official site
+                                {t(language, 'govt.apply_official')}
                                 <ExternalLink size={14} />
                               </a>
                             </div>
@@ -365,7 +368,7 @@ export default function GovtSchemesPage() {
       {/* ── Footer disclaimer ────────────────────────────────────────────── */}
       {!loading && (
         <p style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.6, opacity: 0.7 }}>
-          GigHood curates these for gig workers. Always verify on official govt sites before applying.
+          {t(language, 'govt.footer_disclaimer')}
         </p>
       )}
     </div>

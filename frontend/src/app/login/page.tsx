@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { sendOtp, verifyOtp } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
+import { useLanguageStore } from '@/store/languageStore';
+import { t } from '@/lib/i18n';
 
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const language = useLanguageStore((s) => s.language);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -51,7 +54,10 @@ export default function LoginPage() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone.length < 10) return;
+    if (!/^\d{10}$/.test(phone)) {
+      setError('Phone number must be exactly 10 digits.');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -113,7 +119,7 @@ export default function LoginPage() {
           gigHood <span className="text-gradient">Protect</span>
         </h1>
         <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '15px' }}>
-          Secure login for verified workers
+          {t(language, 'login.subtitle')}
         </p>
       </div>
 
@@ -166,8 +172,8 @@ export default function LoginPage() {
 
         <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '18px' }}>
           {authMode === 'signin'
-            ? 'Use Sign In if you already created an account.'
-            : 'Use Sign Up for first-time onboarding with a new number.'}
+            ? t(language, 'login.signin_hint')
+            : t(language, 'login.signup_hint')}
         </p>
 
         {error && (
@@ -183,10 +189,12 @@ export default function LoginPage() {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 placeholder="9876543210"
                 className="input-glass"
-                maxLength={15}
+                minLength={10}
+                maxLength={10}
+                pattern="[0-9]{10}"
                 required
               />
               <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -196,9 +204,9 @@ export default function LoginPage() {
             <button 
               type="submit" 
               className="btn-premium mt-4"
-              disabled={isLoading || phone.length < 10}
+              disabled={isLoading || phone.length !== 10}
             >
-              {isLoading ? <div className="spinner" /> : 'Continue securely'}
+              {isLoading ? <div className="spinner" /> : t(language, 'login.continue_securely')}
             </button>
           </form>
         ) : (
@@ -225,7 +233,7 @@ export default function LoginPage() {
               className="btn-premium mt-4"
               disabled={isLoading || otp.length < 6}
             >
-              {isLoading ? <div className="spinner" /> : authMode === 'signin' ? 'Verify & Sign In' : 'Verify & Continue'}
+              {isLoading ? <div className="spinner" /> : authMode === 'signin' ? t(language, 'login.verify_signin') : t(language, 'login.verify_continue')}
             </button>
             <button 
               type="button" 
@@ -233,14 +241,14 @@ export default function LoginPage() {
               style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '16px', background: 'none', border: 'none', cursor: 'pointer' }}
               disabled={isLoading}
             >
-              Change number
+              {t(language, 'login.change_number')}
             </button>
           </form>
         )}
       </div>
 
       <div style={{ textAlign: 'center', marginTop: '40px' }} className="stagger-3">
-        <p className="label-micro">Bank-grade encryption • ISO 27001</p>
+        <p className="label-micro">{t(language, 'login.security_note')}</p>
       </div>
     </main>
   );

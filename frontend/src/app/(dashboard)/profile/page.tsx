@@ -181,9 +181,9 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setShowEarnings(false);
       setEarningsInput("");
-      showToast("Earnings updated successfully");
+      showToast(t(language, "profile.earnings_updated"));
     } catch {
-      showToast("Update failed. Please try again.");
+      showToast(t(language, "profile.update_failed"));
     } finally { setSaving(false); }
   };
 
@@ -299,13 +299,13 @@ export default function ProfilePage() {
 
           {/* Top bar */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 20px 0" }}>
-            <span style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>My Profile</span>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>{t(language, "profile.my_profile")}</span>
             <button
               onClick={handleLogout}
               style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 13px", borderRadius: "99px", background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer" }}
             >
               <LogOut size={13} color="rgba(255,255,255,0.8)" />
-              <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>Sign out</span>
+              <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>{t(language, "sign_out")}</span>
             </button>
           </div>
 
@@ -389,7 +389,7 @@ export default function ProfilePage() {
           {/* ── PROTECTION PLAN ─────────────────────────────────────────── */}
           <div>
             <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "10px", paddingLeft: "4px" }}>
-              Protection Plan
+              {t(language, "profile.protection_plan")}
             </p>
             <SectionCard>
               {/* Status row */}
@@ -399,8 +399,8 @@ export default function ProfilePage() {
                     <ShieldCheck size={20} color="#34D399" />
                   </div>
                   <div>
-                    <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>Active Protection</div>
-                    <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>Policy Week: {policyWeek}</div>
+                    <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>{t(language, "profile.active_protection")}</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>{t(language, "profile.policy_week")}: {policyWeek}</div>
                   </div>
                 </div>
                 <span style={{
@@ -409,16 +409,16 @@ export default function ProfilePage() {
                   color: policy?.status === "active" ? "#34D399" : "#94A3B8",
                   border: `1px solid ${policy?.status === "active" ? "rgba(52,211,153,0.3)" : "rgba(148,163,184,0.3)"}`,
                 }}>
-                  {(policy?.status ?? "Pending").toUpperCase()}
+                  {policy?.status === "active" ? t(language, "active") : t(language, "pending")}
                 </span>
               </div>
 
               {/* Plan metrics */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: "1px solid rgba(255,255,255,0.05)", padding: "14px 16px", gap: "8px" }}>
                 {[
-                  { label: "Tier",     value: policy ? `Tier ${tier}` : "—", color: tc },
-                  { label: "Premium",  value: policy ? `₹${policy.weekly_premium ?? policy.premium_amount ?? "—"}/wk` : "—", color: "var(--text-primary)" },
-                  { label: "Coverage", value: policy ? `₹${policy.coverage_cap_daily}/day` : "—", color: "#34D399" },
+                  { label: t(language, "tier_label"), value: policy ? `${t(language, "tier_label")} ${tier}` : "—", color: tc },
+                  { label: t(language, "premium"),  value: policy ? `₹${policy.weekly_premium ?? policy.premium_amount ?? "—"}/wk` : "—", color: "var(--text-primary)" },
+                  { label: t(language, "coverage_label"), value: policy ? `₹${policy.coverage_cap_daily}/day` : "—", color: "#34D399" },
                 ].map(s => (
                   <div key={s.label} style={{ textAlign: "center" }}>
                     <div style={{ fontSize: "15px", fontWeight: 800, color: s.color }}>{s.value}</div>
@@ -430,22 +430,22 @@ export default function ProfilePage() {
               {/* How it works pill */}
               <div style={{ margin: "0 16px 14px", padding: "10px 14px", borderRadius: "12px", background: "rgba(103,232,249,0.06)", border: "1px solid rgba(103,232,249,0.15)" }}>
                 <p style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                  <span style={{ color: "#67E8F9", fontWeight: 700 }}>How it works: </span>
-                  Payouts are fully automatic — no claim needed. If DCI in your zone crosses 0.85, coverage triggers instantly.
+                  <span style={{ color: "#67E8F9", fontWeight: 700 }}>{t(language, "how_it_works")}: </span>
+                  {t(language, "profile.how_it_works_desc")}
                 </p>
-                <p style={{ fontSize: "12px", color: "#34D399", fontWeight: 600, marginTop: "6px" }}>✔ Zero-click payouts · Sent to {worker?.upi_id ?? "your UPI"}</p>
+                <p style={{ fontSize: "12px", color: "#34D399", fontWeight: 600, marginTop: "6px" }}>{t(language, "profile.zero_click_payout", { upi: worker?.upi_id ?? "UPI" })}</p>
               </div>
 
               {/* Zone / Claim risk row */}
               {policy?.tier_explanation && (
                 <div style={{ display: "flex", gap: "10px", padding: "0 16px 14px" }}>
                   <div style={{ flex: 1, padding: "10px 12px", borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <div style={{ fontSize: "10px", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>Zone Risk</div>
+                    <div style={{ fontSize: "10px", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>{t(language, "profile.zone_risk")}</div>
                     {riskChip(zoneRisk)}
                     <div style={{ fontSize: "10px", color: "var(--text-secondary)", marginTop: "4px" }}>DCI avg: {policy.tier_explanation.avg_dci_4w}</div>
                   </div>
                   <div style={{ flex: 1, padding: "10px 12px", borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <div style={{ fontSize: "10px", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>Claim History</div>
+                    <div style={{ fontSize: "10px", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>{t(language, "profile.claim_history")}</div>
                     {riskChip(claimRisk)}
                     <div style={{ fontSize: "10px", color: "var(--text-secondary)", marginTop: "4px" }}>Last 28 days</div>
                   </div>
@@ -457,7 +457,7 @@ export default function ProfilePage() {
           {/* ── TRUST SCORE ─────────────────────────────────────────────── */}
           <div>
             <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "10px", paddingLeft: "4px" }}>
-              Trust Score
+              {t(language, "trust_score")}
             </p>
             <SectionCard>
               <div style={{ padding: "20px 16px", display: "flex", gap: "20px", alignItems: "center" }}>
@@ -523,7 +523,7 @@ export default function ProfilePage() {
           {/* ── ACCOUNT INFO ─────────────────────────────────────────────── */}
           <div>
             <p style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)", marginBottom: "10px", paddingLeft: "4px" }}>
-              Account Details
+              {t(language, "profile.account_details")}
             </p>
             <SectionCard>
               <Cell iconBg="rgba(96,165,250,0.12)"  icon={<MapPin size={18} color="#60A5FA" />}    label={worker?.dark_store_zone ?? "—"} sub={worker?.city ?? "—"} />
@@ -537,7 +537,7 @@ export default function ProfilePage() {
                     color: worker?.is_platform_verified ? "#34D399" : "#94A3B8",
                     border: `1px solid ${worker?.is_platform_verified ? "rgba(52,211,153,0.3)" : "rgba(148,163,184,0.3)"}`,
                   }}>
-                    {worker?.is_platform_verified ? "Verified" : "Not verified"}
+                    {worker?.is_platform_verified ? t(language, "verified_partner") : t(language, "not_verified")}
                   </span>
                 }
               />
@@ -576,12 +576,12 @@ export default function ProfilePage() {
               <Cell
                 iconBg="rgba(96,165,250,0.12)" icon={<Bell size={18} color="#60A5FA" />}
                 label={t(language, "notification_preferences")}
-                onClick={() => showToast("Notification preferences coming soon")}
+                onClick={() => showToast(t(language, "profile.notifications_soon"))}
               />
               <Cell
                 iconBg="rgba(168,85,247,0.12)" icon={<Star size={18} color="#A855F7" />}
-                label="Rate GigHood"
-                onClick={() => showToast("Thanks! Rating coming soon 🌟")}
+                label={t(language, "profile.rate_gighood")}
+                onClick={() => showToast(t(language, "profile.rating_soon"))}
               />
               <Cell
                 iconBg="rgba(239,68,68,0.1)" icon={<LogOut size={18} color="#F87171" />}

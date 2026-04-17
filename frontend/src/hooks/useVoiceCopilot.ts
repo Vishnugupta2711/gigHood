@@ -38,6 +38,12 @@ const LANG_MAP: Record<string, string> = {
   as: "as-IN",
 };
 
+function resolveRecognitionLanguage(code: string): string {
+  // In practice, Web Speech recognition is most reliable on en-US/hi-IN in Chrome.
+  if (code === "hi") return "hi-IN";
+  return "en-US";
+}
+
 export function useVoiceCopilot(onTranscript: (text: string) => void) {
   const language = useLanguageStore((s) => s.language);
   const [isListening, setIsListening] = useState(false);
@@ -50,6 +56,7 @@ export function useVoiceCopilot(onTranscript: (text: string) => void) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldKeepListeningRef = useRef(false);
   const restartTimerRef = useRef<number | null>(null);
+  const networkRecoveryTriedRef = useRef(false);
 
   // Store onTranscript in a ref so it never appears in the useEffect dep array.
   // Without this, every render of the parent creates a new inline callback,
@@ -90,7 +97,7 @@ export function useVoiceCopilot(onTranscript: (text: string) => void) {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = LANG_MAP[language] || "en-US";
+    recognition.lang = resolveRecognitionLanguage(language);
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: unknown) => {
@@ -127,12 +134,33 @@ export function useVoiceCopilot(onTranscript: (text: string) => void) {
 
       // These are fatal — mic permission denied, hardware lost, etc.
       console.warn(`[VoiceCopilot] Speech recognition error: ${errorType}`);
-      if (errorType === "not-allowed" || errorType === "service-not-allowed") {
+      if (errorType === "network") {
+        if (!networkRecoveryTriedRef.current) {
+          networkRecoveryTriedRef.current = true;
+          recognition.lang = "en-US";
+          if (shouldKeepListeningRef.current) {
+            if (restartTimerRef.current !== null) {
+              window.clearTimeout(restartTimerRef.current);
+            }
+            restartTimerRef.current = window.setTimeout(() => {
+              try {
+                recognition.start();
+                setIsListening(true);
+                setListenError(null);
+              } catch {
+                shouldKeepListeningRef.current = false;
+                setIsListening(false);
+                setListenError("Voice service is currently unavailable. Please try again in a few seconds.");
+              }
+            }, 450);
+          }
+          return;
+        }
+        setListenError("Voice service is currently unavailable on this device/browser. Please try again.");
+      } else if (errorType === "not-allowed" || errorType === "service-not-allowed") {
         setListenError("Microphone permission is blocked. Enable mic access in browser settings.");
       } else if (errorType === "audio-capture") {
         setListenError("No microphone detected. Please check your audio input device.");
-      } else if (errorType === "network") {
-        setListenError("Speech network error. Please try again with a stable connection.");
       } else {
         setListenError("Voice input failed. Please try again.");
       }
@@ -190,6 +218,7 @@ export function useVoiceCopilot(onTranscript: (text: string) => void) {
     } else {
       try {
         setListenError(null);
+        networkRecoveryTriedRef.current = false;
         shouldKeepListeningRef.current = true;
         recognition.start();
         setIsListening(true);

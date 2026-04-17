@@ -117,7 +117,7 @@ class Settings(BaseSettings):
     SUPABASE_RETRY_BACKOFF_SECONDS: float = 0.5
 
     # CORS
-    BACKEND_CORS_ORIGINS: str = "http://localhost:3000,https://gighood.vercel.app"
+    BACKEND_CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,https://gighood.vercel.app"
     
     # Security
     JWT_SECRET: str = "fallback_secret_key"

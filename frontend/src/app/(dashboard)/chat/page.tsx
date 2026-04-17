@@ -29,13 +29,64 @@ const WELCOME_MESSAGES: Record<AppLanguage, string> = {
   as: "নমস্কাৰ! মই আপোনাৰ Gig Copilot। আপোনাৰ পলিচি, জোন ঝুঁকি আৰু ক্লেইম ইতিহাস ব্যাখ্যা কৰিব পাৰো। কেনেকৈ সহায় কৰিম?",
 };
 
-const SUGGESTED_QUESTIONS = [
-  { emoji: "💸", text: "How are my payouts calculated?" },
-  { emoji: "🛡️", text: "What is my current zone risk?" },
-  { emoji: "📅", text: "When does my policy renew?" },
-  { emoji: "⚡", text: "What triggers automatic coverage?" },
-  { emoji: "📊", text: "Explain my trust score" },
-];
+const SUGGESTED_QUESTIONS_BY_LANG: Record<AppLanguage, Array<{ emoji: string; text: string }>> = {
+  en: [
+    { emoji: "💸", text: "How are my payouts calculated?" },
+    { emoji: "🛡️", text: "What is my current zone risk?" },
+    { emoji: "📅", text: "When does my policy renew?" },
+    { emoji: "⚡", text: "What triggers automatic coverage?" },
+    { emoji: "📊", text: "Explain my trust score" },
+  ],
+  hi: [
+    { emoji: "💸", text: "मेरे भुगतान की गणना कैसे होती है?" },
+    { emoji: "🛡️", text: "मेरा वर्तमान ज़ोन जोखिम क्या है?" },
+    { emoji: "📅", text: "मेरी पॉलिसी कब नवीनीकृत होगी?" },
+    { emoji: "⚡", text: "ऑटोमैटिक कवरेज कब ट्रिगर होती है?" },
+    { emoji: "📊", text: "मेरा ट्रस्ट स्कोर समझाइए" },
+  ],
+  ta: [
+    { emoji: "💸", text: "என் பேஅவுட் எப்படி கணக்கிடப்படுகிறது?" },
+    { emoji: "🛡️", text: "என் தற்போதைய மண்டல ஆபத்து என்ன?" },
+    { emoji: "📅", text: "என் பாலிசி எப்போது புதுப்பிக்கப்படுகிறது?" },
+    { emoji: "⚡", text: "தானியங்கி கவரேஜ் எப்போது தொடங்கும்?" },
+    { emoji: "📊", text: "என் நம்பிக்கை மதிப்பெண்ணை விளக்கவும்" },
+  ],
+  te: [
+    { emoji: "💸", text: "నా పేఅవుట్లు ఎలా లెక్కిస్తారు?" },
+    { emoji: "🛡️", text: "నా ప్రస్తుత జోన్ రిస్క్ ఏమిటి?" },
+    { emoji: "📅", text: "నా పాలసీ ఎప్పుడు రీన్యూ అవుతుంది?" },
+    { emoji: "⚡", text: "ఆటోమేటిక్ కవరేజ్ ఏమి ట్రిగర్ చేస్తుంది?" },
+    { emoji: "📊", text: "నా ట్రస్ట్ స్కోర్‌ని వివరించండి" },
+  ],
+  kn: [
+    { emoji: "💸", text: "ನನ್ನ ಪಾವತಿಗಳು ಹೇಗೆ ಲೆಕ್ಕಿಸಲಾಗುತ್ತದೆ?" },
+    { emoji: "🛡️", text: "ನನ್ನ ಪ್ರಸ್ತುತ ಝೋನ್ ಅಪಾಯ ಏನು?" },
+    { emoji: "📅", text: "ನನ್ನ ಪಾಲಿಸಿ ಯಾವಾಗ ನವೀಕರಿಸುತ್ತದೆ?" },
+    { emoji: "⚡", text: "ಸ್ವಯಂ ಕವರೆಜ್ ಏನು ಟ್ರಿಗರ್ ಮಾಡುತ್ತದೆ?" },
+    { emoji: "📊", text: "ನನ್ನ ಟ್ರಸ್ಟ್ ಸ್ಕೋರ್ ವಿವರಿಸಿ" },
+  ],
+  mr: [
+    { emoji: "💸", text: "माझे पेआउट्स कसे मोजले जातात?" },
+    { emoji: "🛡️", text: "माझा सध्याचा झोन धोका काय आहे?" },
+    { emoji: "📅", text: "माझी पॉलिसी कधी नूतनीकरण होते?" },
+    { emoji: "⚡", text: "ऑटोमॅटिक कव्हरेज कशामुळे ट्रिगर होते?" },
+    { emoji: "📊", text: "माझा ट्रस्ट स्कोअर समजवा" },
+  ],
+  bn: [
+    { emoji: "💸", text: "আমার পেআউট কীভাবে হিসাব হয়?" },
+    { emoji: "🛡️", text: "আমার বর্তমান জোন ঝুঁকি কত?" },
+    { emoji: "📅", text: "আমার পলিসি কবে রিনিউ হবে?" },
+    { emoji: "⚡", text: "অটোমেটিক কভারেজ কী ট্রিগার করে?" },
+    { emoji: "📊", text: "আমার ট্রাস্ট স্কোর ব্যাখ্যা করুন" },
+  ],
+  as: [
+    { emoji: "💸", text: "মোৰ পেমেন্ট কেনেকৈ গণনা হয়?" },
+    { emoji: "🛡️", text: "মোৰ বৰ্তমান জ'ন ঝুঁকি কিমান?" },
+    { emoji: "📅", text: "মোৰ পলিচি কেতিয়া নবীকৰণ হয়?" },
+    { emoji: "⚡", text: "স্বয়ংক্ৰিয় কভাৰেজ কিহে ট্ৰিগাৰ কৰে?" },
+    { emoji: "📊", text: "মোৰ ট্রাষ্ট স্ক'ৰ বুজাই দিয়ক" },
+  ],
+};
 
 function now(): string {
   return new Date().toLocaleTimeString("en-IN", {
@@ -138,7 +189,7 @@ export default function ChatPage() {
           ? `Why was my last payout ₹${lastPaidAmount.toLocaleString("en-IN")}?`
           : "How are my payouts calculated?",
     },
-    ...SUGGESTED_QUESTIONS.slice(1),
+    ...(SUGGESTED_QUESTIONS_BY_LANG[language] ?? SUGGESTED_QUESTIONS_BY_LANG.en).slice(1),
   ];
 
   const scrollToBottom = useCallback(() => {
@@ -367,12 +418,12 @@ export default function ChatPage() {
               {isSpeaking
                 ? "Speaking…"
                 : isAudioLoading
-                  ? "AI is thinking…"
+                    ? t(language, "chat.ai_thinking")
                   : isListening
-                    ? "Listening…"
+                      ? t(language, "chat.listening")
                     : isLoading
-                      ? "AI is typing…"
-                      : "AI · Online · Monitoring your zone"}
+                        ? t(language, "chat.ai_typing")
+                      : t(language, "chat.online_monitoring")}
             </p>
           </div>
 
@@ -583,7 +634,7 @@ export default function ChatPage() {
                 marginBottom: "10px",
               }}
             >
-              Quick questions
+              {t(language, "chat.quick_questions")}
             </p>
             <div
               style={{ display: "flex", flexDirection: "column", gap: "8px" }}

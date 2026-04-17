@@ -1,10 +1,11 @@
 import axios from "axios";
 
-const DEFAULT_LOCAL_API_URL = "http://localhost:8001";
+const DEFAULT_LOCAL_API_URL = "http://localhost:8005";
 const DEFAULT_PROD_API_URL = "https://gighood-backend-live.onrender.com";
 const DEFAULT_PREVIEW_API_URL = "https://gighood-backend-admin.onrender.com";
 
 function resolveApiBaseUrl(): string {
+  const configuredLocal = process.env.NEXT_PUBLIC_API_URL_LOCAL;
   const configuredProd = process.env.NEXT_PUBLIC_API_URL;
   const configuredPreview = process.env.NEXT_PUBLIC_API_URL_PREVIEW;
   const configuredAdmin = process.env.NEXT_PUBLIC_API_URL_ADMIN;
@@ -20,7 +21,7 @@ function resolveApiBaseUrl(): string {
     }
 
     if (host === "localhost" || host === "127.0.0.1") {
-      return DEFAULT_LOCAL_API_URL;
+      return configuredLocal || configuredProd || DEFAULT_LOCAL_API_URL;
     }
 
     // Most reliable path on Vercel when system env vars are exposed.

@@ -25,56 +25,36 @@
 ![OpenRouter](https://img.shields.io/badge/OpenRouter-LLM%20Gateway-111827?style=for-the-badge)
 ![Groq](https://img.shields.io/badge/Groq-Inference-F55036?style=for-the-badge)
 
+> **[🚀 Jump to Setup Instructions](#prerequisites)** | **[📖 Read the Full Solution & Architecture](./docs/SOLUTION.md)**
+
 </div>
 
-## What This Repo Contains
+## What is gigHood?
 
-1. FastAPI backend for worker auth, DCI/disruption indexing, policies, claims, payouts, chat, and admin analytics.
-2. Next.js frontend with three surfaces:
-   - public marketing site
-   - worker app (dark, phone-style shell)
-   - admin dashboard (light surface)
-3. Supabase migration-backed schema and data contracts.
-4. Neo4j-backed fraud relationship graph for admin fraud monitor visualizations.
+**gigHood** is an AI-powered parametric income insurance platform for Q-commerce delivery partners (Zepto, Blinkit). It detects zone-level economic disruptions (weather, AQI, curfews) and automatically triggers instant payouts to affected workers—with zero paperwork or claim filing required.
 
-## ML Runtime Notes
-
-1. DCI runtime weights are loaded from `dci_weights` (active row) with cold-start fallback.
-2. Weekly ML job retrains three assets on Sundays:
-   - risk tier model (`backend/services/risk_profiler.py`)
-   - fraud model (`backend/ml/fraud_model.pkl`)
-   - DCI signal weights (`backend/services/dci_weight_trainer.py` -> `dci_weights`)
-3. Fraud scoring uses a hybrid model:
-   - rule-layer score from telemetry + behavior checks
-   - XGBoost probability score from `claim_frequency`, `zone_risk`, `location_anomaly`, `time_of_day`
+**For a deep dive into the Actuarial Mechanics, Machine Learning Architecture, Fraud Defense, and Unit Economics, please see our detailed [SOLUTION.md](./docs/SOLUTION.md).**
 
 ## Documentation Index
 
-1. `README.md`: setup, environment, runbook.
-2. `docs/API.md`: backend routes and endpoint contracts.
-3. `docs/DATABASE.md`: schema and migration mapping.
-4. `docs/CONTEXT.md`: architecture, deployment, and release context for contributors/LLMs.
-5. `AGENTS.md`: coding/contribution guardrails.
-6. `docs/SOLUTION.md`: product and architecture narrative.
+1. `docs/SOLUTION.md`: The complete product, actuarial, and architecture narrative (Round 2 requirement).
+2. `docs/API.md`: Backend routes and endpoint contracts.
+3. `docs/DATABASE.md`: Schema, entity relationships, and Neo4j projection map.
+4. `docs/CONTEXT.md`: Deployment, operational guidelines, and system topology.
+5. `AGENTS.md`: Coding/contribution guardrails.
 
 ## Repository Structure
 
 ```text
 gigHood/
-├── backend/
-├── docs/
-├── frontend/
-├── supabase/
-├── scripts/
-├── tests/
+├── backend/          # FastAPI backend, ML models, spatial intelligence
+├── frontend/         # Next.js 14 Web App (Worker App & Admin Dashboard)
+├── supabase/         # PostgreSQL migrations & DB schema
+├── dataset/          # Synthetic training data for XGBoost models
+├── docs/             # Technical and product documentation
+├── tests/            # Pytest test suites
 ├── docker-compose.yml
-├── README.md
-├── AGENTS.md
-└── docs/
-   ├── API.md
-   ├── DATABASE.md
-   ├── CONTEXT.md
-   └── SOLUTION.md
+└── README.md
 ```
 
 ## Prerequisites
@@ -82,7 +62,7 @@ gigHood/
 1. Python 3.11+
 2. Node.js 20+
 3. npm 10+
-4. Docker Desktop (optional)
+4. Docker Desktop (optional for full stack run)
 
 ## Quick Setup
 
@@ -106,31 +86,15 @@ Use example files to bootstrap local setup:
 1. `cp backend/.env.example backend/.env`
 2. `cp frontend/.env.example frontend/.env.local`
 
-### Backend (`backend/.env`)
+**Important Backend Env Vars (`backend/.env`):**
+- `SUPABASE_URL` & `SUPABASE_KEY` & `SUPABASE_SERVICE_ROLE_KEY`
+- `RAZORPAY_KEY_ID` & `RAZORPAY_KEY_SECRET`
+- `NEO4J_URI` & `NEO4J_USER` & `NEO4J_PASSWORD`
+- `OPENWEATHER_API_KEY` & `CPCB_API_KEY`
+- `GROQ_API_KEY` & `OPENROUTER_API_KEY`
 
-1. `SUPABASE_URL`
-2. `SUPABASE_KEY`
-3. `SUPABASE_SERVICE_ROLE_KEY`
-4. `JWT_SECRET`
-5. `RAZORPAY_KEY_ID`
-6. `RAZORPAY_KEY_SECRET`
-7. `OPENROUTER_API_KEY`
-8. `GROQ_API_KEY`
-9. `FIREBASE_CREDENTIALS_PATH`
-10. `BACKEND_CORS_ORIGINS` (comma-separated frontend origins)
-11. `NEO4J_URI`
-12. `NEO4J_USER`
-13. `NEO4J_PASSWORD`
-14. `NEO4J_DATABASE` (optional; set for Aura instances with non-default DB name)
-
-### Frontend (`frontend/.env.local`)
-
-1. `NEXT_PUBLIC_API_URL`
-   - production API base URL
-2. `NEXT_PUBLIC_API_URL_PREVIEW`
-   - preview/staging API base URL
-3. `NEXT_PUBLIC_VERCEL_ENV` (optional when auto-exposed by Vercel)
-   - helps frontend choose preview vs production URL deterministically
+**Important Frontend Env Vars (`frontend/.env.local`):**
+- `NEXT_PUBLIC_API_URL` (typically `http://127.0.0.1:8001` for local dev)
 
 ## Run Locally
 
@@ -153,172 +117,53 @@ npm ci
 npm run dev
 ```
 
-## Local URLs
-
-1. Frontend: `http://localhost:3000`
-2. Backend API: `http://127.0.0.1:8001`
-3. OpenAPI docs: `http://127.0.0.1:8001/docs`
-
 ## Docker
+
+To run the entire stack (Frontend + Backend + DB dependencies) via Docker:
 
 ```bash
 docker compose up --build -d
 ```
 
-Stop:
+Stop the containers:
 
 ```bash
 docker compose down
 ```
 
-## Deployment Notes
+## Local URLs
 
-1. Frontend supports both `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_API_URL_PREVIEW`.
-2. Resolution order in browser:
-   - local host -> local backend
-   - preview deployment -> `NEXT_PUBLIC_API_URL_PREVIEW` (fallback to `NEXT_PUBLIC_API_URL`)
-   - production/other -> `NEXT_PUBLIC_API_URL`
-3. Recommended: always set both values in Vercel (`Preview` + `Production`) to avoid accidental routing drift.
-4. Admin frontend previews require a backend that mounts `/admin/*`.
-5. Render backend deploys in this repo require root `.python-version` pinned to `3.11.9` to avoid Python 3.14 package build failures (`pydantic-core` source build errors).
-
-## Python Runtime Pinning
-
-1. This branch intentionally includes root `.python-version` set to `3.11.9`.
-2. This repo does not rely on `pyproject.toml` or `runtime.txt` for Render Python selection.
-3. If this file is omitted during merge, Render may auto-upgrade Python and break dependency builds.
-4. When merging admin/staging into main, include `.python-version` in the merge commit to keep production runtime stable.
-
-## Sign-Out and Redirect Behavior
-
-1. Admin sign-out returns users to `/` (main website).
-2. Worker app sign-out returns users to `/` (main website).
-3. Unauthenticated worker dashboard access redirects to `/`.
-
-## Pre-Merge Release Checklist
-
-1. Confirm `NEXT_PUBLIC_API_URL` is set in both Vercel `Preview` and `Production` environments.
-2. Confirm `NEXT_PUBLIC_API_URL_PREVIEW` is set for Vercel `Preview` (recommended).
-3. Confirm admin backend (`admin` branch service) latest deploy is `live` on Render.
-4. Confirm production backend (`main` branch service) latest deploy is `live` on Render.
-5. Validate frontend with `npm run build` from `frontend/`.
-6. Validate backend with `pytest` from repository root.
-7. Ensure docs in `docs/` match code behavior before opening merge PR.
-
-## UI Surface Contract
-
-1. Worker routes (`/worker-app/*` and supported legacy aliases) render in dark phone shell.
-2. Admin and public routes remain light and full-width.
-3. Route-scoped wrapper for this behavior lives in `frontend/src/components/AppRouteShell.tsx`.
+1. Frontend App & Admin Dashboard: `http://localhost:3000`
+2. Backend API: `http://127.0.0.1:8001`
+3. OpenAPI / Swagger Docs: `http://127.0.0.1:8001/docs`
 
 ## Validation Commands
 
-From repo root:
+To ensure system integrity, run tests from the repository root:
 
 ```bash
-pytest
+source venv/bin/activate && PYTHONPATH=. pytest
 ```
 
-From `frontend/`:
+To validate the frontend build:
 
 ```bash
+cd frontend
 npm run lint
 npm run build
 ```
 
-## Fraud Graph (Neo4j)
+## Python Runtime Pinning
 
-1. Graph ingestion runs during claim processing and demo claim processing.
-2. Nodes projected: `Worker`, `Device`, `Hex_Zone`.
-3. Relationships projected: `USES_DEVICE`, `CLAIMED_IN`.
-4. Admin graph endpoint: `GET /admin/fraud/network-graph`.
-5. Admin Fraud Monitor tab consumes this endpoint and renders live network links when available.
-6. Manual backfill endpoint: `POST /admin/fraud/network-graph/backfill?limit=1000`.
-7. Graph node fields are live-scored by backend (`fraud_score`, `risk_level`) and drive UI filter buttons.
+- This branch intentionally includes root `.python-version` set to `3.11.9`.
+- Render backend deploys in this repo require root `.python-version` pinned to `3.11.9` to avoid Python 3.14 package build failures. Do not modify or remove this file.
 
-### Verify in Neo4j Query Page
+## UI Surface Contract
 
-Paste these Cypher statements in Neo4j Browser / Query page:
-
-1. Check labels and relationship types exist:
-
-```cypher
-CALL db.labels() YIELD label RETURN label ORDER BY label;
-CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType ORDER BY relationshipType;
-```
-
-2. Check projected counts:
-
-```cypher
-MATCH (w:Worker) RETURN count(w) AS workers;
-MATCH (d:Device) RETURN count(d) AS devices;
-MATCH (z:Hex_Zone) RETURN count(z) AS zones;
-MATCH ()-[r:USES_DEVICE]->() RETURN count(r) AS uses_device_edges;
-MATCH ()-[r:CLAIMED_IN]->() RETURN count(r) AS claimed_in_edges;
-```
-
-3. Inspect sample graph triplets:
-
-```cypher
-MATCH (w:Worker)-[:USES_DEVICE]->(d:Device), (w)-[:CLAIMED_IN]->(z:Hex_Zone)
-RETURN w.id AS worker_id, d.fingerprint AS device_fingerprint, z.id AS zone_id
-LIMIT 25;
-```
-
-4. Validate syndicate detection logic directly:
-
-```cypher
-MATCH (d:Device)<-[:USES_DEVICE]-(w:Worker)-[:CLAIMED_IN]->(z:Hex_Zone)
-WITH d,
-     collect(DISTINCT w.id) AS workers,
-     collect(DISTINCT z.id) AS zones
-WHERE size(workers) > 1 AND size(zones) > 1
-RETURN d.fingerprint AS device_fingerprint, workers, zones
-ORDER BY size(workers) DESC, size(zones) DESC;
-```
-
-5. If query page shows no labels/relationships, trigger backfill and retry:
-
-```bash
-curl -X POST "http://127.0.0.1:8001/admin/fraud/network-graph/backfill?limit=1000"
-curl "http://127.0.0.1:8001/admin/fraud/network-graph"
-```
-
-### One-go Neo4j verification script
-
-Paste and run this full block in Neo4j Query page:
-
-```cypher
-CALL db.labels() YIELD label RETURN 'LABEL' AS kind, label AS value ORDER BY value;
-CALL db.relationshipTypes() YIELD relationshipType RETURN 'REL' AS kind, relationshipType AS value ORDER BY value;
-
-MATCH (w:Worker) RETURN count(w) AS workers;
-MATCH (d:Device) RETURN count(d) AS devices;
-MATCH (z:Hex_Zone) RETURN count(z) AS zones;
-MATCH ()-[r:USES_DEVICE]->() RETURN count(r) AS uses_device_edges;
-MATCH ()-[r:CLAIMED_IN]->() RETURN count(r) AS claimed_in_edges;
-
-MATCH (w:Worker)-[:USES_DEVICE]->(d:Device), (w)-[:CLAIMED_IN]->(z:Hex_Zone)
-RETURN w.id AS worker_id, d.fingerprint AS device_fingerprint, z.id AS zone_id
-LIMIT 25;
-
-MATCH (d:Device)<-[:USES_DEVICE]-(w:Worker)-[:CLAIMED_IN]->(z:Hex_Zone)
-WITH d,
-     collect(DISTINCT w.id) AS workers,
-     collect(DISTINCT z.id) AS zones
-WHERE size(workers) > 1 AND size(zones) > 1
-RETURN d.fingerprint AS device_fingerprint, workers, zones,
-       size(workers) AS worker_count, size(zones) AS zone_count
-ORDER BY worker_count DESC, zone_count DESC;
-```
-
-### About the large backend terminal warnings
-
-1. Those warnings happen when the query references labels/relationships before they exist in a fresh Neo4j graph.
-2. The backend now pre-checks schema presence (`Worker`, `Device`, `Hex_Zone`, `USES_DEVICE`, `CLAIMED_IN`) before running the syndicate query.
-3. If projection is not ready yet, the endpoint returns an empty graph payload cleanly instead of flooding terminal warnings.
+1. Worker routes (`/worker-app/*` and supported legacy aliases) render in a dark, mobile-focused shell.
+2. Admin and public routes (`/admin-dashboard/*`) remain light and full-width desktop layouts.
+3. Route-scoped wrapper for this behavior lives in `frontend/src/components/AppRouteShell.tsx`.
 
 ## Notes
 
-1. Demo simulation endpoints are under `/workers/me/demo/*`.
-2. If docs differ from runtime behavior, code + migrations are source of truth; update docs in same branch.
+- **Demo Simulations:** Disruption simulation endpoints are available under `/workers/me/demo/*` to safely test trigger logic locally without waiting for real-world environmental collapse.

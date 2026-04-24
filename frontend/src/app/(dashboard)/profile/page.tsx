@@ -253,8 +253,8 @@ export default function ProfilePage() {
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
               <div>
-                <h3 style={{ fontSize: "20px", fontWeight: 700 }}>{t("policy.update_earnings")}</h3>
-                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>{t("policy.current_earnings", { amount: worker?.avg_daily_earnings ?? "—" })}</p>
+                <h3 style={{ fontSize: "20px", fontWeight: 700 }}>{t(language, "policy.update_earnings")}</h3>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>{t(language, "policy.current_earnings", { amount: worker?.avg_daily_earnings ?? "—" })}</p>
               </div>
               <button onClick={() => setShowEarnings(false)} style={{ width: 34, height: 34, borderRadius: "10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                 <X size={16} color="var(--text-secondary)" />

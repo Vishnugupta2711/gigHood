@@ -253,11 +253,6 @@ export default function ChatPage() {
         ...prev,
         { role: "assistant", content: reply, ts: now() },
       ]);
-
-      // Delay speech output slightly for smooth flow
-      if (mode === "voice") {
-        setTimeout(() => speak({ text: reply, lang: replyLang }), 300);
-      }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "CanceledError") return;
       if (err instanceof DOMException && err.name === "AbortError") return;
@@ -268,9 +263,6 @@ export default function ChatPage() {
         ...prev,
         { role: "assistant", content: errorMsg, ts: now() },
       ]);
-      if (mode === "voice") {
-        setTimeout(() => speak({ text: errorMsg, lang: language }), 300);
-      }
     } finally {
       abortRef.current = null;
       setIsLoading(false);
@@ -280,13 +272,10 @@ export default function ChatPage() {
 
   const {
     isListening,
-    isSpeaking,
     isAudioLoading,
     isVoiceSupported,
     listenError,
     toggleListening,
-    speak,
-    interruptSpeech,
   } = useVoiceCopilot((txt) => sendMessage(txt));
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -322,26 +311,13 @@ export default function ChatPage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: isSpeaking
-                  ? "0 0 0 3px rgba(245,158,11,0.4), 0 6px 20px rgba(245,158,11,0.6)"
-                  : "0 0 0 3px rgba(99,102,241,0.25), 0 6px 20px rgba(99,102,241,0.35)",
+                boxShadow: "0 0 0 3px rgba(99,102,241,0.25), 0 6px 20px rgba(99,102,241,0.35)",
                 transition: "box-shadow 0.3s ease",
-                animation: isSpeaking ? "pulse 1.5s infinite" : "none",
+                animation: "none",
               }}
             >
               <Bot size={20} color="white" />
             </div>
-            {isSpeaking && (
-              <span
-                style={{
-                  position: "absolute",
-                  inset: -4,
-                  borderRadius: "50%",
-                  border: "2px solid #F59E0B",
-                  animation: "ping 1.5s cubic-bezier(0,0,0.2,1) infinite",
-                }}
-              />
-            )}
             {/* Online dot */}
             <span
               style={{
@@ -351,21 +327,17 @@ export default function ChatPage() {
                 width: 11,
                 height: 11,
                 borderRadius: "50%",
-                background: isSpeaking
-                  ? "#F59E0B"
-                  : isAudioLoading
-                    ? "#A78BFA"
-                    : isListening
-                      ? "#ef4444"
-                      : "#22C55E",
+                background: isAudioLoading
+                  ? "#A78BFA"
+                  : isListening
+                    ? "#ef4444"
+                    : "#22C55E",
                 border: "2px solid rgba(10,10,20,0.9)",
-                boxShadow: isSpeaking
-                  ? "0 0 6px #F59E0B"
-                  : isAudioLoading
-                    ? "0 0 6px #A78BFA"
-                    : isListening
-                      ? "0 0 6px #ef4444"
-                      : "0 0 6px #22C55E",
+                boxShadow: isAudioLoading
+                  ? "0 0 6px #A78BFA"
+                  : isListening
+                    ? "0 0 6px #ef4444"
+                    : "0 0 6px #22C55E",
                 transition: "all 0.3s",
               }}
             />
@@ -404,26 +376,22 @@ export default function ChatPage() {
             <p
               style={{
                 fontSize: "11px",
-                color: isSpeaking
-                  ? "#F59E0B"
-                  : isAudioLoading
-                    ? "#A78BFA"
-                    : isListening
-                      ? "#ef4444"
-                      : "#22C55E",
+                color: isAudioLoading
+                  ? "#A78BFA"
+                  : isListening
+                    ? "#ef4444"
+                    : "#22C55E",
                 fontWeight: 600,
                 marginTop: "1px",
               }}
             >
-              {isSpeaking
-                ? "Speaking…"
-                : isAudioLoading
-                    ? t(language, "chat.ai_thinking")
-                  : isListening
-                      ? t(language, "chat.listening")
-                    : isLoading
-                        ? t(language, "chat.ai_typing")
-                      : t(language, "chat.online_monitoring")}
+              {isAudioLoading
+                ? t(language, "chat.ai_thinking")
+                : isListening
+                  ? t(language, "chat.listening")
+                  : isLoading
+                    ? t(language, "chat.ai_typing")
+                    : t(language, "chat.online_monitoring")}
             </p>
           </div>
 
@@ -708,89 +676,63 @@ export default function ChatPage() {
               gap: "12px",
             }}
           >
-            {isSpeaking ? (
-              /* Stop speech button */
-              <button
-                onClick={interruptSpeech}
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  padding: "14px",
-                  borderRadius: "16px",
-                  background: "rgba(239,68,68,0.12)",
-                  border: "1px solid rgba(239,68,68,0.35)",
-                  color: "#F87171",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                }}
-              >
-                <Square size={16} fill="currentColor" /> Stop Speaking
-              </button>
-            ) : (
-              /* Voice wave + listen state */
+            {/* Voice wave + listen state */}
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                padding: "14px 16px",
+                borderRadius: "16px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.07)",
+              }}
+            >
+              {/* Animated bars */}
               <div
                 style={{
-                  flex: 1,
                   display: "flex",
+                  gap: "3px",
                   alignItems: "center",
-                  gap: "14px",
-                  padding: "14px 16px",
-                  borderRadius: "16px",
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.07)",
+                  height: "22px",
                 }}
               >
-                {/* Animated bars */}
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "3px",
-                    alignItems: "center",
-                    height: "22px",
-                  }}
-                >
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <motion.div
-                      key={i}
-                      animate={
-                        isListening ? { height: [4, 18, 4] } : { height: 4 }
-                      }
-                      transition={{
-                        repeat: Infinity,
-                        duration: 0.7,
-                        delay: i * 0.12,
-                        ease: "easeInOut",
-                      }}
-                      style={{
-                        width: 3,
-                        background: isListening
-                          ? "#34D399"
-                          : "rgba(255,255,255,0.18)",
-                        borderRadius: 2,
-                      }}
-                    />
-                  ))}
-                </div>
-                <span
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    color: isListening ? "#34D399" : "var(--text-secondary)",
-                  }}
-                >
-                  {isListening ? "Listening…" : "Tap mic to speak"}
-                </span>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <motion.div
+                    key={i}
+                    animate={
+                      isListening ? { height: [4, 18, 4] } : { height: 4 }
+                    }
+                    transition={{
+                      repeat: Infinity,
+                      duration: 0.7,
+                      delay: i * 0.12,
+                      ease: "easeInOut",
+                    }}
+                    style={{
+                      width: 3,
+                      background: isListening
+                        ? "#34D399"
+                        : "rgba(255,255,255,0.18)",
+                      borderRadius: 2,
+                    }}
+                  />
+                ))}
               </div>
-            )}
+              <span
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: isListening ? "#34D399" : "var(--text-secondary)",
+                }}
+              >
+                {isListening ? "Listening…" : "Tap mic to speak"}
+              </span>
+            </div>
 
             {/* Mic button */}
-            {!isSpeaking && (
-              <button
+            <button
                 onClick={() => {
                   navigator.vibrate?.(10);
                   toggleListening();
@@ -833,7 +775,6 @@ export default function ChatPage() {
                   />
                 )}
               </button>
-            )}
           </div>
         ) : (
           /* TEXT MODE */
@@ -880,7 +821,6 @@ export default function ChatPage() {
                 type="button"
                 onClick={() => {
                   stopGeneration();
-                  interruptSpeech();
                   navigator.vibrate?.(30);
                 }}
                 style={{

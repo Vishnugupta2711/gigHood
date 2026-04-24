@@ -52,12 +52,8 @@ export const useLanguageStore = create<LanguageState>()(
       },
 
       inferLanguageFromCity: (city) => {
-        if (get().hasManualChoice) {
-          return;
-        }
-        const newLang = mapCityToLanguage(city);
-        set({ language: newLang });
-        i18n.changeLanguage(newLang);
+        // Automatically inferring language from city is disabled
+        // to keep ENG as the default language.
       },
     }),
     {

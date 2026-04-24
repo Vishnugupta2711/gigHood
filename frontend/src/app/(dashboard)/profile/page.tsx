@@ -253,8 +253,8 @@ export default function ProfilePage() {
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
               <div>
-                <h3 style={{ fontSize: "20px", fontWeight: 700 }}>Update Earnings</h3>
-                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>Current: ₹{worker?.avg_daily_earnings ?? "—"}/day</p>
+                <h3 style={{ fontSize: "20px", fontWeight: 700 }}>{t("policy.update_earnings")}</h3>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>{t("policy.current_earnings", { amount: worker?.avg_daily_earnings ?? "—" })}</p>
               </div>
               <button onClick={() => setShowEarnings(false)} style={{ width: 34, height: 34, borderRadius: "10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                 <X size={16} color="var(--text-secondary)" />
@@ -512,7 +512,7 @@ export default function ProfilePage() {
                     </div>
                   ))}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "8px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>Total Score</span>
+                    <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>{t(language, "home.total")}</span>
                     <span style={{ fontSize: "18px", fontWeight: 900, color: tColor }}>{ts.toFixed(1)}</span>
                   </div>
                 </div>

@@ -13,6 +13,7 @@ import backend.api.demo as demo
 import backend.scheduler.jobs as jobs
 import backend.api.location_pings as location_pings
 import backend.api.tts as tts
+import backend.api.stt as stt
 from backend.config import settings
 from backend.services.neo4j_graph import close_neo4j_driver
 
@@ -57,6 +58,7 @@ app.include_router(notifications.router, prefix="/notifications", tags=["notific
 app.include_router(chat.router, prefix="/chat", tags=["chat"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
 app.include_router(tts.router, tags=["tts"])
+app.include_router(stt.router, prefix="/stt", tags=["stt"])
 
 @app.get("/")
 async def root():

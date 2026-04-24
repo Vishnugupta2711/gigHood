@@ -669,10 +669,10 @@ export default function DashboardPage() {
       : "—";
 
   const coverageBadges = [
-    t("home.coverage_heavy_rainfall"),
-    t("home.coverage_hazardous_aqi"),
-    t("home.coverage_traffic_gridlock"),
-    t("home.coverage_platform_outage"),
+    { id: "heavy_rainfall", label: t("home.coverage_heavy_rainfall"), icon: "🌧️" },
+    { id: "hazardous_aqi", label: t("home.coverage_hazardous_aqi"), icon: "🌫️" },
+    { id: "traffic_gridlock", label: t("home.coverage_traffic_gridlock"), icon: "🚧" },
+    { id: "platform_outage", label: t("home.coverage_platform_outage"), icon: "📉" },
   ];
 
   const shiftCoverage = (direction: "left" | "right") => {
@@ -1190,7 +1190,7 @@ export default function DashboardPage() {
                 <div style={{ fontSize: "48px", fontWeight: 900, lineHeight: 1, letterSpacing: "-2px", textShadow: `0 6px 24px ${statusColor}70` }} className="tabular-nums">
                   {hasDci ? normalizedDci.toFixed(2) : "--"}
                 </div>
-                <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "5px", letterSpacing: "0.5px" }}>DCI Score / 1.00</div>
+                <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "5px", letterSpacing: "0.5px" }}>{t("home.dci_score")}</div>
               </div>
             </motion.div>
 
@@ -1266,15 +1266,12 @@ export default function DashboardPage() {
             </div>
           </div>
           <div ref={coverageCarouselRef} style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}>
-            {coverageBadges.map(label => (
-              <div key={label} style={{ flexShrink: 0, scrollSnapAlign: "start", padding: "14px 16px", borderRadius: "16px", background: "rgba(14,165,233,0.06)", border: "1px solid rgba(14,165,233,0.18)", minWidth: "140px" }}>
+            {coverageBadges.map(item => (
+              <div key={item.id} style={{ flexShrink: 0, scrollSnapAlign: "start", padding: "14px 16px", borderRadius: "16px", background: "rgba(14,165,233,0.06)", border: "1px solid rgba(14,165,233,0.18)", minWidth: "140px" }}>
                 <div style={{ fontSize: "22px", marginBottom: "6px" }}>
-                  {label === "Heavy Rainfall" && "🌧️"}
-                  {label === "Hazardous AQI" && "🌫️"}
-                  {label === "Traffic Gridlock" && "🚧"}
-                  {label === "Platform Outage" && "📉"}
+                  {item.icon}
                 </div>
-                <div style={{ fontSize: "13px", fontWeight: 600, color: "#BAE6FD" }}>{label}</div>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#BAE6FD" }}>{item.label}</div>
                 <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "3px" }}>{t("home.covered_tick")}</div>
               </div>
             ))}

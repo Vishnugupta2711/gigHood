@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Map, { Marker, Source, Layer, MapRef } from "react-map-gl/maplibre";
+import { useTranslation } from "react-i18next";
 import type { LayerProps } from "react-map-gl/maplibre";
 import type { FeatureCollection, Polygon } from "geojson";
 
@@ -63,6 +64,7 @@ export default function SafetyRadar({
   compact?: boolean;
   userCoords?: { latitude: number; longitude: number } | null;
 }) {
+  const { t } = useTranslation();
   const mapRef = useRef<MapRef>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [mapEnabled, setMapEnabled] = useState(true);
@@ -207,13 +209,13 @@ export default function SafetyRadar({
           }}
         >
           <div style={{ display: "flex", gap: "6px" }}>
-            <span style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(34,197,94,0.2)", color: "#22C55E", borderRadius: "99px", fontWeight: 600 }}>Safe</span>
-            <span style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(239,68,68,0.2)", color: "#EF4444", borderRadius: "99px", fontWeight: 600 }}>High Risk</span>
-            <span style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(59,130,246,0.2)", color: "#3B82F6", borderRadius: "99px", fontWeight: 600 }}>Demand</span>
+            <span style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(34,197,94,0.2)", color: "#22C55E", borderRadius: "99px", fontWeight: 600 }}>{t("home.status_safe")}</span>
+            <span style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(239,68,68,0.2)", color: "#EF4444", borderRadius: "99px", fontWeight: 600 }}>{t("home.status_warning")}</span>
+            <span style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(59,130,246,0.2)", color: "#3B82F6", borderRadius: "99px", fontWeight: 600 }}>{t("home.radar_demand")}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", padding: "8px 12px", borderRadius: "10px", width: "max-content" }}>
             <Navigation size={14} color="#818CF8" />
-            <span style={{ fontSize: "12px", color: "#818CF8", fontWeight: 600 }}>Live zone overlay</span>
+            <span style={{ fontSize: "12px", color: "#818CF8", fontWeight: 600 }}>{t("home.live_zone_overlay")}</span>
           </div>
         </div>
       )}

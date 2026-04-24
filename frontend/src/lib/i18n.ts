@@ -130,6 +130,7 @@ function normalizeLanguage(language?: string): SupportedLanguage {
 }
 
 function resolveKey(dict: TranslationDict, key: string): string | undefined {
+  if (!key) return undefined;
   if (dict[key]) return dict[key];
 
   const underscoreKey = key.replace(/\./g, "_");

@@ -1,9 +1,11 @@
 services:
+  # ── Backend API ─────────────────────────────────────────────── port 8001 ──
   backend:
+    container_name: gighood_backend
+    image: ghcr.io/kr1shnasomani/gighood-backend:latest
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: gighood_backend
     ports:
       - "8001:8001"
     volumes:
@@ -14,18 +16,21 @@ services:
     restart: unless-stopped
     environment:
       - PYTHONPATH=/app
-    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8001"]
+    command: [ "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8001" ]
 
+  # ── Frontend UI ─────────────────────────────────────────────── port 3000 ──
   frontend:
+    container_name: gighood_frontend
+    image: ghcr.io/kr1shnasomani/gighood-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: gighood_frontend
     ports:
       - "3000:3000"
     depends_on:
       - backend
     environment:
+      # Browser fetches from localhost
       - NEXT_PUBLIC_API_URL=http://localhost:8001
     volumes:
       - ./frontend:/app

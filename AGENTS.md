@@ -174,3 +174,13 @@ Conflict resolution priority:
 2. never bypass migrations for schema changes
 3. never use destructive git commands unless explicitly requested
 4. if unexpected unrelated repo changes appear, stop and confirm with the user before proceeding
+
+## 11) Graphify Guidelines
+
+This project uses a Graphify knowledge graph (located at `graphify-out/`).
+
+**Rules:**
+1. Before answering architecture or codebase questions, read `graphify-out/GRAPH_REPORT.md` for god nodes and community structure.
+2. If `graphify-out/wiki/index.md` exists, navigate it instead of reading raw files.
+3. For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's extracted + inferred edges instead of scanning files.
+4. After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost).

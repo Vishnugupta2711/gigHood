@@ -64,19 +64,18 @@ gigHood/
 3. npm 10+
 4. Docker Desktop (optional for full stack run)
 
-## Quick Setup
+## Quick Setup (Docker)
 
-### macOS/Linux
+The recommended way to run gigHood locally is using Docker Compose. This pulls the pre-built multi-arch images from GHCR.
 
 ```bash
-chmod +x setup.sh
-./setup.sh
+docker compose pull
+docker compose up
 ```
 
-### Windows
-
-```bat
-setup.bat
+Alternatively, to build the images locally from source:
+```bash
+docker compose up --build
 ```
 
 ## Environment Variables
@@ -117,25 +116,11 @@ npm ci
 npm run dev
 ```
 
-## Docker
-
-To run the entire stack (Frontend + Backend + DB dependencies) via Docker:
-
-```bash
-docker compose up --build -d
-```
-
-Stop the containers:
-
-```bash
-docker compose down
-```
-
 ## Local URLs
 
 1. Frontend App & Admin Dashboard: `http://localhost:3000`
-2. Backend API: `http://127.0.0.1:8001`
-3. OpenAPI / Swagger Docs: `http://127.0.0.1:8001/docs`
+2. Backend API: `http://localhost:8001`
+3. OpenAPI / Swagger Docs: `http://localhost:8001/docs`
 
 ## Validation Commands
 

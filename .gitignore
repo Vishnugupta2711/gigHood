@@ -126,3 +126,5 @@ backend/ml/*.json
 
 # Render/CI local cache
 .render-buildpacks.json
+
+graphify-out/

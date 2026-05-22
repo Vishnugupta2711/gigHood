@@ -16,6 +16,9 @@ on:
       - 'backend/**'
       - '.github/workflows/docker-image.yml'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build Check

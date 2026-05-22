@@ -1,60 +1,90 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot configuration for gigHood
+# Uses grouped updates to produce ONE PR per ecosystem instead of one per package.
 
 version: 2
 updates:
-  - package-ecosystem: pip
-    directory: /backend
-    schedule:
-      interval: monthly
-      day: monday
-      time: "05:00"
-      timezone: "Asia/Kolkata"
-    open-pull-requests-limit: 1
-    groups:
-      backend-dependencies:
-        patterns:
-          - "*"
-    labels:
-      - dependencies
-      - backend
-    commit-message:
-      prefix: "deps(backend)"
 
-  - package-ecosystem: npm
-    directory: /frontend
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: monthly
-      day: monday
-      time: "05:15"
-      timezone: "Asia/Kolkata"
-    open-pull-requests-limit: 1
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
     groups:
-      frontend-dependencies:
-        patterns:
-          - "*"
+      github-actions:
+        patterns: ["*"]
     labels:
-      - dependencies
-      - frontend
-    commit-message:
-      prefix: "deps(frontend)"
+      - "dependencies"
+      - "github-actions"
 
-  - package-ecosystem: github-actions
-    directory: /
+  # Python — backend
+  - package-ecosystem: "pip"
+    directory: "/backend"
     schedule:
-      interval: monthly
-      day: monday
-      time: "05:30"
-      timezone: "Asia/Kolkata"
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    groups:
+      backend-deps:
+        patterns: ["*"]
+    ignore:
+      # pytest 9.x is incompatible with all versions of pytest-asyncio
+      - dependency-name: "pytest"
+        versions: [">=9"]
+    labels:
+      - "dependencies"
+      - "python"
+
+  # Node.js — frontend
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    groups:
+      frontend-deps:
+        patterns: ["*"]
+    ignore:
+      # ESLint 10 is a major breaking release
+      - dependency-name: "eslint"
+        versions: [">=10"]
+      # TypeScript 6 is a major breaking release
+      - dependency-name: "typescript"
+        versions: [">=6"]
+    labels:
+      - "dependencies"
+      - "javascript"
+
+  # Docker — base image in Dockerfile
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 1
     groups:
-      ci-dependencies:
-        patterns:
-          - "*"
+      docker-base:
+        patterns: ["*"]
+    ignore:
+      # Pinned to Python 3.11 for compatibility
+      - dependency-name: "python"
+        versions: [">=3.12"]
     labels:
-      - dependencies
-      - ci
-    commit-message:
-      prefix: "deps(ci)"
+      - "dependencies"
+      - "docker"
+
+  # Docker — frontend Dockerfile
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 1
+    groups:
+      docker-frontend:
+        patterns: ["*"]
+    labels:
+      - "dependencies"
+      - "docker"

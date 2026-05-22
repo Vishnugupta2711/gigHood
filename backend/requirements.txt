@@ -7,7 +7,7 @@ httpx==0.28.1
 python-jose==3.3.0
 passlib==1.7.4
 bcrypt==4.2.1
-python-multipart==0.0.20
+python-multipart==0.0.27
 xgboost==1.7.6
 scikit-learn==1.5.2
 numpy
@@ -20,8 +20,9 @@ razorpay==1.4.1
 firebase-admin==6.6.0
 neo4j==5.28.1
 rich>=13.7.0
-pytest==8.3.4
+pytest==9.0.3
 pytest-asyncio==0.25.0
 setuptools<81
-httpx
 Faker==37.1.0
+    # pip-audit: subdependency explicitly fixed
+starlette==0.49.1

@@ -165,7 +165,7 @@ def override_zone_signals(payload: SandboxSignalOverrideRequest):
         raise
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/sandbox/override-signals/batch")
@@ -202,7 +202,7 @@ def override_all_live_zone_signals(payload: SandboxSignalBatchOverrideRequest):
         raise
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/fraud/network-graph")
@@ -217,7 +217,7 @@ def get_fraud_network_graph(seed_if_empty: bool = True, city: str | None = None)
         return get_syndicate_graph(seed_if_empty=seed_if_empty, city=city)
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/fraud/network-graph/backfill")
@@ -232,7 +232,7 @@ def backfill_fraud_network_graph(limit: int = 1000):
         return backfill_claim_graph(limit=max(1, min(limit, 5000)))
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 def _clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))
@@ -298,7 +298,7 @@ def get_alerts_count():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/dashboard/kpis")
 def get_kpis():
@@ -331,7 +331,7 @@ def get_kpis():
         }
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/dashboard/zones")
 def get_zones():
@@ -348,7 +348,7 @@ def get_zones():
         return zones
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/dashboard/risk-forecast")
 def get_risk_forecast():
@@ -384,7 +384,7 @@ def get_risk_forecast():
         return forecast[:6]
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/dashboard/payout-trends")
 def get_payout_trends():
@@ -423,7 +423,7 @@ def get_payout_trends():
         return trends
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/payouts/summary")
 def get_payout_summary():
@@ -445,7 +445,7 @@ def get_payout_summary():
         }
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/payouts/recent")
 def get_recent_payouts():
@@ -473,7 +473,7 @@ def get_recent_payouts():
         return result
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/dashboard/fraud-queue")
 def get_fraud_queue():
@@ -568,7 +568,7 @@ def get_fraud_queue():
         return result
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/policies/stats")
 def get_policy_stats():
@@ -597,7 +597,7 @@ def get_policy_stats():
         }
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/policies/tiers")
 def get_policy_tiers():
@@ -633,7 +633,7 @@ def get_policy_tiers():
         return result
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/fraud/metrics")
 def get_fraud_metrics():
@@ -670,7 +670,7 @@ def get_fraud_metrics():
         }
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/fraud/signals")
 def get_fraud_signals():
@@ -705,7 +705,7 @@ def get_fraud_signals():
         return signals
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/fraud/workers")
 def get_fraud_workers():
@@ -762,7 +762,7 @@ def get_fraud_workers():
         return result
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/fraud/events")
 def get_fraud_events():
@@ -798,4 +798,4 @@ def get_fraud_events():
         return events
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

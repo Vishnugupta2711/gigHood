@@ -643,7 +643,7 @@ def seed_demo_data(worker: dict = Depends(get_current_worker)):
         raise
     except Exception as e:
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Demo seed failed: {e}")
+        raise HTTPException(status_code=500, detail="Demo seed failed due to an internal server error.")
 
 
 @router.post("/me/demo/simulate-disruption")
@@ -654,7 +654,7 @@ def simulate_disruption(payload: SimulateDisruptionRequest, worker: dict = Depen
         raise
     except Exception as e:
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Demo disruption simulation failed: {e}")
+        raise HTTPException(status_code=500, detail="Demo disruption simulation failed due to an internal server error.")
 
 
 @router.post("/me/demo/process-claim")
@@ -665,4 +665,4 @@ def process_demo_claim(worker: dict = Depends(get_current_worker)):
         raise
     except Exception as e:
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Demo claim processing failed: {e}")
+        raise HTTPException(status_code=500, detail="Demo claim processing failed due to an internal server error.")

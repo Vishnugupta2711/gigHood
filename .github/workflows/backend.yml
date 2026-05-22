@@ -5,11 +5,13 @@ on:
     branches: [ "main" ]
     paths:
       - 'backend/**'
+      - 'conftest.py'
       - '.github/workflows/backend.yml'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'backend/**'
+      - 'conftest.py'
 
 permissions:
   contents: read
@@ -38,5 +40,11 @@ jobs:
           SUPABASE_URL: "https://mock.supabase.co"
           SUPABASE_KEY: "mock-key"
           SUPABASE_SERVICE_ROLE_KEY: "mock-service-key"
+          JWT_SECRET: "mock-jwt-secret-for-ci-testing-only"
+          NEO4J_URI: ""
+          NEO4J_USER: ""
+          NEO4J_PASSWORD: ""
+          DATABASE_URL: ""
+          PYTHONDONTWRITEBYTECODE: "1"
         run: |
           PYTHONPATH=. pytest backend/tests/ -v

@@ -104,7 +104,8 @@ def initiate_upi_payout(upi_id: str, amount_rupees: float, reference_id: str, fr
         imps_tx = "IMPS-MOCK-999"
         return {
             "id": imps_tx,
-            "status": "processed",
+            "entity": "payout",
+            "status": "processing",
             "channel": "IMPS",
             "transaction_id": imps_tx,
             "reference_id": reference_id,
